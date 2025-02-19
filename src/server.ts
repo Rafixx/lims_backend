@@ -1,10 +1,7 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
-import { ApolloServer } from 'apollo-server-express';
 import { Server as SocketIOServer } from 'socket.io';
-import { typeDefs } from './graphql/schema';
-import { resolvers } from './graphql/resolvers';
 import muestrasRouter, { actualizarMuestra, muestras } from './routes/muestras';
 import userRouter from './routes/user';
 
@@ -16,11 +13,6 @@ async function startServer() {
   // Rutas REST básicas (si sigues utilizándolas)
   app.use('/api/muestras', muestrasRouter);
   app.use('/api/user', userRouter);
-
-  // Configuración de Apollo Server para GraphQL
-  const apolloServer = new ApolloServer({ typeDefs, resolvers });
-  await apolloServer.start();
-  apolloServer.applyMiddleware({ app: app as any });
 
   // Crear servidor HTTP subyacente
   const server = http.createServer(app);
@@ -50,9 +42,6 @@ async function startServer() {
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-    console.log(
-      `👤 GraphQL disponible en http://localhost:${PORT}${apolloServer.graphqlPath}`
-    );
   });
 }
 
