@@ -1,6 +1,7 @@
 // src/graphql/resolvers/muestra.resolver.ts
 import { Muestra } from '../../data/types';
 import { muestras } from '../../data/muestras';
+import { pubsub } from '../pubsub';
 
 export const muestraResolver = {
   Query: {
@@ -30,6 +31,9 @@ export const muestraResolver = {
         productos: args.productos,
       };
       muestras.push(newMuestra);
+      // Publica la nueva muestra en la suscripción
+      pubsub.publish('MUESTRA_ACTUALIZADA', { muestraActualizada: newMuestra });
+
       return newMuestra;
     },
     updateMuestra: (
@@ -53,13 +57,22 @@ export const muestraResolver = {
         muestra.fechaIngreso = args.fechaIngreso;
       if (args.estado !== undefined) muestra.estado = args.estado;
       if (args.ubicacion !== undefined) muestra.ubicacion = args.ubicacion;
+      // Publica la muestra actualizada
+      pubsub.publish('MUESTRA_ACTUALIZADA', { muestraActualizada: muestra });
+
       return muestra;
     },
     deleteMuestra: (_: any, args: { id: string }): boolean => {
       const index = muestras.findIndex((m) => m.id === args.id);
       if (index === -1) throw new Error('Muestra no encontrada');
       muestras.splice(index, 1);
+      // En este ejemplo, no publicamos para delete, pero podrías hacerlo si lo deseas.
       return true;
+    },
+  },
+  Subscription: {
+    muestraActualizada: {
+      subscribe: () => (pubsub as any).asyncIterator(['MUESTRA_ACTUALIZADA']),
     },
   },
 };

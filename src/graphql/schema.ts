@@ -170,6 +170,10 @@ export const typeDefs = gql`
     deletePerfil(rol: String!): Boolean!
   }
 
+  type Subscription {
+    muestraActualizada: Muestra!
+  }
+
   input ProductoMuestraInput {
     productoId: ID!
     tecnicas: [TecnicaMuestraInput!]!
