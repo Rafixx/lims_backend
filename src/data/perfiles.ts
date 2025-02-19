@@ -1,5 +1,5 @@
 // src/data/perfiles.ts
-import { Perfil } from './types';
+import { Perfil } from './tipos';
 
 export const perfiles: Perfil[] = [
   {

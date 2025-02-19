@@ -1,6 +1,6 @@
 //src/data/index.ts
 
-export * from './types';
+export * from './tipos';
 export { productos } from './productos';
 export { tecnicas } from './tecnicas';
 export { muestras } from './muestras';

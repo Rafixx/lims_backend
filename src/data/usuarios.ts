@@ -1,5 +1,5 @@
 // src/data/usuarios.ts
-import { Usuario } from './types';
+import { Usuario } from './tipos';
 
 export const usuarios: Usuario[] = [
   {

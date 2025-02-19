@@ -1,5 +1,5 @@
 // src/data/maquinas.ts
-import { Maquina } from './types';
+import { Maquina } from './tipos';
 
 export const maquinas: Maquina[] = [
   { id: 'maq1', nombre: 'Termociclador A', tipo: 'PCR' },

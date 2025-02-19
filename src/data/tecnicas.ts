@@ -1,5 +1,5 @@
 // src/data/tecnicas.ts
-import { Tecnica } from './types';
+import { Tecnica } from './tipos';
 
 export const tecnicas: Tecnica[] = [
   {

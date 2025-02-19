@@ -1,5 +1,5 @@
 // src/data/placas.ts
-import { Placa } from './types';
+import { Placa } from './tipos';
 
 export const placas: Placa[] = [
   {

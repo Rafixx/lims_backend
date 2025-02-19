@@ -1,5 +1,5 @@
 // src/data/muestras.ts
-import { Muestra } from './types';
+import { Muestra } from './tipos';
 
 export const muestras: Muestra[] = [
   {

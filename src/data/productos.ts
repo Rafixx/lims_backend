@@ -1,5 +1,5 @@
 //src/data/productos.ts
-import { Producto } from './types';
+import { Producto } from './tipos';
 
 export const productos: Producto[] = [
   {
