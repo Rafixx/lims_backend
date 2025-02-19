@@ -5,6 +5,8 @@ import cors from 'cors';
 import muestraRoutes from './routes/muestras.routes';
 import userRoutes from './routes/user.routes';
 import maquinaRoutes from './routes/maquina.routes';
+import productoRoutes from './routes/producto.routes';
+import tecnicaRoutes from './routes/tecnica.routes';
 import { initSocket } from './socket';
 
 const app = express();
@@ -14,6 +16,8 @@ app.use(express.json());
 app.use('/api/muestras', muestraRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/maquinas', maquinaRoutes);
+app.use('/api/productos', productoRoutes);
+app.use('/api/tecnicas', tecnicaRoutes);
 
 const server = http.createServer(app);
 
