@@ -1,6 +1,7 @@
 // src/controllers/muestras.controller.ts
 import { Request, Response } from 'express';
-import { muestras } from '../data/muestras';
+// import { muestras } from '../data/muestras';
+import { muestras } from '../data/generaMuestras';
 import { Muestra } from '../data/tipos';
 import { getIO } from '../socket';
 

@@ -22,11 +22,15 @@ export interface Resultado {
 
 export interface TecnicaMuestra {
   tecnicaId: string;
+  nombre: string;
+  estado: string;
   resultados: Resultado[];
 }
 
 export interface ProductoMuestra {
   productoId: string;
+  nombre: string;
+  estado: string;
   tecnicas: TecnicaMuestra[];
 }
 
