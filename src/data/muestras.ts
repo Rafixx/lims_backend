@@ -14,12 +14,12 @@ export const muestras: Muestra[] = [
       {
         productoId: 'prod1',
         nombre: 'Producto 1',
-        estado: 'En Proceso',
+        estado: 'En Curso',
         tecnicas: [
           {
             tecnicaId: 'tec1',
             nombre: 'Técnica 1',
-            estado: 'En Proceso',
+            estado: 'En Curso',
             resultados: [
               {
                 id: 'res1',
@@ -32,7 +32,7 @@ export const muestras: Muestra[] = [
           {
             tecnicaId: 'tec2',
             nombre: 'Técnica 2',
-            estado: 'En Proceso',
+            estado: 'En Curso',
             resultados: [
               {
                 id: 'res2',
@@ -57,12 +57,12 @@ export const muestras: Muestra[] = [
       {
         productoId: 'prod3',
         nombre: 'Producto 3',
-        estado: 'En Proceso',
+        estado: 'En Curso',
         tecnicas: [
           {
             tecnicaId: 'tec4',
             nombre: 'Técnica 4',
-            estado: 'En Proceso',
+            estado: 'En Curso',
             resultados: [
               {
                 id: 'res3',

@@ -7,9 +7,10 @@ import userRoutes from './routes/user.routes';
 import maquinaRoutes from './routes/maquina.routes';
 import productoRoutes from './routes/producto.routes';
 import tecnicaRoutes from './routes/tecnica.routes';
+import authRoutes from './routes/auth.routes';
 import { initSocket } from './socket';
 
-const app = express();
+export const app = express();
 app.use(cors());
 app.use(express.json());
 
@@ -18,6 +19,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/maquinas', maquinaRoutes);
 app.use('/api/productos', productoRoutes);
 app.use('/api/tecnicas', tecnicaRoutes);
+app.use('/api', authRoutes);
 
 const server = http.createServer(app);
 
