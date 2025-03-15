@@ -1,15 +1,15 @@
 //src/data/types.ts
-export interface Producto {
+export interface Estudio {
   id: string;
   nombre: string;
-  tecnicas: string[];
+  procesos: Proceso[];
 }
 
-export interface Tecnica {
+export interface Proceso {
   id: string;
   nombre: string;
   productoId: string;
-  maquinaId: string | null;
+  aparatoId: string | null;
   parametros: any;
 }
 
@@ -20,28 +20,41 @@ export interface Resultado {
   fechaResultado: string;
 }
 
-export interface TecnicaMuestra {
-  tecnicaId: string;
+export interface ProcesoMuestra {
+  procesoId: string;
   nombre: string;
   estado: string;
   resultados: Resultado[];
 }
 
-export interface ProductoMuestra {
-  productoId: string;
+export interface EstudioMuestra {
+  estudioId: string;
   nombre: string;
   estado: string;
-  tecnicas: TecnicaMuestra[];
+  procesos: ProcesoMuestra[];
 }
 
 export interface Muestra {
   id: string;
+  idSolicitud: string;
   identificacionExterna: string;
   codigoInterno: string;
   fechaIngreso: string;
   estado: string;
   ubicacion: string;
-  productos: ProductoMuestra[];
+  estudios: EstudioMuestra[];
+}
+export enum EstadoSolicitud {
+  PENDIENTE = 'pendiente',
+  EN_PROCESO = 'en_proceso',
+  FINALIZADA = 'finalizada',
+}
+
+export interface Solicitud {
+  id: string;
+  fechaSolicitud: string;
+  solicitante: string;
+  estado: EstadoSolicitud;
 }
 
 export interface Placa {
@@ -52,7 +65,7 @@ export interface Placa {
   muestras: { id: string; posicion: string }[];
 }
 
-export interface Maquina {
+export interface Aparato {
   id: string;
   nombre: string;
   tipo: string;

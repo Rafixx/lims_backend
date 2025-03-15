@@ -1,5 +1,22 @@
 import { Muestra } from './tipos';
-import { updateMuestraEstado } from '../controllers/muestras.controller';
+// import { updateMuestraEstado } from '../controllers/muestras.controller';
+import { estudios } from './estudios';
+import { procesos } from './procesos';
+
+const getRandomEstudioNombre = (): string => {
+  const randomIndex = Math.floor(Math.random() * estudios.length);
+  return estudios[randomIndex].nombre;
+};
+
+const getRandomProcesoNombre = (): string => {
+  const randomIndex = Math.floor(Math.random() * procesos.length);
+  return procesos[randomIndex].nombre;
+};
+
+const getRandomEstado = () => {
+  const estados = ['Pendiente', 'En Curso', 'Finalizada'];
+  return estados[Math.floor(Math.random() * 3)];
+};
 
 // Función que genera entre 5 y 8 resultados para cada técnica.
 function createResultados(
@@ -8,7 +25,7 @@ function createResultados(
   tecnicaIndex: number
 ): any[] {
   // Se varía el número de resultados: 5 + (tecnicaIndex % 4) dará un valor entre 5 y 8.
-  const count = 5 + (tecnicaIndex % 4);
+  const count = 3 + (tecnicaIndex % 2);
   const resultados = [];
   for (let i = 0; i < count; i++) {
     resultados.push({
@@ -40,8 +57,8 @@ function createTecnicas(
   for (let t = 0; t < count; t++) {
     tecnicas.push({
       tecnicaId: `tec${sampleIndex}_${prodIndex}_${t + 1}`,
-      nombre: `Técnica ${t + 1}`,
-      estado: 'En Proceso',
+      nombre: getRandomProcesoNombre(),
+      estado: getRandomEstado(),
       resultados: createResultados(sampleIndex, prodIndex, t + 1),
     });
   }
@@ -54,8 +71,8 @@ function createProducto(sampleIndex: number, prodIndex: number): any {
   const numTecnicas = 5 + (prodIndex % 3); // Puede ser 5, 6 o 7
   return {
     productoId: `prod${sampleIndex}_${prodIndex}`,
-    nombre: `Producto ${prodIndex}`,
-    estado: 'En Proceso',
+    nombre: getRandomEstudioNombre(),
+    estado: getRandomEstado(),
     tecnicas: createTecnicas(sampleIndex, prodIndex, numTecnicas),
   };
 }
@@ -75,8 +92,7 @@ for (let s = 1; s <= 10; s++) {
     identificacionExterna: `EXT-${s.toString().padStart(3, '0')}`,
     codigoInterno: `INT-${s.toString().padStart(3, '0')}`,
     fechaIngreso: new Date(2025, 1, 15, 8, 30 + s).toISOString(),
-    // Se alterna el estado entre "Pendiente", "En Curso" y "Finalizada" según el índice.
-    estado: s % 3 === 0 ? 'Pendiente' : s % 3 === 1 ? 'En Curso' : 'Finalizada',
+    estado: getRandomEstado(),
     // Se asigna la ubicación: muestra par tendrá ubicación en "Máquina maqX", impares en "Congelador A".
     ubicacion: s % 2 === 0 ? `Máquina maq${s}` : 'Congelador A',
     productos,

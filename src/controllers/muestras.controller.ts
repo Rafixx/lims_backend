@@ -1,7 +1,7 @@
 // src/controllers/muestras.controller.ts
 import { Request, Response } from 'express';
 // import { muestras } from '../data/muestras';
-import { muestras } from '../data/generaMuestras';
+import { muestras } from '../data/muestras';
 import { Muestra } from '../data/tipos';
 import { getIO } from '../socket';
 
@@ -19,6 +19,15 @@ export const getMuestraById = (req: Request, res: Response): void => {
     return;
   }
   res.json(muestra);
+};
+
+// Obtener muestras por idSolicitud
+export const getMuestrasByIdSolicitud = (req: Request, res: Response): void => {
+  const { idSolicitud } = req.params;
+  const muestrasSolicitud = muestras.filter(
+    (m) => m.idSolicitud === idSolicitud
+  );
+  res.json(muestrasSolicitud);
 };
 
 // Crear una nueva muestra

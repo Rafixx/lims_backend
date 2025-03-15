@@ -1,7 +1,7 @@
 // src/tests/producto.test.ts
 import request from 'supertest';
 import express from 'express';
-import productoRoutes from '../routes/producto.routes';
+import productoRoutes from '../routes/estudio.routes';
 
 const app = express();
 app.use(express.json());

@@ -1,7 +1,7 @@
 // src/tests/tecnica.test.ts
 import request from 'supertest';
 import express from 'express';
-import tecnicaRoutes from '../routes/tecnica.routes';
+import tecnicaRoutes from '../routes/proceso.routes';
 
 const app = express();
 app.use(express.json());

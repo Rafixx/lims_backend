@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   getMuestras,
   getMuestraById,
+  getMuestrasByIdSolicitud,
   createMuestra,
   updateMuestra,
   deleteMuestra,
@@ -13,6 +14,7 @@ const muestraRoutes = Router();
 
 muestraRoutes.get('/', getMuestras);
 muestraRoutes.get('/:id', getMuestraById);
+muestraRoutes.get('/solicitud/:idSolicitud', getMuestrasByIdSolicitud);
 muestraRoutes.post('/', createMuestra);
 muestraRoutes.put('/:id', updateMuestra);
 muestraRoutes.delete('/:id', deleteMuestra);

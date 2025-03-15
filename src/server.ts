@@ -2,11 +2,12 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import solicitudRoutes from './routes/solicitudes.routes';
 import muestraRoutes from './routes/muestras.routes';
 import userRoutes from './routes/user.routes';
-import maquinaRoutes from './routes/maquina.routes';
-import productoRoutes from './routes/producto.routes';
-import tecnicaRoutes from './routes/tecnica.routes';
+import aparatoRoutes from './routes/aparato.routes';
+import estudioRoutes from './routes/estudio.routes';
+import procesoRoutes from './routes/proceso.routes';
 import authRoutes from './routes/auth.routes';
 import { initSocket } from './socket';
 
@@ -14,11 +15,12 @@ export const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use('/api/solicitudes', solicitudRoutes);
 app.use('/api/muestras', muestraRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/maquinas', maquinaRoutes);
-app.use('/api/productos', productoRoutes);
-app.use('/api/tecnicas', tecnicaRoutes);
+app.use('/api/aparatos', aparatoRoutes);
+app.use('/api/estudios', estudioRoutes);
+app.use('/api/procesos', procesoRoutes);
 app.use('/api', authRoutes);
 
 const server = http.createServer(app);

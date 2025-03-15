@@ -1,7 +1,7 @@
 // src/data/maquinas.ts
-import { Maquina } from './tipos';
+import { Aparato } from './tipos';
 
-export const maquinas: Maquina[] = [
+export const aparatos: Aparato[] = [
   { id: 'maq1', nombre: 'Termociclador A', tipo: 'PCR' },
   { id: 'maq2', nombre: 'Termociclador B', tipo: 'qPCR' },
   { id: 'maq3', nombre: 'Robot QIAamp', tipo: 'Extracción DNA' },

@@ -1,7 +1,7 @@
 // src/tests/maquina.test.ts
 import request from 'supertest';
 import express from 'express';
-import maquinaRoutes from '../routes/maquina.routes';
+import maquinaRoutes from '../routes/aparato.routes';
 
 const app = express();
 app.use(express.json());
