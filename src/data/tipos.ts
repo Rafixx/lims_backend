@@ -2,6 +2,7 @@
 export interface Estudio {
   id: string;
   nombre: string;
+  estado: string;
   procesos: Proceso[];
 }
 
@@ -11,6 +12,7 @@ export interface Proceso {
   productoId: string;
   aparatoId: string | null;
   parametros: any;
+  resultados: TipoResultado[];
 }
 
 export interface Resultado {
@@ -54,7 +56,8 @@ export interface Solicitud {
   id: string;
   fechaSolicitud: string;
   solicitante: string;
-  estado: EstadoSolicitud;
+  estado: string;
+  muestras: Muestra[];
 }
 
 export interface Placa {
@@ -82,4 +85,21 @@ export interface Usuario {
 export interface Perfil {
   rol: string;
   permisos: string[];
+}
+
+export interface TipoResultado {
+  id: string;
+  nombre: string;
+  tipo: string;
+  // tipo: TipoResultadoEnum;
+  unidad: string | null;
+  decimales: number | null;
+  min: number | null;
+  max: number | null;
+}
+
+export enum TipoResultadoEnum {
+  NUMERO = 'numero',
+  TEXTO = 'texto',
+  BOOLEANO = 'booleano',
 }

@@ -8,6 +8,7 @@ import userRoutes from './routes/user.routes';
 import aparatoRoutes from './routes/aparato.routes';
 import estudioRoutes from './routes/estudio.routes';
 import procesoRoutes from './routes/proceso.routes';
+import tipoResultadoRoutes from './routes/tipoResultado.routes';
 import authRoutes from './routes/auth.routes';
 import { initSocket } from './socket';
 
@@ -21,6 +22,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/aparatos', aparatoRoutes);
 app.use('/api/estudios', estudioRoutes);
 app.use('/api/procesos', procesoRoutes);
+app.use('/api/tiposResultado', tipoResultadoRoutes);
 app.use('/api', authRoutes);
 
 const server = http.createServer(app);
