@@ -11,8 +11,10 @@ export interface Proceso {
   nombre: string;
   productoId: string;
   aparatoId: string | null;
-  parametros: any;
-  resultados: TipoResultado[];
+  parametros: unknown;
+  pipetas?: Pipeta[];
+  reactivos?: Reactivo[];
+  resultados?: TipoResultado[];
 }
 
 export interface Resultado {
@@ -102,4 +104,28 @@ export enum TipoResultadoEnum {
   NUMERO = 'numero',
   TEXTO = 'texto',
   BOOLEANO = 'booleano',
+}
+
+export interface ListaTrabajo {
+  id: string;
+  tipo: string;
+  proceso: Proceso;
+  muestras: Muestra[];
+  fecha: string;
+  tecnico: Usuario;
+  estado: string;
+}
+
+export interface Pipeta {
+  id: string;
+  zona: string;
+  codigo: string;
+  modelo: string;
+}
+
+export interface Reactivo {
+  id: string;
+  nombre: string;
+  volumen: number;
+  lote: string;
 }

@@ -10,6 +10,9 @@ import estudioRoutes from './routes/estudio.routes';
 import procesoRoutes from './routes/proceso.routes';
 import tipoResultadoRoutes from './routes/tipoResultado.routes';
 import authRoutes from './routes/auth.routes';
+import listasTrabajoRoutes from './routes/listasTrabajo.routes';
+import pipetaRoutes from './routes/pipeta.routes';
+import reactivoRoutes from './routes/reactivos.routes';
 import { initSocket } from './socket';
 
 export const app = express();
@@ -23,6 +26,9 @@ app.use('/api/aparatos', aparatoRoutes);
 app.use('/api/estudios', estudioRoutes);
 app.use('/api/procesos', procesoRoutes);
 app.use('/api/tiposResultado', tipoResultadoRoutes);
+app.use('/api/listasTrabajo', listasTrabajoRoutes);
+app.use('/api/pipetas', pipetaRoutes);
+app.use('/api/reactivos', reactivoRoutes);
 app.use('/api', authRoutes);
 
 const server = http.createServer(app);
