@@ -1,42 +1,20 @@
-// src/server.ts
-import express from 'express';
-import http from 'http';
-import cors from 'cors';
-import solicitudRoutes from './routes/solicitudes.routes';
-import muestraRoutes from './routes/muestras.routes';
-import userRoutes from './routes/user.routes';
-import aparatoRoutes from './routes/aparato.routes';
-import estudioRoutes from './routes/estudio.routes';
-import procesoRoutes from './routes/proceso.routes';
-import tipoResultadoRoutes from './routes/tipoResultado.routes';
-import authRoutes from './routes/auth.routes';
-import listasTrabajoRoutes from './routes/listasTrabajo.routes';
-import pipetaRoutes from './routes/pipeta.routes';
-import reactivoRoutes from './routes/reactivos.routes';
-import { initSocket } from './socket';
-
-export const app = express();
-app.use(cors());
-app.use(express.json());
-
-app.use('/api/solicitudes', solicitudRoutes);
-app.use('/api/muestras', muestraRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/aparatos', aparatoRoutes);
-app.use('/api/estudios', estudioRoutes);
-app.use('/api/procesos', procesoRoutes);
-app.use('/api/tiposResultado', tipoResultadoRoutes);
-app.use('/api/listasTrabajo', listasTrabajoRoutes);
-app.use('/api/pipetas', pipetaRoutes);
-app.use('/api/reactivos', reactivoRoutes);
-app.use('/api', authRoutes);
-
-const server = http.createServer(app);
-
-// Inicializa Socket.IO
-initSocket(server);
+import app from './app';
+import { sequelize } from './config/db.config';
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-});
+
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Conexión a la base de datos establecida correctamente.');
+
+    app.listen(PORT, () => {
+      console.log(`Servidor escuchando en el puerto ${PORT}`);
+    });
+  } catch (error) {
+    console.error('No se pudo conectar a la base de datos:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

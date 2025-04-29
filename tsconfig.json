@@ -9,7 +9,8 @@
     "skipLibCheck": true
   },
   "include": [
-    "src"
+    "src",
+    "src/types" // Include the types directory for type definitions
   ],
   "exclude": [
     "node_modules"
