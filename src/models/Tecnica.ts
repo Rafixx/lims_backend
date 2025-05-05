@@ -111,5 +111,9 @@ export class Tecnica extends Model<
       foreignKey: 'id_muestra',
       as: 'muestra',
     });
+    this.belongsTo(models.DimTecnicaProc, {
+      foreignKey: 'id_tecnica_proc',
+      as: 'tecnica_proc',
+    });
   }
 }

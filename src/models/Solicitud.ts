@@ -52,11 +52,8 @@ export class Solicitud extends Model<
         },
         id_cliente: {
           type: DataTypes.INTEGER,
-          allowNull: false,
-          validate: {
-            notNull: { msg: 'id_cliente es requerido' },
-            isInt: { msg: 'id_paciente debe ser numérico' },
-          },
+          allowNull: true,
+          defaultValue: null,
         },
         id_prueba: {
           type: DataTypes.INTEGER,
@@ -97,10 +94,18 @@ export class Solicitud extends Model<
     );
   }
   static associate(models: Record<string, ModelStatic<Model>>) {
-    this.hasMany(models.Muestra, {
-      foreignKey: 'id_muestra',
-      as: 'muestras',
+    this.belongsTo(models.DimCliente, {
+      foreignKey: 'id_cliente',
+      as: 'cliente',
     });
-    // …añade aquí el resto de relaciones
+    this.belongsTo(models.DimPrueba, {
+      foreignKey: 'id_prueba',
+      as: 'prueba',
+    });
+
+    this.hasMany(models.Muestra, {
+      foreignKey: 'id_solicitud',
+      as: 'muestra',
+    });
   }
 }

@@ -4,5 +4,5 @@
     "source.fixAll.eslint": "always"
   },
   // Asegúrate de usar Prettier como formateador predeterminado:
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
 }

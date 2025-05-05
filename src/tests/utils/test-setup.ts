@@ -6,6 +6,7 @@ import { initModels } from '../../models/index';
 beforeAll(async () => {
   initModels(sequelize);
   await sequelize.sync({ force: true });
+  jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 // Limpia **todas** las tablas antes de cada test
@@ -13,6 +14,10 @@ beforeEach(async () => {
   for (const model of Object.values(sequelize.models)) {
     await model.destroy({ where: {}, truncate: true, cascade: true });
   }
+});
+
+afterAll(() => {
+  (console.error as jest.Mock).mockRestore();
 });
 
 // Cierra la conexión al terminar

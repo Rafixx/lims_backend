@@ -166,14 +166,18 @@ export class Muestra extends Model<
   }
 
   static associate(models: Record<string, ModelStatic<Model>>) {
-    this.belongsTo(models.Solicitud, {
-      foreignKey: 'id_solicitud',
-      as: 'solicitud',
+    this.belongsTo(models.Usuario, {
+      foreignKey: 'id_tecnico_resp',
+      as: 'tecnico_resp',
     });
-    // this.hasMany(models.Tecnica, {
-    //   foreignKey: 'id_muestra',
-    //   as: 'tecnicas',
-    // });
+    this.belongsTo(models.DimTipoMuestra, {
+      foreignKey: 'id_tipo_muestra',
+      as: 'tipo_muestra',
+    });
+    this.hasMany(models.Tecnica, {
+      foreignKey: 'id_muestra',
+      as: 'tecnicas',
+    });
     // …otras relaciones
   }
 }

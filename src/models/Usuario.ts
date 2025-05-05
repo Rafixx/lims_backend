@@ -23,6 +23,8 @@ export class Usuario extends Model<
   declare passwordhash: string;
   declare email: string;
   declare id_rol: CreationOptional<number>;
+  declare rol?: Rol; // relación cargada con include
+
   declare create_dt: CreationOptional<Date>;
   declare update_dt: CreationOptional<Date>;
   declare delete_dt: CreationOptional<Date>;

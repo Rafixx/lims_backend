@@ -1,46 +1,26 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import { UsuarioService } from '../services/usuario.service';
+import { AuthService } from '../services/auth.service';
 
-const usuarioService = new UsuarioService();
+const authService = new AuthService();
 
 export const loginUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
 
   try {
-    const user = await usuarioService.findByEmail(email);
-    if (!user) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
-    }
+    const { token, user } = await authService.login({ username, password });
 
-    const isValid = await bcrypt.compare(password, user.passwordhash);
-    if (!isValid) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
-    }
-
-    const token = jwt.sign(
-      {
-        id: user.id_usuario,
-        email: user.email,
-        id_rol: user.id_rol,
-      },
-      process.env.JWT_SECRET || 'secretKey',
-      { expiresIn: '1h' }
-    );
-
-    res.json({
+    return res.status(200).json({
       token,
-      user: {
-        id_usuario: user.id_usuario,
-        nombre: user.nombre,
-        email: user.email,
-        username: user.username,
-        id_rol: user.id_rol,
-      },
+      user,
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+  } catch (error: unknown) {
+    console.error('[Login Error]', error);
+
+    const err = error as { message?: string; statusCode?: number };
+
+    return res.status(err.statusCode || 401).json({
+      success: false,
+      message: err.message || 'Credenciales inválidas',
+    });
   }
 };

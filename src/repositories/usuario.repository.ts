@@ -3,7 +3,9 @@ import { CreationAttributes } from 'sequelize';
 
 export class UsuarioRepository {
   async findByEmail(email: string) {
-    return Usuario.findOne({ where: { email } });
+    return Usuario.findOne({
+      where: { email },
+    });
   }
 
   async findById(id: number) {

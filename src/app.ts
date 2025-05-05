@@ -11,6 +11,7 @@ import { dimPruebaRoutes } from './routes/dimPrueba.routes';
 import { dimTecnicaProcRoutes } from './routes/dimTecnicaProc.routes';
 import { authRoutes } from './routes/auth.routes';
 import { usuarioRoutes } from './routes/usuario.routes';
+import { dimTipoMuestraRoutes } from './routes/dimTipoMuestra.routes';
 
 const app = express();
 
@@ -21,12 +22,13 @@ app.use(express.json());
 app.use('/api/solicitudes', solicitudRoutes);
 app.use('/api/muestras', muestraRoutes);
 app.use('/api/tecnicas', tecnicaRoutes);
-app.use('/api/dimClientes', dimClienteRoutes);
+app.use('/api/clientes', dimClienteRoutes);
 app.use('/api/dimPlantillaTecnicas', dimPlantillaTecnicaRoutes);
-app.use('/api/dimPruebas', dimPruebaRoutes);
+app.use('/api/pruebas', dimPruebaRoutes);
 app.use('/api/dimTecnicaProc', dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/login', authRoutes);
+app.use('/api/tiposMuestra', dimTipoMuestraRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);

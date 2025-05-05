@@ -4,8 +4,8 @@ interface CreateMuestraDTO {
   id_solicitud: number;
   id_paciente?: number;
   id_tecnico_resp?: number;
-  id_tipo_muestra: number;
-  codigo_epi: string;
+  id_tipo_muestra?: number;
+  codigo_epi?: string;
   codigo_externo?: string;
   estado_muestra: string;
   f_toma?: Date;

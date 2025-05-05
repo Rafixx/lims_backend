@@ -3,6 +3,8 @@ import { Solicitud } from '../../models/Solicitud';
 import { Muestra } from '../../models/Muestra';
 import { Rol } from '../../models/Rol';
 import { Tecnica } from '../../models/Tecnica';
+import { DimCliente } from '../../models/DimCliente';
+import { DimPrueba } from '../../models/DimPrueba';
 
 export const createMockUsuario = (overrides: Partial<Usuario> = {}): Usuario =>
   ({
@@ -71,3 +73,32 @@ export const createMockTecnica = (overrides: Partial<Tecnica> = {}): Tecnica =>
     update_dt: new Date(),
     ...overrides,
   }) as Tecnica;
+
+export const createMockCiente = (
+  overrides: Partial<DimCliente> = {}
+): DimCliente =>
+  ({
+    id: 1,
+    nombre: 'Mock Cliente',
+    razon_social: 'Mock Razon Social',
+    nif: '12345678A',
+    direccion: 'Mock Direccion',
+    activo: true,
+    created_by: 1,
+    updated_dt: new Date(),
+    delete_dt: null,
+    ...overrides,
+  }) as DimCliente;
+
+export const createMockPrueba = (
+  overrides: Partial<DimPrueba> = {}
+): DimPrueba =>
+  ({
+    id: 1,
+    cod_prueba: 'Cod Prueba',
+    prueba: 'Mock Prueba',
+    activa: true,
+    created_by: 1,
+    updated_dt: new Date(),
+    ...overrides,
+  }) as DimPrueba;
