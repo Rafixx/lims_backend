@@ -30,6 +30,20 @@ export const getPruebaById = async (
   }
 };
 
+export const getTecnicasByPrueba = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = Number(req.params.id);
+  try {
+    const tecnicas = await dimPruebaService.getTecnicasByPrueba(id);
+    res.status(200).json(tecnicas);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createPrueba = async (
   req: Request,
   res: Response,

@@ -1,4 +1,5 @@
 import { DimPrueba } from '../models/DimPrueba';
+import { DimTecnicaProc } from '../models/DimTecnicaProc';
 
 interface CreateDimPruebaDTO {
   cod_prueba: string;
@@ -18,6 +19,23 @@ export class DimPruebaService {
       throw new Error('Prueba no encontrada');
     }
     return prueba;
+  }
+
+  //obtener dim_tecnica_proc por prueba
+  async getTecnicasByPrueba(id: number) {
+    const prueba = await DimPrueba.findByPk(id, {
+      include: [
+        {
+          model: DimTecnicaProc,
+          as: 'tecnicas',
+          attributes: ['id', 'tecnica_proc'],
+        },
+      ],
+    });
+    if (!prueba) {
+      throw new Error('Prueba no encontrada');
+    }
+    return prueba.tecnicas;
   }
 
   async getAllPruebas() {

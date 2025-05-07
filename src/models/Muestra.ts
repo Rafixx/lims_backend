@@ -174,6 +174,10 @@ export class Muestra extends Model<
       foreignKey: 'id_tipo_muestra',
       as: 'tipo_muestra',
     });
+    this.belongsTo(models.DimPaciente, {
+      foreignKey: 'id_paciente',
+      as: 'paciente',
+    });
     this.hasMany(models.Tecnica, {
       foreignKey: 'id_muestra',
       as: 'tecnicas',

@@ -10,6 +10,7 @@ import {
   HasManyGetAssociationsMixin,
 } from 'sequelize';
 import { Solicitud } from './Solicitud';
+import { DimTecnicaProc } from './DimTecnicaProc';
 
 export class DimPrueba extends Model<
   InferAttributes<DimPrueba>,
@@ -24,6 +25,8 @@ export class DimPrueba extends Model<
 
   // Mixin para poder llamar a getSolicitudes()
   declare getSolicitudes: HasManyGetAssociationsMixin<Solicitud>;
+  declare getTecnicasByPrueba: HasManyGetAssociationsMixin<DimTecnicaProc>;
+  declare tecnicas?: DimTecnicaProc[];
 
   static initModel(sequelize: Sequelize) {
     this.init(
@@ -76,6 +79,11 @@ export class DimPrueba extends Model<
     this.hasMany(models.Solicitud, {
       foreignKey: 'id_prueba',
       as: 'solicitudes',
+    });
+    // Un DimPrueba puede tener muchas dim_Tecnicas_proc
+    this.hasMany(models.DimTecnicaProc, {
+      foreignKey: 'id_prueba',
+      as: 'tecnicas',
     });
   }
 }

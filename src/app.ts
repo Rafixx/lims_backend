@@ -12,6 +12,8 @@ import { dimTecnicaProcRoutes } from './routes/dimTecnicaProc.routes';
 import { authRoutes } from './routes/auth.routes';
 import { usuarioRoutes } from './routes/usuario.routes';
 import { dimTipoMuestraRoutes } from './routes/dimTipoMuestra.routes';
+import { dimUbicacionRoutes } from './routes/dimUbicacion.routes';
+import { dimPacienteRoutes } from './routes/dimPaciente.routes';
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.use('/api/dimTecnicaProc', dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/login', authRoutes);
 app.use('/api/tiposMuestra', dimTipoMuestraRoutes);
+app.use('/api/ubicaciones', dimUbicacionRoutes);
+app.use('/api/pacientes', dimPacienteRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);
