@@ -30,6 +30,20 @@ export const getSolicitudById = async (
   }
 };
 
+// export const getTecnicasBySolicitud = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const id = Number(req.params.id);
+//   try {
+//     const tecnicas = await solicitudService.getTecnicasBySolicitud(id);
+//     res.status(200).json(tecnicas);
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+
 export const createSolicitud = async (
   req: Request,
   res: Response,

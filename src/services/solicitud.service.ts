@@ -5,13 +5,21 @@ import { Tecnica } from '../models/Tecnica';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
 import { SolicitudRepository } from '../repositories/solicitud.repository';
 
+interface TecnicaProc {
+  id: number;
+  tecnica_proc: string;
+}
+
 interface CreateSolicitudDTO {
   num_solicitud: string;
   id_cliente: number;
+  id_paciente: number;
+  id_tipo_muestra: number;
   id_prueba: number;
   f_entrada: Date;
   f_compromiso?: Date;
   f_creacion?: Date;
+  tecnicas: TecnicaProc[];
   estado_solicitud: string;
   created_by: number;
 }
@@ -19,9 +27,10 @@ interface CreateSolicitudDTO {
 interface UpdateSolicitudDTO {
   num_solicitud?: string;
   id_cliente?: number;
+  id_paciente?: number;
+  id_tipo_muestra?: number;
   id_prueba?: number;
   f_entrada?: Date;
-  id_tipo_muestra?: number;
   updated_by: number;
 }
 
@@ -38,6 +47,9 @@ export class SolicitudService {
   // async createSolicitudWithTecnicas(data: CreateSolicitudDTO) {
   async createSolicitud(data: CreateSolicitudDTO) {
     return sequelize.transaction(async (t) => {
+      console.log('DATA:', data);
+      const tecnicas_proc = data.tecnicas;
+
       const solicitud = await Solicitud.create(
         {
           ...data,
@@ -49,6 +61,8 @@ export class SolicitudService {
       // Crea al menos una muestra asociada (esto se podría parametrizar)
       const muestra = await Muestra.create(
         {
+          id_tipo_muestra: data.id_tipo_muestra,
+          id_paciente: data.id_paciente,
           id_solicitud: solicitud.id_solicitud,
           created_by: data.created_by,
           // updated_by: data.updated_by,
@@ -57,13 +71,14 @@ export class SolicitudService {
       );
 
       // Busca las técnicas definidas para esa prueba
-      const tecnicasProc = await DimTecnicaProc.findAll({
-        where: { id_prueba: data.id_prueba },
-        transaction: t,
-      });
+      // const tecnicasProc = await DimTecnicaProc.findAll({
+      //   where: { id_prueba: data.id_prueba },
+      //   transaction: t,
+      // });
 
       // Crea una Técnica por cada DimTecnicaProc encontrada
-      const tecnicas = tecnicasProc.map((tp) =>
+      // const tecnicas = tecnicasProc.map((tp) =>
+      const tecnicas = tecnicas_proc.map((tp) =>
         Tecnica.create(
           {
             id_muestra: muestra.id_muestra,
@@ -94,6 +109,27 @@ export class SolicitudService {
   async getAllSolicitudes() {
     return this.solicitudRepo.findAll();
   }
+
+  // async getTecnicasBySolicitud(id: number) {
+  //   const solicitud = await this.solicitudRepo.findById(id);
+  //   if (!solicitud) {
+  //     throw new Error('Solicitud no encontrada');
+  //   }
+  //   const tecnicas = await Tecnica.findAll({
+  //     where: { id_muestra: solicitud.muestra.id_muestra },
+  //     include: [
+  //       {
+  //         model: DimTecnicaProc,
+  //         as: 'tecnica_proc',
+  //         attributes: ['id', 'tecnica_proc'],
+  //       },
+  //     ],
+  //   });
+  //   if (!tecnicas) {
+  //     throw new Error('No se encontraron técnicas para esta solicitud');
+  //   }
+  //   return tecnicas;
+  // }
 
   async updateSolicitud(id: number, data: UpdateSolicitudDTO) {
     return sequelize.transaction(async (t) => {

@@ -9,6 +9,7 @@ import {
   CreationOptional,
   ModelStatic,
 } from 'sequelize';
+import { DimTecnicaProc } from './DimTecnicaProc';
 
 export class Tecnica extends Model<
   InferAttributes<Tecnica>,
@@ -27,6 +28,8 @@ export class Tecnica extends Model<
   declare update_dt?: Date;
   declare created_by?: number;
   declare updated_by?: number;
+
+  declare tecnica_proc?: DimTecnicaProc; // <-- esta línea es clave
 
   // ============== inicialización ============
   static initModel(sequelize: Sequelize) {

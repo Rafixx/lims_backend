@@ -15,6 +15,12 @@ export class MuestraRepository {
     });
   }
 
+  async findBySolicitudId(id_solicitud: number) {
+    return Muestra.findOne({
+      where: { id_solicitud },
+    });
+  }
+
   async findAll() {
     return Muestra.findAll({
       include: [

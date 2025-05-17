@@ -15,7 +15,18 @@ export class SolicitudRepository {
         {
           model: Muestra,
           as: 'muestra',
-          attributes: ['id_muestra', 'id_tecnico_resp', 'id_tipo_muestra'],
+          include: [
+            {
+              model: Tecnica,
+              as: 'tecnicas',
+              include: [
+                {
+                  model: DimTecnicaProc,
+                  as: 'tecnica_proc',
+                },
+              ],
+            },
+          ],
         },
         { model: DimCliente, as: 'cliente', attributes: ['id', 'nombre'] },
         { model: DimPrueba, as: 'prueba', attributes: ['id', 'prueba'] },
@@ -30,41 +41,28 @@ export class SolicitudRepository {
         {
           model: Muestra,
           as: 'muestra',
-          attributes: [
-            'id_muestra',
-            'codigo_epi',
-            'codigo_externo',
-            'f_toma',
-            'f_recepcion',
-            'f_destruccion',
-            'f_devolucion',
-            'estado_muestra',
-          ],
+          order: [['id_muestra', 'DESC']],
+          // attributes: [],
           include: [
             {
               model: Usuario,
               as: 'tecnico_resp',
-              attributes: ['id_usuario', 'nombre', 'email'],
+              // attributes: ['id_usuario', 'nombre', 'email'],
             },
             {
               model: DimTipoMuestra,
               as: 'tipo_muestra',
-              attributes: ['cod_tipo_muestra', 'tipo_muestra'],
+              // attributes: ['cod_tipo_muestra', 'tipo_muestra'],
             },
             {
               model: Tecnica,
               as: 'tecnicas',
-              attributes: [
-                'id_tecnica',
-                'fecha_inicio_tec',
-                'estado',
-                'fecha_estado',
-              ],
+              // attributes: [],
               include: [
                 {
                   model: DimTecnicaProc,
                   as: 'tecnica_proc',
-                  attributes: ['tecnica_proc'],
+                  // attributes: [],
                 },
               ],
             },

@@ -30,6 +30,14 @@ export class MuestraService {
     return muestra;
   }
 
+  async getBySolicitudId(id_solicitud: number) {
+    const muestra = await this.muestraRepo.findBySolicitudId(id_solicitud);
+    if (!muestra) {
+      throw new Error('Muestra no encontrada');
+    }
+    return muestra;
+  }
+
   async getAllMuestras() {
     return this.muestraRepo.findAll();
   }
