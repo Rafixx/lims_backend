@@ -37,7 +37,7 @@ interface CreateSolicitudDTO {
     f_recepcion?: string;
     f_destruccion?: string;
     f_devolucion?: string;
-    tecnicas?: { id: number }[];
+    tecnicas?: { id_tecnica_proc: number }[];
     updated_by?: number;
     created_by?: number;
   }[];
@@ -67,7 +67,7 @@ interface UpdateSolicitudDTO {
     f_recepcion?: string;
     f_destruccion?: string;
     f_devolucion?: string;
-    tecnicas?: { id: number }[];
+    tecnicas?: { id_tecnica_proc: number }[];
     updated_by?: number;
     created_by?: number;
   }[];
@@ -85,7 +85,6 @@ export class SolicitudService {
 
   // async createSolicitudWithTecnicas(data: CreateSolicitudDTO) {
   async createSolicitud(data: CreateSolicitudDTO) {
-    console.log('data que llega', data);
     return sequelize.transaction(async (t) => {
       const solicitud = await Solicitud.create(
         {
@@ -134,7 +133,7 @@ export class SolicitudService {
           Tecnica.create(
             {
               id_muestra: nuevaMuestra.id_muestra,
-              id_tecnica_proc: tp.id,
+              id_tecnica_proc: tp.id_tecnica_proc,
               estado: 'PENDIENTE',
               fecha_estado: new Date(),
               created_by: data.updated_by,
@@ -235,7 +234,7 @@ export class SolicitudService {
             Tecnica.create(
               {
                 id_muestra: nuevaMuestra.id_muestra,
-                id_tecnica_proc: tecnica.id,
+                id_tecnica_proc: tecnica.id_tecnica_proc,
                 estado: 'PENDIENTE',
                 fecha_estado: new Date(),
                 created_by: data.updated_by,
