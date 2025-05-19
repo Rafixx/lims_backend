@@ -22,18 +22,12 @@ export class TecnicaRepository {
   }
   async findByMuestraId(id_muestra: number) {
     return Tecnica.findAll({
-      // where: { id_muestra },
+      where: { id_muestra },
       include: [
         {
           model: DimTecnicaProc,
           as: 'tecnica_proc',
           attributes: ['id', 'tecnica_proc'],
-        },
-        {
-          model: Muestra,
-          where: { id_muestra },
-          as: 'muestra',
-          attributes: [],
         },
       ],
     });
