@@ -19,7 +19,6 @@ export class Solicitud extends Model<
   declare id_solicitud: CreationOptional<number>;
   declare num_solicitud?: string;
   declare id_cliente: number;
-  declare id_prueba?: number;
   declare f_creacion?: Date;
   declare f_entrada?: Date;
   declare f_compromiso?: Date;
@@ -35,8 +34,6 @@ export class Solicitud extends Model<
 
   declare getMuestras: HasManyGetAssociationsMixin<Muestra>;
 
-  // ... y así con el resto de columnas
-
   static initModel(sequelize: Sequelize) {
     this.init(
       {
@@ -51,11 +48,6 @@ export class Solicitud extends Model<
           defaultValue: null,
         },
         id_cliente: {
-          type: DataTypes.INTEGER,
-          allowNull: true,
-          defaultValue: null,
-        },
-        id_prueba: {
           type: DataTypes.INTEGER,
           allowNull: true,
           defaultValue: null,
@@ -97,10 +89,6 @@ export class Solicitud extends Model<
     this.belongsTo(models.DimCliente, {
       foreignKey: 'id_cliente',
       as: 'cliente',
-    });
-    this.belongsTo(models.DimPrueba, {
-      foreignKey: 'id_prueba',
-      as: 'prueba',
     });
 
     this.hasMany(models.Muestra, {

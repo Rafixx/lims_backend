@@ -22,7 +22,7 @@ export class TecnicaRepository {
   }
   async findByMuestraId(id_muestra: number) {
     return Tecnica.findAll({
-      where: { id_muestra },
+      // where: { id_muestra },
       include: [
         {
           model: DimTecnicaProc,
@@ -31,30 +31,31 @@ export class TecnicaRepository {
         },
         {
           model: Muestra,
-          as: 'muestra',
-          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
-        },
-      ],
-    });
-  }
-  async findBySolicitudId(id_solicitud: number) {
-    return Tecnica.findAll({
-      attributes: [],
-      include: [
-        {
-          model: DimTecnicaProc,
-          as: 'tecnica_proc',
-          attributes: ['id', 'tecnica_proc'],
-        },
-        {
-          model: Muestra,
-          where: { id_solicitud },
+          where: { id_muestra },
           as: 'muestra',
           attributes: [],
         },
       ],
     });
   }
+  // async findBySolicitudId(id_solicitud: number) {
+  //   return Tecnica.findAll({
+  //     attributes: [],
+  //     include: [
+  //       {
+  //         model: DimTecnicaProc,
+  //         as: 'tecnica_proc',
+  //         attributes: ['id', 'tecnica_proc'],
+  //       },
+  //       {
+  //         model: Muestra,
+  //         where: { id_solicitud },
+  //         as: 'muestra',
+  //         attributes: [],
+  //       },
+  //     ],
+  //   });
+  // }
 
   async findAll() {
     return Tecnica.findAll({

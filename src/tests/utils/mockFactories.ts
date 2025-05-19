@@ -27,7 +27,6 @@ export const createMockSolicitud = (
     id_solicitud: 1,
     num_solicitud: 'REQ-001',
     id_cliente: 1,
-    id_prueba: 1,
     f_creacion: new Date(),
     f_entrada: new Date(),
     estado_solicitud: 'EN_PROCESO',
@@ -40,6 +39,7 @@ export const createMockSolicitud = (
 export const createMockMuestra = (overrides: Partial<Muestra> = {}): Muestra =>
   ({
     id_muestra: 1,
+    id_prueba: 1,
     id_solicitud: 1,
     codigo_epi: 'M-001',
     id_tipo_muestra: 1,

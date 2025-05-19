@@ -3,7 +3,7 @@ import { Router } from 'express';
 import {
   getTecnicas,
   getTecnicaById,
-  getTecnicasBySolicitudId,
+  // getTecnicasBySolicitudId,
   getTecnicasByMuestraId,
   createTecnica,
   updateTecnica,
@@ -14,7 +14,7 @@ const router = Router();
 
 router.get('/', getTecnicas);
 router.get('/:id', getTecnicaById);
-router.get('/solicitud/:id', getTecnicasBySolicitudId);
+// router.get('/solicitud/:id', getTecnicasBySolicitudId);
 router.get('/muestra/:id', getTecnicasByMuestraId);
 router.post('/', createTecnica);
 router.put('/:id', updateTecnica);

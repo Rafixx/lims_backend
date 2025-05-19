@@ -19,6 +19,7 @@ export class Muestra extends Model<
   declare id_muestra: CreationOptional<number>;
   declare id_paciente?: number;
   declare id_solicitud: number;
+  declare id_prueba?: number;
   declare id_tecnico_resp?: CreationOptional<number>;
   declare id_tipo_muestra?: CreationOptional<number>;
   declare id_centro_externo?: CreationOptional<number>;
@@ -61,6 +62,11 @@ export class Muestra extends Model<
             notNull: { msg: 'id_solicitud es requerido' },
             isInt: { msg: 'id_solicitud debe ser numérico' },
           },
+        },
+        id_prueba: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          defaultValue: null,
         },
         id_tecnico_resp: {
           type: DataTypes.INTEGER,
@@ -182,6 +188,9 @@ export class Muestra extends Model<
       foreignKey: 'id_muestra',
       as: 'tecnicas',
     });
-    // …otras relaciones
+    this.belongsTo(models.DimPrueba, {
+      foreignKey: 'id_prueba',
+      as: 'prueba',
+    });
   }
 }

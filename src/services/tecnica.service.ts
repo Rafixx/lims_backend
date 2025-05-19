@@ -28,11 +28,14 @@ export class TecnicaService {
     if (!id_muestra) {
       throw new Error('ID de muestra no proporcionado');
     }
-    const tecnica = await this.tecnicaRepo.findByMuestraId(id_muestra);
-    if (!tecnica) {
+    const tecnicas = await this.tecnicaRepo.findByMuestraId(id_muestra);
+    if (!tecnicas) {
       throw new Error('Técnica no encontrada');
     }
-    return tecnica;
+    return tecnicas.map((tecnica) => ({
+      id: tecnica.tecnica_proc?.id,
+      tecnica_proc: tecnica.tecnica_proc?.tecnica_proc,
+    }));
   }
 
   // async getTecnicaBySolicitudId(id_solicitud: number) {
@@ -48,14 +51,14 @@ export class TecnicaService {
   //     tecnica_proc: tecnica_proc.tecnica_proc?.tecnica_proc,
   //   }));
   // }
-  async getTecnicaBySolicitudId(id_solicitud: number) {
-    const tecnicas = await this.tecnicaRepo.findBySolicitudId(id_solicitud);
+  // async getTecnicaBySolicitudId(id_solicitud: number) {
+  //   const tecnicas = await this.tecnicaRepo.findBySolicitudId(id_solicitud);
 
-    return tecnicas.map((tecnica) => ({
-      id: tecnica.tecnica_proc?.id,
-      tecnica_proc: tecnica.tecnica_proc?.tecnica_proc,
-    }));
-  }
+  //   return tecnicas.map((tecnica) => ({
+  //     id: tecnica.tecnica_proc?.id,
+  //     tecnica_proc: tecnica.tecnica_proc?.tecnica_proc,
+  //   }));
+  // }
 
   async createTecnica(data: CreateTecnicaDTO) {
     return this.tecnicaRepo.create({

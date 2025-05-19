@@ -26,10 +26,10 @@ export class SolicitudRepository {
                 },
               ],
             },
+            { model: DimPrueba, as: 'prueba', attributes: ['id', 'prueba'] },
           ],
         },
         { model: DimCliente, as: 'cliente', attributes: ['id', 'nombre'] },
-        { model: DimPrueba, as: 'prueba', attributes: ['id', 'prueba'] },
       ],
     });
   }
@@ -66,10 +66,10 @@ export class SolicitudRepository {
                 },
               ],
             },
+            { model: DimPrueba, as: 'prueba', attributes: ['id', 'prueba'] },
           ],
         },
         { model: DimCliente, as: 'cliente', attributes: ['id', 'nombre'] },
-        { model: DimPrueba, as: 'prueba', attributes: ['id', 'prueba'] },
       ],
     });
   }

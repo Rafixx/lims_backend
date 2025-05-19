@@ -30,19 +30,19 @@ export const getTecnicaById = async (
   }
 };
 
-export const getTecnicasBySolicitudId = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const id = Number(req.params.id);
-  try {
-    const tecnicas = await tecnicaService.getTecnicaBySolicitudId(id);
-    res.status(200).json(tecnicas);
-  } catch (error) {
-    next(error);
-  }
-};
+// export const getTecnicasBySolicitudId = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const id = Number(req.params.id);
+//   try {
+//     const tecnicas = await tecnicaService.getTecnicaBySolicitudId(id);
+//     res.status(200).json(tecnicas);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 export const getTecnicasByMuestraId = async (
   req: Request,
