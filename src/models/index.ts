@@ -15,6 +15,8 @@ import { DimPaciente } from './DimPaciente';
 import { DimPipeta } from './DimPipeta';
 import { DimMaquina } from './DimMaquina';
 import { DimReactivo } from './DimReactivo';
+import { DimCentro } from './DimCentro';
+import { DimCriterioValidacion } from './DimCriterioValidacion';
 
 type ModelWithAssociate = ModelStatic<Model> & {
   associate?(models: Record<string, ModelStatic<Model>>): void;
@@ -37,6 +39,8 @@ export function initModels(sequelize: Sequelize) {
   DimPipeta.initModel(sequelize);
   DimMaquina.initModel(sequelize);
   DimReactivo.initModel(sequelize);
+  DimCentro.initModel(sequelize);
+  DimCriterioValidacion.initModel(sequelize);
 
   // 2) Ahora sí construye el map de clases
   const models = {
@@ -55,6 +59,8 @@ export function initModels(sequelize: Sequelize) {
     DimPipeta,
     DimMaquina,
     DimReactivo,
+    DimCentro,
+    DimCriterioValidacion,
   } as const;
 
   // 3) Asociaciones

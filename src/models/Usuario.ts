@@ -100,6 +100,22 @@ export class Usuario extends Model<
         updatedAt: 'update_dt',
         paranoid: true,
         deletedAt: 'delete_dt',
+
+        // 🔐 por defecto, nunca exponer passwordhash
+        defaultScope: {
+          attributes: { exclude: ['passwordhash'] },
+        },
+
+        // Scopes específicos
+        scopes: {
+          tecnicosLab: {
+            where: { id_rol: 2 },
+            attributes: ['id_usuario', 'nombre'],
+          },
+          authScope: {
+            attributes: { include: ['passwordhash'] },
+          },
+        },
       }
     );
   }

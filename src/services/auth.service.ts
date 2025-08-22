@@ -22,7 +22,7 @@ interface LoginResponseDTO {
 
 export class AuthService {
   async login(data: LoginDTO): Promise<LoginResponseDTO> {
-    const usuario = await Usuario.findOne({
+    const usuario = await Usuario.scope('authScope').findOne({
       where: { username: data.username },
       include: [
         {
@@ -35,6 +35,16 @@ export class AuthService {
 
     if (!usuario) {
       throw new UnauthorizedError('Usuario no encontrado');
+    }
+
+    // Protección extra: que exista hash
+    if (!usuario.passwordhash || typeof usuario.passwordhash !== 'string') {
+      throw new UnauthorizedError('El usuario no tiene credenciales válidas');
+    }
+
+    // Protección extra: que haya password en input
+    if (!data.password || typeof data.password !== 'string') {
+      throw new UnauthorizedError('Contraseña no proporcionada');
     }
 
     const passwordValid = await bcrypt.compare(
