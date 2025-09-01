@@ -24,7 +24,7 @@ export class Tecnica extends Model<
   declare estado?: string;
   declare fecha_estado?: Date;
   declare comentarios?: string;
-  declare delete_dt?: Date;
+  declare delete_dt?: Date | null; //añado |null por el workList.repository
   declare update_dt?: Date;
   declare created_by?: number;
   declare updated_by?: number;

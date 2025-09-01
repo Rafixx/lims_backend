@@ -21,6 +21,7 @@ import { dimMaquinaRoutes } from './routes/dimMaquina.routes';
 import { dimCentroRoutes } from './routes/dimCentro.routes';
 import { dimCriterioValidacionRoutes } from './routes/dimCriterioValidacion.routes';
 import { tecnicoLabRoutes } from './routes/tecnicoLab.routes';
+import { worklistRouter } from './routes/worklist.routes';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/maquinas', dimMaquinaRoutes);
 app.use('/api/centros', dimCentroRoutes);
 app.use('/api/criteriosValidacion', dimCriterioValidacionRoutes);
 app.use('/api/tecnicosLab', tecnicoLabRoutes);
+app.use('/api/worklist', worklistRouter);
 
 // Middleware de manejo de errores
 app.use(errorHandler);

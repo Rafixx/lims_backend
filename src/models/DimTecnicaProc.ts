@@ -102,5 +102,10 @@ export class DimTecnicaProc extends Model<
       foreignKey: 'id_plantilla_tecnica',
       as: 'plantillaTecnica',
     });
+    // Asociación inversa: Un proceso puede tener muchas técnicas
+    this.hasMany(models.Tecnica, {
+      foreignKey: 'id_tecnica_proc',
+      as: 'tecnicas',
+    });
   }
 }
