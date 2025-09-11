@@ -1,6 +1,8 @@
 import { Op, fn, col } from 'sequelize';
 import { Tecnica } from '../models/Tecnica';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
+import { Muestra } from '../models/Muestra';
+import { DimTipoMuestra } from '../models/DimTipoMuestra';
 
 /**
  * Interfaz para el resultado agrupado de técnicas por proceso
@@ -119,6 +121,19 @@ export class WorklistRepository {
             model: DimTecnicaProc,
             as: 'tecnica_proc', // Agregar alias aquí también
             required: true,
+          },
+          {
+            model: Muestra,
+            as: 'muestra',
+            required: false,
+            include: [
+              {
+                model: DimTipoMuestra,
+                as: 'tipo_muestra',
+                attributes: ['tipo_muestra'],
+                required: false,
+              },
+            ],
           },
         ],
         where: {
