@@ -7,6 +7,8 @@ import { Usuario } from '../models/Usuario';
 import { DimTipoMuestra } from '../models/DimTipoMuestra';
 import { Tecnica } from '../models/Tecnica';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
+import { DimPaciente } from '../models/DimPaciente';
+import { DimCentro } from '../models/DimCentro';
 
 export class SolicitudRepository {
   async findById(id: number) {
@@ -14,15 +16,39 @@ export class SolicitudRepository {
       include: [
         {
           model: Muestra,
-          as: 'muestra',
+          as: 'muestras',
+          order: [['id_muestra', 'DESC']],
+          // attributes: [],
           include: [
+            {
+              model: Usuario,
+              as: 'tecnico_resp',
+              // attributes: ['id_usuario', 'nombre', 'email'],
+            },
+            {
+              model: DimTipoMuestra,
+              as: 'tipo_muestra',
+              // attributes: ['cod_tipo_muestra', 'tipo_muestra'],
+            },
+            {
+              model: DimPaciente,
+              as: 'paciente',
+              attributes: ['id', 'nombre'],
+            },
+            {
+              model: DimCentro,
+              as: 'centro',
+              attributes: ['id', 'codigo', 'descripcion'],
+            },
             {
               model: Tecnica,
               as: 'tecnicas',
+              // attributes: [],
               include: [
                 {
                   model: DimTecnicaProc,
                   as: 'tecnica_proc',
+                  // attributes: [],
                 },
               ],
             },
@@ -40,7 +66,7 @@ export class SolicitudRepository {
       include: [
         {
           model: Muestra,
-          as: 'muestra',
+          as: 'muestras',
           order: [['id_muestra', 'DESC']],
           // attributes: [],
           include: [
@@ -53,6 +79,16 @@ export class SolicitudRepository {
               model: DimTipoMuestra,
               as: 'tipo_muestra',
               // attributes: ['cod_tipo_muestra', 'tipo_muestra'],
+            },
+            {
+              model: DimPaciente,
+              as: 'paciente',
+              attributes: ['id', 'nombre'],
+            },
+            {
+              model: DimCentro,
+              as: 'centro',
+              attributes: ['id', 'codigo', 'descripcion'],
             },
             {
               model: Tecnica,

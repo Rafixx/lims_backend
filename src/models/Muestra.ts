@@ -192,5 +192,13 @@ export class Muestra extends Model<
       foreignKey: 'id_prueba',
       as: 'prueba',
     });
+    this.belongsTo(models.DimCentro, {
+      foreignKey: 'id_centro_externo',
+      as: 'centro',
+    });
+    this.belongsTo(models.Solicitud, {
+      foreignKey: 'id_solicitud',
+      as: 'solicitud',
+    });
   }
 }

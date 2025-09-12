@@ -93,7 +93,7 @@ export class Solicitud extends Model<
 
     this.hasMany(models.Muestra, {
       foreignKey: 'id_solicitud',
-      as: 'muestra',
+      as: 'muestras',
     });
   }
 }
