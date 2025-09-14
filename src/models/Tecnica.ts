@@ -20,6 +20,7 @@ export class Tecnica extends Model<
   declare id_muestra: number;
   declare id_tecnica_proc: number;
   declare id_tecnico_resp?: number;
+  declare id_worklist?: number;
   declare fecha_inicio_tec?: Date;
   declare estado?: string;
   declare fecha_estado?: Date;
@@ -55,6 +56,10 @@ export class Tecnica extends Model<
           },
         },
         id_tecnico_resp: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        },
+        id_worklist: {
           type: DataTypes.INTEGER,
           allowNull: true,
         },
@@ -117,6 +122,16 @@ export class Tecnica extends Model<
     this.belongsTo(models.DimTecnicaProc, {
       foreignKey: 'id_tecnica_proc',
       as: 'tecnica_proc',
+    });
+    // Técnica pertenece a un Usuario (técnico responsable)
+    this.belongsTo(models.Usuario, {
+      foreignKey: 'id_tecnico_resp',
+      as: 'tecnico',
+    });
+    //Tecnica puede pertenecer a un Worklist
+    this.belongsTo(models.Worklist, {
+      foreignKey: 'id_worklist',
+      as: 'worklist',
     });
   }
 }

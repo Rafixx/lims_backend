@@ -1,53 +1,364 @@
 import { Request, Response } from 'express';
 import { WorklistService } from '../services/worklist.service';
+import { TecnicaService } from '../services/tecnica.service';
+import { BadRequestError } from '../errors/BadRequestError';
+import { NotFoundError } from '../errors/NotFoundError';
 
 /**
- * Controlador para manejar las peticiones HTTP relacionadas con worklist
+ * Controlador para manejar las peticiones HTTP relacionadas con Worklist
  */
 export class WorklistController {
   private worklistService: WorklistService;
+  private tecnicaService: TecnicaService;
 
   constructor() {
     this.worklistService = new WorklistService();
+    this.tecnicaService = new TecnicaService();
   }
 
-  /**
-   * Obtiene todas las técnicas pendientes
-   * GET /api/worklist/tecnicas-pendientes
-   */
-  async getTecnicasPendientes(req: Request, res: Response): Promise<void> {
-    try {
-      const tecnicas = await this.worklistService.getTecnicasPendientes();
+  // ==================== OPERACIONES CRUD ====================
 
-      res.status(200).json({
+  /**
+   * Crea un nuevo worklist
+   * POST /api/worklist
+   */
+  async create(req: Request, res: Response): Promise<void> {
+    try {
+      const { nombre, userId } = req.body;
+      // const userId = req.user?.id; // Asumiendo que tienes middleware de auth
+
+      const worklist = await this.worklistService.create({ nombre }, userId);
+
+      res.status(201).json({
         success: true,
-        data: tecnicas,
-        message: 'Técnicas pendientes obtenidas correctamente',
+        data: worklist,
+        message: 'Worklist creado correctamente',
       });
     } catch (error) {
-      console.error(
-        'Error en controlador al obtener técnicas pendientes:',
-        error
-      );
+      console.error('Error en controlador al crear worklist:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor al obtener técnicas pendientes',
+        message: 'Error interno del servidor al crear worklist',
         error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
   }
 
   /**
-   * Obtiene técnicas agrupadas por proceso con conteos
-   * GET /api/worklist/tecnicas-agrupadas
+   * Obtiene todos los worklists
+   * GET /api/worklist
+   */
+  async getAll(req: Request, res: Response): Promise<void> {
+    try {
+      const worklists = await this.worklistService.getAll();
+
+      res.status(200).json({
+        success: true,
+        data: worklists,
+        message: 'Worklists obtenidos correctamente',
+      });
+    } catch (error) {
+      console.error('Error en controlador al obtener worklists:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al obtener worklists',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Obtiene un worklist por ID
+   * GET /api/worklist/:id
+   */
+  async getById(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const worklist = await this.worklistService.getById(id);
+
+      res.status(200).json({
+        success: true,
+        data: worklist,
+        message: 'Worklist obtenido correctamente',
+      });
+    } catch (error) {
+      console.error('Error en controlador al obtener worklist por ID:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al obtener worklist',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Actualiza un worklist
+   * PUT /api/worklist/:id
+   */
+  async update(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const { nombre, userId } = req.body;
+      // const userId = req.user?.id;
+
+      const worklist = await this.worklistService.update(
+        id,
+        { nombre },
+        userId
+      );
+
+      res.status(200).json({
+        success: true,
+        data: worklist,
+        message: 'Worklist actualizado correctamente',
+      });
+    } catch (error) {
+      console.error('Error en controlador al actualizar worklist:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al actualizar worklist',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Elimina un worklist
+   * DELETE /api/worklist/:id
+   */
+  async delete(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const { userId } = req.body;
+      // const userId = req.user?.id;
+
+      await this.worklistService.delete(id, userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Worklist eliminado correctamente',
+      });
+    } catch (error) {
+      console.error('Error en controlador al eliminar worklist:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al eliminar worklist',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  // ==================== OPERACIONES ESPECÍFICAS DE WORKLIST ====================
+
+  /**
+   * Asigna técnicas a un worklist
+   * POST /api/worklist/:id/asignar-tecnicas
+   */
+  async setTecnicas(req: Request, res: Response): Promise<void> {
+    try {
+      const idWorklist = parseInt(req.params.id);
+      const { idsTecnicas, userId } = req.body;
+      // const userId = req.user?.id;
+
+      const tecnicasAsignadas = await this.worklistService.setTecnicas(
+        idWorklist,
+        { idsTecnicas },
+        userId
+      );
+
+      res.status(200).json({
+        success: true,
+        data: { tecnicasAsignadas },
+        message: `${tecnicasAsignadas} técnicas asignadas al worklist correctamente`,
+      });
+    } catch (error) {
+      console.error('Error en controlador al asignar técnicas:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al asignar técnicas',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Remueve técnicas de un worklist
+   * DELETE /api/worklist/:id/remover-tecnicas
+   */
+  async removeTecnicas(req: Request, res: Response): Promise<void> {
+    try {
+      const idWorklist = parseInt(req.params.id);
+      const { idsTecnicas, userId } = req.body; // Opcional
+      // const userId = req.user?.id;
+
+      const tecnicasRemovidas = await this.worklistService.removeTecnicas(
+        idWorklist,
+        idsTecnicas,
+        userId
+      );
+
+      res.status(200).json({
+        success: true,
+        data: { tecnicasRemovidas },
+        message: `${tecnicasRemovidas} técnicas removidas del worklist correctamente`,
+      });
+    } catch (error) {
+      console.error('Error en controlador al remover técnicas:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al remover técnicas',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Obtiene estadísticas de un worklist
+   * GET /api/worklist/:id/estadisticas
+   */
+  async getStats(req: Request, res: Response): Promise<void> {
+    try {
+      const idWorklist = parseInt(req.params.id);
+      const estadisticas = await this.worklistService.getStats(idWorklist);
+
+      res.status(200).json({
+        success: true,
+        data: estadisticas,
+        message: 'Estadísticas del worklist obtenidas correctamente',
+      });
+    } catch (error) {
+      console.error('Error en controlador al obtener estadísticas:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al obtener estadísticas',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Obtiene técnicas agrupadas por proceso de un worklist específico
+   * GET /api/worklist/:id/tecnicas-agrupadas
    */
   async getTecnicasAgrupadasPorProceso(
     req: Request,
     res: Response
   ): Promise<void> {
     try {
+      const idWorklist = parseInt(req.params.id);
       const tecnicasAgrupadas =
-        await this.worklistService.getTecnicasAgrupadasPorProceso();
+        await this.worklistService.getTecnicasAgrupadasPorProceso(idWorklist);
 
       res.status(200).json({
         success: true,
@@ -59,6 +370,15 @@ export class WorklistController {
         'Error en controlador al obtener técnicas agrupadas:',
         error
       );
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor al obtener técnicas agrupadas',
@@ -68,184 +388,188 @@ export class WorklistController {
   }
 
   /**
-   * Obtiene técnicas pendientes con información del proceso incluida
-   * GET /api/worklist/tecnicas-con-proceso
+   * Obtiene técnicas sin asignar a ningún worklist
+   * GET /api/worklist/tecnicas-sin-asignar
    */
-  async getTecnicasPendientesConProceso(
-    req: Request,
-    res: Response
-  ): Promise<void> {
+  async getTecnicasSinAsignar(req: Request, res: Response): Promise<void> {
     try {
-      const tecnicas =
-        await this.worklistService.getTecnicasPendientesConProceso();
+      const tecnicas = await this.worklistService.getTecnicasSinAsignar();
 
       res.status(200).json({
         success: true,
         data: tecnicas,
-        message: 'Técnicas pendientes con proceso obtenidas correctamente',
+        message: 'Técnicas sin asignar obtenidas correctamente',
       });
     } catch (error) {
       console.error(
-        'Error en controlador al obtener técnicas con proceso:',
+        'Error en controlador al obtener técnicas sin asignar:',
         error
       );
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor al obtener técnicas con proceso',
+        message: 'Error interno del servidor al obtener técnicas sin asignar',
         error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
   }
 
   /**
-   * Obtiene técnicas pendientes para un proceso específico
-   * GET /api/worklist/proceso/:idTecnicaProc/tecnicas
+   * Obtiene todos los procesos de técnicas disponibles
+   * GET /api/worklist/procesos-disponibles
    */
-  async getTecnicasPendientesPorProceso(
-    req: Request,
-    res: Response
-  ): Promise<void> {
+  async getProcesosDisponibles(req: Request, res: Response): Promise<void> {
     try {
-      const { idTecnicaProc } = req.params;
-      const id = parseInt(idTecnicaProc, 10);
-
-      if (isNaN(id) || id <= 0) {
-        res.status(400).json({
-          success: false,
-          message: 'ID de proceso de técnica inválido',
-        });
-        return;
-      }
-
-      const tecnicas =
-        await this.worklistService.getTecnicasPendientesPorProceso(id);
-
-      res.status(200).json({
-        success: true,
-        data: tecnicas,
-        message: `Técnicas pendientes para proceso ${id} obtenidas correctamente`,
-      });
-    } catch (error) {
-      console.error(
-        'Error en controlador al obtener técnicas por proceso:',
-        error
-      );
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor al obtener técnicas por proceso',
-        error: process.env.NODE_ENV === 'development' ? error : undefined,
-      });
-    }
-  }
-
-  /**
-   * Obtiene estadísticas completas del worklist
-   * GET /api/worklist/estadisticas
-   */
-  async getWorklistStats(req: Request, res: Response): Promise<void> {
-    try {
-      const stats = await this.worklistService.getWorklistStats();
-
-      res.status(200).json({
-        success: true,
-        data: stats,
-        message: 'Estadísticas del worklist obtenidas correctamente',
-      });
-    } catch (error) {
-      console.error('Error en controlador al obtener estadísticas:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor al obtener estadísticas',
-        error: process.env.NODE_ENV === 'development' ? error : undefined,
-      });
-    }
-  }
-
-  /**
-   * Obtiene procesos que tienen técnicas pendientes
-   * GET /api/worklist/procesos-pendientes
-   */
-  async getProcesosPendientes(req: Request, res: Response): Promise<void> {
-    try {
-      const procesos = await this.worklistService.getProcesosPendientes();
+      const procesos = await this.worklistService.getProcesosDisponibles();
 
       res.status(200).json({
         success: true,
         data: procesos,
-        message: 'Procesos pendientes obtenidos correctamente',
+        message: 'Procesos disponibles obtenidos correctamente',
       });
     } catch (error) {
       console.error(
-        'Error en controlador al obtener procesos pendientes:',
+        'Error en controlador al obtener procesos disponibles:',
         error
       );
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor al obtener procesos pendientes',
+        message: 'Error interno del servidor al obtener procesos disponibles',
         error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
   }
 
+  // ==================== ENDPOINTS PARA OPERACIONES DE TÉCNICA (delegación) ====================
+
   /**
-   * Obtiene el conteo total de técnicas pendientes
-   * GET /api/worklist/conteo
+   * Asigna un técnico a una técnica (delegación a TecnicaController)
+   * PATCH /api/worklist/tecnica/:idTecnica/asignar
    */
-  async getConteoTecnicasPendientes(
-    req: Request,
-    res: Response
-  ): Promise<void> {
+  async asignarTecnico(req: Request, res: Response): Promise<void> {
     try {
-      const conteo = await this.worklistService.getConteoTecnicasPendientes();
+      const idTecnica = parseInt(req.params.idTecnica);
+      const { id_tecnico_resp } = req.body;
+
+      const tecnica = await this.tecnicaService.asignarTecnico(
+        idTecnica,
+        id_tecnico_resp
+      );
 
       res.status(200).json({
         success: true,
-        data: { count: conteo },
-        message: 'Conteo de técnicas pendientes obtenido correctamente',
+        data: tecnica,
+        message: 'Técnico asignado correctamente',
       });
     } catch (error) {
-      console.error('Error en controlador al obtener conteo:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor al obtener conteo',
-        error: process.env.NODE_ENV === 'development' ? error : undefined,
-      });
-    }
-  }
+      console.error('Error en controlador al asignar técnico:', error);
 
-  /**
-   * Valida si existe un proceso específico con técnicas pendientes
-   * GET /api/worklist/proceso/:idTecnicaProc/existe
-   */
-  async existeProcesoConTecnicasPendientes(
-    req: Request,
-    res: Response
-  ): Promise<void> {
-    try {
-      const { idTecnicaProc } = req.params;
-      const id = parseInt(idTecnicaProc, 10);
-
-      if (isNaN(id) || id <= 0) {
+      if (error instanceof BadRequestError) {
         res.status(400).json({
           success: false,
-          message: 'ID de proceso de técnica inválido',
+          message: error.message,
         });
         return;
       }
 
-      const existe =
-        await this.worklistService.existeProcesoConTecnicasPendientes(id);
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al asignar técnico',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Inicia una técnica (delegación a TecnicaController)
+   * PATCH /api/worklist/tecnica/:idTecnica/iniciar
+   */
+  async iniciarTecnica(req: Request, res: Response): Promise<void> {
+    try {
+      const idTecnica = parseInt(req.params.idTecnica);
+
+      const tecnica = await this.tecnicaService.iniciarTecnica(idTecnica);
 
       res.status(200).json({
         success: true,
-        data: { exists: existe },
-        message: `Validación de proceso ${id} completada`,
+        data: tecnica,
+        message: 'Técnica iniciada correctamente',
       });
     } catch (error) {
-      console.error('Error en controlador al validar proceso:', error);
+      console.error('Error en controlador al iniciar técnica:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor al validar proceso',
+        message: 'Error interno del servidor al iniciar técnica',
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Completa una técnica (delegación a TecnicaController)
+   * PATCH /api/worklist/tecnica/:idTecnica/completar
+   */
+  async completarTecnica(req: Request, res: Response): Promise<void> {
+    try {
+      const idTecnica = parseInt(req.params.idTecnica);
+      const { comentarios } = req.body;
+
+      const tecnica = await this.tecnicaService.completarTecnica(
+        idTecnica,
+        comentarios
+      );
+
+      res.status(200).json({
+        success: true,
+        data: tecnica,
+        message: 'Técnica completada correctamente',
+      });
+    } catch (error) {
+      console.error('Error en controlador al completar técnica:', error);
+
+      if (error instanceof BadRequestError) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor al completar técnica',
         error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }

@@ -2,6 +2,7 @@
 import { Solicitud } from './Solicitud';
 import { Muestra } from './Muestra';
 import { Tecnica } from './Tecnica';
+import { Worklist } from './Worklist';
 import { DimCliente } from './DimCliente';
 import { DimPrueba } from './DimPrueba';
 import { DimTecnicaProc } from './DimTecnicaProc';
@@ -27,6 +28,7 @@ export function initModels(sequelize: Sequelize) {
   Solicitud.initModel(sequelize);
   Muestra.initModel(sequelize);
   Tecnica.initModel(sequelize);
+  Worklist.initModel(sequelize);
   DimCliente.initModel(sequelize);
   DimPrueba.initModel(sequelize);
   DimTecnicaProc.initModel(sequelize);
@@ -47,6 +49,7 @@ export function initModels(sequelize: Sequelize) {
     Solicitud,
     Muestra,
     Tecnica,
+    Worklist,
     DimCliente,
     DimPrueba,
     DimTecnicaProc,
