@@ -17,6 +17,7 @@ export class Worklist extends Model<
   // ============== columnas ==============
   declare id_worklist: CreationOptional<number>;
   declare nombre?: string;
+  declare id_tecnica_proc?: number;
   declare create_dt?: Date | null;
   declare delete_dt?: Date | null;
   declare update_dt?: Date;
@@ -34,6 +35,10 @@ export class Worklist extends Model<
         },
         nombre: {
           type: DataTypes.STRING(20),
+          allowNull: true,
+        },
+        id_tecnica_proc: {
+          type: DataTypes.INTEGER,
           allowNull: true,
         },
         create_dt: {
@@ -77,6 +82,10 @@ export class Worklist extends Model<
     this.hasMany(models.Tecnica, {
       foreignKey: 'id_worklist',
       as: 'tecnicas',
+    });
+    this.belongsTo(models.DimTecnicaProc, {
+      foreignKey: 'id_tecnica_proc',
+      as: 'tecnica_proc',
     });
   }
 }

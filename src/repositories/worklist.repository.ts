@@ -5,6 +5,7 @@ import { DimTecnicaProc } from '../models/DimTecnicaProc';
 import { Muestra } from '../models/Muestra';
 import { DimTipoMuestra } from '../models/DimTipoMuestra';
 import { Usuario } from '../models/Usuario';
+import { DimPaciente } from '../models/DimPaciente';
 
 /**
  * Interfaz para los datos de creación de un worklist
@@ -19,6 +20,7 @@ export interface CrearWorklistData {
  */
 export interface ActualizarWorklistData {
   nombre?: string;
+  id_tecnica_proc?: number;
   updated_by?: number;
 }
 
@@ -97,6 +99,7 @@ export class WorklistRepository {
               },
             ],
           },
+          { model: DimTecnicaProc, as: 'tecnica_proc' },
         ],
         order: [['create_dt', 'DESC']],
       });
@@ -145,6 +148,11 @@ export class WorklistRepository {
                     as: 'tipo_muestra',
                     attributes: ['tipo_muestra'],
                   },
+                  {
+                    model: DimPaciente,
+                    as: 'paciente',
+                    attributes: ['nombre'],
+                  },
                 ],
               },
               {
@@ -154,6 +162,10 @@ export class WorklistRepository {
                 required: false,
               },
             ],
+          },
+          {
+            model: DimTecnicaProc,
+            as: 'tecnica_proc',
           },
         ],
       });
