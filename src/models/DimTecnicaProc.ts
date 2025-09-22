@@ -89,6 +89,16 @@ export class DimTecnicaProc extends Model<
         timestamps: false,
       }
     );
+    this.addScope('withPlantilla', {
+      include: [
+        {
+          model: DimPlantillaTecnica,
+          as: 'plantillaTecnica',
+          attributes: ['id', 'cod_plantilla_tecnica', 'tecnica'],
+          required: false,
+        },
+      ],
+    });
   }
 
   static associate(models: Record<string, ModelStatic<Model>>) {

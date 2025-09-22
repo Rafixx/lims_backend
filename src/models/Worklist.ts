@@ -9,6 +9,9 @@ import {
   CreationOptional,
   ModelStatic,
 } from 'sequelize';
+import { DimTecnicaProc } from './DimTecnicaProc';
+import { Tecnica } from './Tecnica';
+import { Muestra } from './Muestra';
 
 export class Worklist extends Model<
   InferAttributes<Worklist>,
@@ -74,6 +77,27 @@ export class Worklist extends Model<
         deletedAt: 'delete_dt',
       }
     );
+    this.addScope('withRefs', {
+      include: [
+        {
+          model: Tecnica,
+          include: [
+            {
+              model: Muestra,
+              as: 'muestra',
+              attributes: ['codigo_epi', 'codigo_externo'],
+            },
+          ],
+          as: 'tecnicas',
+          attributes: ['estado'],
+        },
+        {
+          model: DimTecnicaProc,
+          as: 'tecnica_proc',
+          attributes: ['tecnica_proc'],
+        },
+      ],
+    });
   }
 
   // ============== asociaciones ============

@@ -10,6 +10,8 @@ import {
   ModelStatic,
 } from 'sequelize';
 import { DimTecnicaProc } from './DimTecnicaProc';
+import { Worklist } from './Worklist';
+import { Usuario } from './Usuario';
 
 export class Tecnica extends Model<
   InferAttributes<Tecnica>,
@@ -110,6 +112,32 @@ export class Tecnica extends Model<
         deletedAt: 'delete_dt',
       }
     );
+    this.addScope('withRefs', {
+      attributes: [
+        'id_tecnica',
+        'fecha_inicio_tec',
+        'estado',
+        'fecha_estado',
+        'comentarios',
+      ],
+      include: [
+        {
+          model: DimTecnicaProc,
+          as: 'tecnica_proc',
+          attributes: ['id', 'tecnica_proc'],
+        },
+        {
+          model: Worklist,
+          as: 'worklist',
+          attributes: ['id_worklist', 'nombre'],
+        },
+        {
+          model: Usuario,
+          as: 'tecnico_resp',
+          attributes: ['id_usuario', 'nombre'],
+        },
+      ],
+    });
   }
 
   // ============== asociaciones ============
@@ -126,7 +154,7 @@ export class Tecnica extends Model<
     // Técnica pertenece a un Usuario (técnico responsable)
     this.belongsTo(models.Usuario, {
       foreignKey: 'id_tecnico_resp',
-      as: 'tecnico',
+      as: 'tecnico_resp',
     });
     //Tecnica puede pertenecer a un Worklist
     this.belongsTo(models.Worklist, {

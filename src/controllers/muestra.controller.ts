@@ -30,6 +30,20 @@ export const getMuestraById = async (
   }
 };
 
+export const getTecnicasById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = Number(req.params.id);
+  try {
+    const muestra = await muestraService.getTecnicasById(id);
+    res.status(200).json(muestra);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createMuestra = async (
   req: Request,
   res: Response,
@@ -66,6 +80,19 @@ export const deleteMuestra = async (
   try {
     const result = await muestraService.deleteMuestra(id);
     res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMuestrasStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const stats = await muestraService.getMuestrasStats();
+    res.status(200).json(stats);
   } catch (error) {
     next(error);
   }

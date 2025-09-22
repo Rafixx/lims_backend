@@ -7,7 +7,7 @@ interface CreateMuestraDTO {
   id_tipo_muestra?: number;
   codigo_epi?: string;
   codigo_externo?: string;
-  estado_muestra: string;
+  estado_muestra?: string;
   f_toma?: Date;
   f_recepcion?: Date;
 }
@@ -30,8 +30,8 @@ export class MuestraService {
     return muestra;
   }
 
-  async getBySolicitudId(id_solicitud: number) {
-    const muestra = await this.muestraRepo.findBySolicitudId(id_solicitud);
+  async getTecnicasById(id_muestra: number) {
+    const muestra = await this.muestraRepo.findTecnicasById(id_muestra);
     if (!muestra) {
       throw new Error('Muestra no encontrada');
     }
@@ -57,5 +57,9 @@ export class MuestraService {
     }
     await this.muestraRepo.delete(muestra);
     return { message: 'Muestra eliminada correctamente' };
+  }
+
+  async getMuestrasStats() {
+    return this.muestraRepo.getMuestrasStats();
   }
 }

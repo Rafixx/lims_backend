@@ -33,9 +33,9 @@ app.use('/api/solicitudes', solicitudRoutes);
 app.use('/api/muestras', muestraRoutes);
 app.use('/api/tecnicas', tecnicaRoutes);
 app.use('/api/clientes', dimClienteRoutes);
-app.use('/api/dimPlantillaTecnicas', dimPlantillaTecnicaRoutes);
+app.use('/api/plantillasTecnicas', dimPlantillaTecnicaRoutes);
 app.use('/api/pruebas', dimPruebaRoutes);
-app.use('/api/dimTecnicaProc', dimTecnicaProcRoutes);
+app.use('/api/tecnicasProc', dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/roles', rolRoutes);
 app.use('/api/login', authRoutes);
@@ -48,7 +48,7 @@ app.use('/api/maquinas', dimMaquinaRoutes);
 app.use('/api/centros', dimCentroRoutes);
 app.use('/api/criteriosValidacion', dimCriterioValidacionRoutes);
 app.use('/api/tecnicosLab', tecnicoLabRoutes);
-app.use('/api/worklist', worklistRouter);
+app.use('/api/worklists', worklistRouter);
 
 // Middleware de manejo de errores
 app.use(errorHandler);
