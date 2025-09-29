@@ -28,6 +28,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// test endpoint
+app.get('/api/health', (_req, res) =>
+  res.json({ ok: true, service: 'lims_backend' })
+);
+
 // Registrar las rutas
 app.use('/api/solicitudes', solicitudRoutes);
 app.use('/api/muestras', muestraRoutes);
