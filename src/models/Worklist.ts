@@ -9,9 +9,9 @@ import {
   CreationOptional,
   ModelStatic,
 } from 'sequelize';
-import { DimTecnicaProc } from './DimTecnicaProc';
 import { Tecnica } from './Tecnica';
 import { Muestra } from './Muestra';
+import { Usuario } from './Usuario';
 
 export class Worklist extends Model<
   InferAttributes<Worklist>,
@@ -20,7 +20,7 @@ export class Worklist extends Model<
   // ============== columnas ==============
   declare id_worklist: CreationOptional<number>;
   declare nombre?: string;
-  declare id_tecnica_proc?: number;
+  declare tecnica_proc?: string;
   declare create_dt?: Date | null;
   declare delete_dt?: Date | null;
   declare update_dt?: Date;
@@ -40,8 +40,8 @@ export class Worklist extends Model<
           type: DataTypes.STRING(20),
           allowNull: true,
         },
-        id_tecnica_proc: {
-          type: DataTypes.INTEGER,
+        tecnica_proc: {
+          type: DataTypes.STRING(100),
           allowNull: true,
         },
         create_dt: {
@@ -87,14 +87,14 @@ export class Worklist extends Model<
               as: 'muestra',
               attributes: ['codigo_epi', 'codigo_externo'],
             },
+            {
+              model: Usuario,
+              as: 'tecnico_resp',
+              attributes: ['nombre'],
+            },
           ],
           as: 'tecnicas',
           attributes: ['estado'],
-        },
-        {
-          model: DimTecnicaProc,
-          as: 'tecnica_proc',
-          attributes: ['tecnica_proc'],
         },
       ],
     });
@@ -106,10 +106,6 @@ export class Worklist extends Model<
     this.hasMany(models.Tecnica, {
       foreignKey: 'id_worklist',
       as: 'tecnicas',
-    });
-    this.belongsTo(models.DimTecnicaProc, {
-      foreignKey: 'id_tecnica_proc',
-      as: 'tecnica_proc',
     });
   }
 }

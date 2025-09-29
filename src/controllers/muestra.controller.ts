@@ -50,6 +50,19 @@ export const createMuestra = async (
   next: NextFunction
 ) => {
   try {
+    // Validación básica del cuerpo de la petición
+    if (!req.body) {
+      return res
+        .status(400)
+        .json({ error: 'El cuerpo de la petición es requerido' });
+    }
+
+    if (!req.body.solicitud) {
+      return res
+        .status(400)
+        .json({ error: 'Los datos de la solicitud son requeridos' });
+    }
+
     const nuevaMuestra = await muestraService.createMuestra(req.body);
     res.status(201).json(nuevaMuestra);
   } catch (error) {
