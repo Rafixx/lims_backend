@@ -13,3 +13,4 @@ router.get('/:id/tecnicas', muestra_controller_1.getTecnicasById);
 router.post('/', muestra_controller_1.createMuestra);
 router.put('/:id', muestra_controller_1.updateMuestra);
 router.delete('/:id', muestra_controller_1.deleteMuestra);
+router.post('/:id/cambiar-estado', muestra_controller_1.cambiarEstadoMuestra);

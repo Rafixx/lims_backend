@@ -12,6 +12,7 @@ const DimCriterioValidacion_1 = require("./DimCriterioValidacion");
 const DimUbicacion_1 = require("./DimUbicacion");
 const DimCliente_1 = require("./DimCliente");
 const DimPrueba_1 = require("./DimPrueba");
+const DimEstado_1 = require("./DimEstado");
 class Muestra extends sequelize_1.Model {
     static initModel(sequelize) {
         this.init({
@@ -108,6 +109,14 @@ class Muestra extends sequelize_1.Model {
                 allowNull: true,
                 defaultValue: 'CREADA',
             },
+            id_estado: {
+                type: sequelize_1.DataTypes.INTEGER,
+                allowNull: true,
+                references: {
+                    model: 'dim_estados',
+                    key: 'id',
+                },
+            },
             update_dt: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: false,
@@ -136,6 +145,23 @@ class Muestra extends sequelize_1.Model {
             updatedAt: 'update_dt',
             paranoid: true,
             deletedAt: 'delete_dt',
+            hooks: {
+                beforeCreate: async (muestra) => {
+                    // Si no se especifica estado, usar el inicial por defecto
+                    if (!muestra.id_estado) {
+                        const estadoInicial = await DimEstado_1.DimEstado.findOne({
+                            where: {
+                                entidad: 'MUESTRA',
+                                es_inicial: true,
+                                activo: true,
+                            },
+                        });
+                        if (estadoInicial) {
+                            muestra.id_estado = estadoInicial.id;
+                        }
+                    }
+                },
+            },
         });
         this.addScope('withRefs', {
             attributes: [
@@ -149,6 +175,13 @@ class Muestra extends sequelize_1.Model {
                 'estado_muestra',
             ],
             include: [
+                {
+                    model: DimEstado_1.DimEstado,
+                    as: 'estadoInfo',
+                    attributes: ['id', 'estado', 'color', 'descripcion'],
+                    where: { entidad: 'MUESTRA' },
+                    required: false,
+                },
                 {
                     model: DimPaciente_1.DimPaciente,
                     as: 'paciente',
@@ -246,6 +279,13 @@ class Muestra extends sequelize_1.Model {
         this.belongsTo(models.DimUbicacion, {
             foreignKey: 'id_ubicacion',
             as: 'ubicacion',
+        });
+        this.belongsTo(models.DimEstado, {
+            foreignKey: 'id_estado',
+            as: 'estadoInfo',
+            scope: {
+                entidad: 'MUESTRA',
+            },
         });
     }
 }

@@ -30,7 +30,7 @@ export class EstadoService {
       },
       order: [
         ['orden', 'ASC'],
-        ['nombre', 'ASC'],
+        ['estado', 'ASC'],
       ],
     });
   }

@@ -14,6 +14,7 @@ import {
   getTecnicasPendientesPorProceso,
   getTecnicasConMuestra,
   getEstadisticasWorklist,
+  cambiarEstadoTecnica,
 } from '../controllers/tecnica.controller';
 
 const router = Router();
@@ -76,5 +77,15 @@ router.patch('/:idTecnica/iniciar', iniciarTecnica);
  * @body {string} comentarios - Comentarios opcionales
  */
 router.patch('/:idTecnica/completar', completarTecnica);
+
+/**
+ * @route POST /api/tecnicas/:id/cambiar-estado
+ * @desc Cambia el estado de una técnica
+ * @access Public
+ * @param {number} id - ID de la técnica
+ * @body {number} nuevoEstadoId - ID del nuevo estado
+ * @body {string} observaciones - Observaciones opcionales
+ */
+router.post('/:id/cambiar-estado', cambiarEstadoTecnica);
 
 export { router as tecnicaRoutes };

@@ -6,14 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
 const db_config_1 = require("./config/db.config");
 const models_1 = require("./models");
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const startServer = async () => {
     try {
         // Inicializar los modelos
         (0, models_1.initModels)(db_config_1.sequelize);
         await db_config_1.sequelize.authenticate();
         console.log('Conexión a la base de datos establecida correctamente.');
-        app_1.default.listen(PORT, () => {
+        app_1.default.listen(PORT, '0.0.0.0', () => {
             console.log(`Servidor escuchando en el puerto ${PORT}`);
         });
     }

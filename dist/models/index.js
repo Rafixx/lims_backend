@@ -20,6 +20,7 @@ const DimMaquina_1 = require("./DimMaquina");
 const DimReactivo_1 = require("./DimReactivo");
 const DimCentro_1 = require("./DimCentro");
 const DimCriterioValidacion_1 = require("./DimCriterioValidacion");
+const DimEstado_1 = require("./DimEstado");
 function initModels(sequelize) {
     // 1) Init
     Solicitud_1.Solicitud.initModel(sequelize);
@@ -40,6 +41,7 @@ function initModels(sequelize) {
     DimReactivo_1.DimReactivo.initModel(sequelize);
     DimCentro_1.DimCentro.initModel(sequelize);
     DimCriterioValidacion_1.DimCriterioValidacion.initModel(sequelize);
+    DimEstado_1.DimEstado.initModel(sequelize);
     // 2) Ahora sí construye el map de clases
     const models = {
         Solicitud: Solicitud_1.Solicitud,
@@ -60,6 +62,7 @@ function initModels(sequelize) {
         DimReactivo: DimReactivo_1.DimReactivo,
         DimCentro: DimCentro_1.DimCentro,
         DimCriterioValidacion: DimCriterioValidacion_1.DimCriterioValidacion,
+        DimEstado: DimEstado_1.DimEstado,
     };
     // 3) Asociaciones
     Object.values(models).forEach((m) => {

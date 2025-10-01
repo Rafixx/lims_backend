@@ -1,7 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload as BaseJwtPayload } from 'jsonwebtoken';
 
-interface JwtPayload {
+// Extend the Request interface to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: number;
+        username: string;
+        id_rol: number;
+      };
+    }
+  }
+}
+
+interface CustomJwtPayload extends BaseJwtPayload {
   id: number;
   username: string;
   id_rol: number;
@@ -23,7 +36,7 @@ export const authenticateToken = (
     if (err) {
       return res.status(403).json({ message: 'Token inválido o expirado' });
     }
-    req.user = decoded as JwtPayload; // Guardamos el payload en la request
+    req.user = decoded as CustomJwtPayload; // Guardamos el payload en la request
     next();
   });
 };

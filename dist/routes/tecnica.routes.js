@@ -57,3 +57,12 @@ router.patch('/:idTecnica/iniciar', tecnica_controller_1.iniciarTecnica);
  * @body {string} comentarios - Comentarios opcionales
  */
 router.patch('/:idTecnica/completar', tecnica_controller_1.completarTecnica);
+/**
+ * @route POST /api/tecnicas/:id/cambiar-estado
+ * @desc Cambia el estado de una técnica
+ * @access Public
+ * @param {number} id - ID de la técnica
+ * @body {number} nuevoEstadoId - ID del nuevo estado
+ * @body {string} observaciones - Observaciones opcionales
+ */
+router.post('/:id/cambiar-estado', tecnica_controller_1.cambiarEstadoTecnica);

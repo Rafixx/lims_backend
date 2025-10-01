@@ -36,7 +36,7 @@ export class Tecnica extends Model<
   declare updated_by?: number;
 
   declare tecnica_proc?: DimTecnicaProc;
-  declare estadoInfo?: DimEstado;
+
   // ============== inicialización ============
   static initModel(sequelize: Sequelize) {
     this.init(
@@ -154,7 +154,7 @@ export class Tecnica extends Model<
         {
           model: DimEstado,
           as: 'estadoInfo',
-          attributes: ['id', 'codigo', 'nombre', 'color', 'descripcion'],
+          attributes: ['id', 'estado', 'color', 'descripcion'],
           where: { entidad: 'TECNICA' },
           required: false,
         },

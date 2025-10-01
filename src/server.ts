@@ -2,7 +2,7 @@ import app from './app';
 import { sequelize } from './config/db.config';
 import { initModels } from './models';
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 const startServer = async () => {
   try {
@@ -12,7 +12,7 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor escuchando en el puerto ${PORT}`);
     });
   } catch (error) {

@@ -4,6 +4,7 @@ import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
 import { Usuario } from '../models/Usuario';
 import { DimTipoMuestra } from '../models/DimTipoMuestra';
+import { DimEstado } from '../models/DimEstado';
 
 /**
  * Interfaz para técnica con información completa de muestra
@@ -45,6 +46,13 @@ export class TecnicaRepository {
     return Tecnica.findByPk(id, {
       include: [
         {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'estado', 'color', 'descripcion'],
+          where: { entidad: 'TECNICA' },
+          required: false,
+        },
+        {
           model: DimTecnicaProc,
           as: 'tecnica_proc',
           attributes: ['id', 'tecnica_proc'],
@@ -61,6 +69,13 @@ export class TecnicaRepository {
     return Tecnica.findAll({
       where: { id_muestra },
       include: [
+        {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'estado', 'color', 'descripcion'],
+          where: { entidad: 'TECNICA' },
+          required: false,
+        },
         {
           model: DimTecnicaProc,
           as: 'tecnica_proc',
@@ -91,6 +106,13 @@ export class TecnicaRepository {
   async findAll() {
     return Tecnica.findAll({
       include: [
+        {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'estado', 'color', 'descripcion'],
+          where: { entidad: 'TECNICA' },
+          required: false,
+        },
         {
           model: DimTecnicaProc,
           as: 'tecnica_proc',
@@ -243,11 +265,19 @@ export class TecnicaRepository {
           'id_tecnica_proc',
           'id_tecnico_resp',
           'estado',
+          'id_estado',
           'fecha_inicio_tec',
           'fecha_estado',
           'comentarios',
         ],
         include: [
+          {
+            model: DimEstado,
+            as: 'estadoInfo',
+            attributes: ['id', 'estado', 'color', 'descripcion'],
+            where: { entidad: 'TECNICA' },
+            required: false,
+          },
           {
             model: DimTecnicaProc,
             as: 'tecnica_proc',

@@ -44,7 +44,6 @@ export class Muestra extends Model<
   declare agotada?: CreationOptional<boolean>;
   declare estado_muestra?: CreationOptional<string>;
   declare id_estado?: CreationOptional<number>;
-  declare estadoInfo?: DimEstado;
 
   declare delete_dt?: CreationOptional<Date>;
   declare update_dt: CreationOptional<Date>;
@@ -217,13 +216,12 @@ export class Muestra extends Model<
         'f_destruccion',
         'f_devolucion',
         'estado_muestra',
-        'estadoInfo',
       ],
       include: [
         {
           model: DimEstado,
           as: 'estadoInfo',
-          attributes: ['id', 'codigo', 'nombre', 'color', 'descripcion'],
+          attributes: ['id', 'estado', 'color', 'descripcion'],
           where: { entidad: 'MUESTRA' },
           required: false,
         },

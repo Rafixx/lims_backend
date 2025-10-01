@@ -27,6 +27,7 @@ const dimCentro_routes_1 = require("./routes/dimCentro.routes");
 const dimCriterioValidacion_routes_1 = require("./routes/dimCriterioValidacion.routes");
 const tecnicoLab_routes_1 = require("./routes/tecnicoLab.routes");
 const worklist_routes_1 = require("./routes/worklist.routes");
+const estado_routes_1 = __importDefault(require("./routes/estado.routes"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -53,6 +54,7 @@ app.use('/api/centros', dimCentro_routes_1.dimCentroRoutes);
 app.use('/api/criteriosValidacion', dimCriterioValidacion_routes_1.dimCriterioValidacionRoutes);
 app.use('/api/tecnicosLab', tecnicoLab_routes_1.tecnicoLabRoutes);
 app.use('/api/worklists', worklist_routes_1.worklistRouter);
+app.use('/api/estados', estado_routes_1.default);
 // Middleware de manejo de errores
 app.use(error_middleware_1.errorHandler);
 exports.default = app;

@@ -6,6 +6,7 @@ const sequelize_1 = require("sequelize");
 const DimTecnicaProc_1 = require("./DimTecnicaProc");
 const Worklist_1 = require("./Worklist");
 const Usuario_1 = require("./Usuario");
+const DimEstado_1 = require("./DimEstado");
 class Tecnica extends sequelize_1.Model {
     // ============== inicialización ============
     static initModel(sequelize) {
@@ -46,6 +47,14 @@ class Tecnica extends sequelize_1.Model {
                 allowNull: true,
                 defaultValue: 'CREADA',
             },
+            id_estado: {
+                type: sequelize_1.DataTypes.INTEGER,
+                allowNull: true,
+                references: {
+                    model: 'dim_estados',
+                    key: 'id',
+                },
+            },
             fecha_estado: {
                 type: sequelize_1.DataTypes.DATE,
                 allowNull: true,
@@ -81,16 +90,41 @@ class Tecnica extends sequelize_1.Model {
             updatedAt: 'update_dt',
             paranoid: true,
             deletedAt: 'delete_dt',
+            hooks: {
+                beforeCreate: async (tecnica) => {
+                    // Si no se especifica estado, usar el inicial por defecto
+                    if (!tecnica.id_estado) {
+                        const estadoInicial = await DimEstado_1.DimEstado.findOne({
+                            where: {
+                                entidad: 'TECNICA',
+                                es_inicial: true,
+                                activo: true,
+                            },
+                        });
+                        if (estadoInicial) {
+                            tecnica.id_estado = estadoInicial.id;
+                        }
+                    }
+                },
+            },
         });
         this.addScope('withRefs', {
             attributes: [
                 'id_tecnica',
                 'fecha_inicio_tec',
                 'estado',
+                'id_estado',
                 'fecha_estado',
                 'comentarios',
             ],
             include: [
+                {
+                    model: DimEstado_1.DimEstado,
+                    as: 'estadoInfo',
+                    attributes: ['id', 'estado', 'color', 'descripcion'],
+                    where: { entidad: 'TECNICA' },
+                    required: false,
+                },
                 {
                     model: DimTecnicaProc_1.DimTecnicaProc,
                     as: 'tecnica_proc',
@@ -129,6 +163,13 @@ class Tecnica extends sequelize_1.Model {
         this.belongsTo(models.Worklist, {
             foreignKey: 'id_worklist',
             as: 'worklist',
+        });
+        this.belongsTo(models.DimEstado, {
+            foreignKey: 'id_estado',
+            as: 'estadoInfo',
+            scope: {
+                entidad: 'TECNICA',
+            },
         });
     }
 }

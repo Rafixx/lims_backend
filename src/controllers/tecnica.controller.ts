@@ -287,3 +287,31 @@ export const getEstadisticasWorklist = async (
     next(error);
   }
 };
+
+export const cambiarEstadoTecnica = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id_tecnica = Number(req.params.id);
+  const { nuevoEstadoId, observaciones } = req.body;
+
+  try {
+    const { EstadoService } = await import('../services/estado.service');
+    const estadoService = new EstadoService();
+
+    const resultado = await estadoService.cambiarEstadoTecnica(
+      id_tecnica,
+      nuevoEstadoId,
+      observaciones
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Estado de técnica actualizado correctamente',
+      data: resultado,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

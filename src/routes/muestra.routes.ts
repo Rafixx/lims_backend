@@ -8,6 +8,7 @@ import {
   updateMuestra,
   deleteMuestra,
   getMuestrasStats,
+  cambiarEstadoMuestra,
 } from '../controllers/muestra.controller';
 
 const router = Router();
@@ -19,5 +20,6 @@ router.get('/:id/tecnicas', getTecnicasById);
 router.post('/', createMuestra);
 router.put('/:id', updateMuestra);
 router.delete('/:id', deleteMuestra);
+router.post('/:id/cambiar-estado', cambiarEstadoMuestra);
 
 export { router as muestraRoutes };
