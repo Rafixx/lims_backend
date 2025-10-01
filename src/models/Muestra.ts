@@ -19,6 +19,7 @@ import { DimCriterioValidacion } from './DimCriterioValidacion';
 import { DimUbicacion } from './DimUbicacion';
 import { DimCliente } from './DimCliente';
 import { DimPrueba } from './DimPrueba';
+import { DimEstado } from './DimEstado';
 
 export class Muestra extends Model<
   InferAttributes<Muestra>,
@@ -42,6 +43,9 @@ export class Muestra extends Model<
   declare f_devolucion?: CreationOptional<Date>;
   declare agotada?: CreationOptional<boolean>;
   declare estado_muestra?: CreationOptional<string>;
+  declare id_estado?: CreationOptional<number>;
+  declare estadoInfo?: DimEstado;
+
   declare delete_dt?: CreationOptional<Date>;
   declare update_dt: CreationOptional<Date>;
   declare created_by?: CreationOptional<number>;
@@ -146,6 +150,15 @@ export class Muestra extends Model<
           allowNull: true,
           defaultValue: 'CREADA',
         },
+        id_estado: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          references: {
+            model: 'dim_estados',
+            key: 'id',
+          },
+        },
+
         update_dt: {
           type: DataTypes.DATE,
           allowNull: false,
@@ -175,6 +188,23 @@ export class Muestra extends Model<
         updatedAt: 'update_dt',
         paranoid: true,
         deletedAt: 'delete_dt',
+        hooks: {
+          beforeCreate: async (muestra: Muestra) => {
+            // Si no se especifica estado, usar el inicial por defecto
+            if (!muestra.id_estado) {
+              const estadoInicial = await DimEstado.findOne({
+                where: {
+                  entidad: 'MUESTRA',
+                  es_inicial: true,
+                  activo: true,
+                },
+              });
+              if (estadoInicial) {
+                muestra.id_estado = estadoInicial.id;
+              }
+            }
+          },
+        },
       }
     );
     this.addScope('withRefs', {
@@ -187,8 +217,16 @@ export class Muestra extends Model<
         'f_destruccion',
         'f_devolucion',
         'estado_muestra',
+        'estadoInfo',
       ],
       include: [
+        {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'codigo', 'nombre', 'color', 'descripcion'],
+          where: { entidad: 'MUESTRA' },
+          required: false,
+        },
         {
           model: DimPaciente,
           as: 'paciente',
@@ -287,6 +325,13 @@ export class Muestra extends Model<
     this.belongsTo(models.DimUbicacion, {
       foreignKey: 'id_ubicacion',
       as: 'ubicacion',
+    });
+    this.belongsTo(models.DimEstado, {
+      foreignKey: 'id_estado',
+      as: 'estadoInfo',
+      scope: {
+        entidad: 'MUESTRA',
+      },
     });
   }
 }

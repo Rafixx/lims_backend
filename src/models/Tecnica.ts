@@ -12,6 +12,7 @@ import {
 import { DimTecnicaProc } from './DimTecnicaProc';
 import { Worklist } from './Worklist';
 import { Usuario } from './Usuario';
+import { DimEstado } from './DimEstado';
 
 export class Tecnica extends Model<
   InferAttributes<Tecnica>,
@@ -25,6 +26,8 @@ export class Tecnica extends Model<
   declare id_worklist?: number;
   declare fecha_inicio_tec?: Date;
   declare estado?: string;
+  declare id_estado?: number;
+
   declare fecha_estado?: Date;
   declare comentarios?: string;
   declare delete_dt?: Date | null; //añado |null por el workList.repository
@@ -32,8 +35,8 @@ export class Tecnica extends Model<
   declare created_by?: number;
   declare updated_by?: number;
 
-  declare tecnica_proc?: DimTecnicaProc; // <-- esta línea es clave
-
+  declare tecnica_proc?: DimTecnicaProc;
+  declare estadoInfo?: DimEstado;
   // ============== inicialización ============
   static initModel(sequelize: Sequelize) {
     this.init(
@@ -74,6 +77,15 @@ export class Tecnica extends Model<
           allowNull: true,
           defaultValue: 'CREADA',
         },
+        id_estado: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          references: {
+            model: 'dim_estados',
+            key: 'id',
+          },
+        },
+
         fecha_estado: {
           type: DataTypes.DATE,
           allowNull: true,
@@ -110,6 +122,23 @@ export class Tecnica extends Model<
         updatedAt: 'update_dt',
         paranoid: true,
         deletedAt: 'delete_dt',
+        hooks: {
+          beforeCreate: async (tecnica: Tecnica) => {
+            // Si no se especifica estado, usar el inicial por defecto
+            if (!tecnica.id_estado) {
+              const estadoInicial = await DimEstado.findOne({
+                where: {
+                  entidad: 'TECNICA',
+                  es_inicial: true,
+                  activo: true,
+                },
+              });
+              if (estadoInicial) {
+                tecnica.id_estado = estadoInicial.id;
+              }
+            }
+          },
+        },
       }
     );
     this.addScope('withRefs', {
@@ -117,10 +146,18 @@ export class Tecnica extends Model<
         'id_tecnica',
         'fecha_inicio_tec',
         'estado',
+        'id_estado',
         'fecha_estado',
         'comentarios',
       ],
       include: [
+        {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'codigo', 'nombre', 'color', 'descripcion'],
+          where: { entidad: 'TECNICA' },
+          required: false,
+        },
         {
           model: DimTecnicaProc,
           as: 'tecnica_proc',
@@ -160,6 +197,13 @@ export class Tecnica extends Model<
     this.belongsTo(models.Worklist, {
       foreignKey: 'id_worklist',
       as: 'worklist',
+    });
+    this.belongsTo(models.DimEstado, {
+      foreignKey: 'id_estado',
+      as: 'estadoInfo',
+      scope: {
+        entidad: 'TECNICA',
+      },
     });
   }
 }
