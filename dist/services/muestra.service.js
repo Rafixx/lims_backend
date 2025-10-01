@@ -7,10 +7,20 @@ class MuestraService {
         this.muestraRepo = muestraRepo;
     }
     async createMuestra(data) {
-        return this.muestraRepo.create({
-            ...data,
-            f_recepcion: data.f_recepcion ?? new Date(),
-        });
+        // Validar que los datos obligatorios estén presentes
+        if (!data.solicitud?.cliente?.id) {
+            throw new Error('El cliente es obligatorio para crear una muestra');
+        }
+        // Establecer fecha de recepción por defecto si no se proporciona
+        if (!data.f_recepcion) {
+            data.f_recepcion = new Date().toISOString();
+        }
+        const resultado = await this.muestraRepo.create(data);
+        return {
+            ...resultado.toJSON(),
+            mensaje: 'Muestra, solicitud y técnicas creadas correctamente',
+            tecnicasCreadas: data.tecnicas ? data.tecnicas.length : 0,
+        };
     }
     async getMuestraById(id) {
         const muestra = await this.muestraRepo.findById(id);
@@ -19,8 +29,8 @@ class MuestraService {
         }
         return muestra;
     }
-    async getBySolicitudId(id_solicitud) {
-        const muestra = await this.muestraRepo.findBySolicitudId(id_solicitud);
+    async getTecnicasById(id_muestra) {
+        const muestra = await this.muestraRepo.findTecnicasById(id_muestra);
         if (!muestra) {
             throw new Error('Muestra no encontrada');
         }
@@ -43,6 +53,9 @@ class MuestraService {
         }
         await this.muestraRepo.delete(muestra);
         return { message: 'Muestra eliminada correctamente' };
+    }
+    async getMuestrasStats() {
+        return this.muestraRepo.getMuestrasStats();
     }
 }
 exports.MuestraService = MuestraService;

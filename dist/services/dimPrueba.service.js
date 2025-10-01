@@ -20,9 +20,10 @@ class DimPruebaService {
         const prueba = await DimPrueba_1.DimPrueba.findByPk(id, {
             include: [
                 {
-                    model: DimTecnicaProc_1.DimTecnicaProc,
+                    model: DimTecnicaProc_1.DimTecnicaProc.scope('withPlantilla'),
                     as: 'tecnicas',
-                    attributes: ['id', 'tecnica_proc'],
+                    attributes: ['id', 'tecnica_proc', 'orden'],
+                    order: [['orden', 'ASC']],
                 },
             ],
         });

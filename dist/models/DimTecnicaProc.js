@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DimTecnicaProc = void 0;
 // src/models/DimTecnicaProc.ts
 const sequelize_1 = require("sequelize");
+const DimPlantillaTecnica_1 = require("./DimPlantillaTecnica");
 class DimTecnicaProc extends sequelize_1.Model {
     static initModel(sequelize) {
         this.init({
@@ -59,6 +60,16 @@ class DimTecnicaProc extends sequelize_1.Model {
             tableName: 'dim_tecnicas_proc',
             schema: process.env.DB_SCHEMA,
             timestamps: false,
+        });
+        this.addScope('withPlantilla', {
+            include: [
+                {
+                    model: DimPlantillaTecnica_1.DimPlantillaTecnica,
+                    as: 'plantillaTecnica',
+                    attributes: ['id', 'cod_plantilla_tecnica', 'tecnica'],
+                    required: false,
+                },
+            ],
         });
     }
     static associate(models) {

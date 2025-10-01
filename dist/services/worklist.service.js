@@ -1,267 +1,88 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.worklistService = exports.WorklistService = void 0;
+exports.WorklistService = void 0;
 const worklist_repository_1 = require("../repositories/worklist.repository");
-const BadRequestError_1 = require("../errors/BadRequestError");
-const NotFoundError_1 = require("../errors/NotFoundError");
-/**
- * Servicio para manejar la lógica de negocio de Worklist
- */
 class WorklistService {
-    constructor() {
-        this.worklistRepository = new worklist_repository_1.WorklistRepository();
+    constructor(workListRepo = new worklist_repository_1.WorklistRepository()) {
+        this.workListRepo = workListRepo;
     }
-    // ==================== OPERACIONES CRUD ====================
-    /**
-     * Crea un nuevo worklist
-     * @param data Datos para crear el worklist
-     * @param userId ID del usuario que crea el worklist
-     * @returns Promise<Worklist> Worklist creado
-     */
-    async create(data, userId) {
-        try {
-            // Validaciones
-            if (data.nombre && data.nombre.length > 20) {
-                throw new BadRequestError_1.BadRequestError('El nombre del worklist no puede exceder 20 caracteres');
-            }
-            const worklistData = {
-                nombre: data.nombre,
-                created_by: userId,
-            };
-            return await this.worklistRepository.create(worklistData);
+    async getWorklistById(id) {
+        const worklist = await this.workListRepo.findById(id);
+        if (!worklist) {
+            throw new Error('Worklist no encontrada');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError) {
-                throw error;
-            }
-            console.error('Error en servicio al crear worklist:', error);
-            throw new Error('No se pudo crear el worklist');
-        }
+        return worklist;
     }
-    /**
-     * Obtiene todos los worklists
-     * @returns Promise<Worklist[]> Lista de worklists
-     */
-    async getAll() {
-        try {
-            return await this.worklistRepository.getAll();
-        }
-        catch (error) {
-            console.error('Error en servicio al obtener worklists:', error);
-            throw new Error('No se pudieron obtener los worklists');
-        }
+    async getAllWorklists() {
+        return this.workListRepo.findAll();
     }
-    /**
-     * Obtiene un worklist por ID
-     * @param id ID del worklist
-     * @returns Promise<Worklist> Worklist encontrado
-     * @throws NotFoundError si no se encuentra el worklist
-     */
-    async getById(id) {
-        try {
-            if (!id || id <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            const worklist = await this.worklistRepository.getById(id);
-            if (!worklist) {
-                throw new NotFoundError_1.NotFoundError('Worklist no encontrado');
-            }
-            return worklist;
+    async getTecnicasById(id_worklist) {
+        const worklist = await this.workListRepo.findTecnicasById(id_worklist);
+        if (!worklist) {
+            throw new Error('Técnicas no encontradas');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError || error instanceof NotFoundError_1.NotFoundError) {
-                throw error;
-            }
-            console.error('Error en servicio al obtener worklist por ID:', error);
-            throw new Error('No se pudo obtener el worklist');
-        }
+        return worklist;
     }
-    /**
-     * Actualiza un worklist
-     * @param id ID del worklist
-     * @param data Datos para actualizar
-     * @param userId ID del usuario que actualiza
-     * @returns Promise<Worklist> Worklist actualizado
-     * @throws NotFoundError si no se encuentra el worklist
-     */
-    async update(id, data, userId) {
-        try {
-            if (!id || id <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            // Validaciones
-            if (data.nombre && data.nombre.length > 20) {
-                throw new BadRequestError_1.BadRequestError('El nombre del worklist no puede exceder 20 caracteres');
-            }
-            const worklistData = {
-                nombre: data.nombre,
-                updated_by: userId,
-            };
-            const worklistActualizado = await this.worklistRepository.update(id, worklistData);
-            if (!worklistActualizado) {
-                throw new NotFoundError_1.NotFoundError('Worklist no encontrado');
-            }
-            return worklistActualizado;
+    async getPosiblesTecnicaProc() {
+        const posiblesTecnicasProc = await this.workListRepo.getPosiblesTecnicaProc();
+        if (!posiblesTecnicasProc) {
+            throw new Error('Técnicas no encontradas');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError || error instanceof NotFoundError_1.NotFoundError) {
-                throw error;
-            }
-            console.error('Error en servicio al actualizar worklist:', error);
-            throw new Error('No se pudo actualizar el worklist');
-        }
+        return posiblesTecnicasProc;
     }
-    /**
-     * Elimina un worklist
-     * @param id ID del worklist
-     * @param userId ID del usuario que elimina
-     * @returns Promise<void>
-     * @throws NotFoundError si no se encuentra el worklist
-     */
-    async delete(id, userId) {
-        try {
-            if (!id || id <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            // Verificar que existe antes de eliminar
-            await this.getById(id);
-            const eliminado = await this.worklistRepository.delete(id, userId);
-            if (!eliminado) {
-                throw new NotFoundError_1.NotFoundError('Worklist no encontrado');
-            }
+    async getPosiblesTecnicas(tecnicaProc) {
+        const posiblesTecnicas = await this.workListRepo.getPosiblesTecnicas(tecnicaProc);
+        if (!posiblesTecnicas) {
+            throw new Error('Técnicas no encontradas');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError || error instanceof NotFoundError_1.NotFoundError) {
-                throw error;
-            }
-            console.error('Error en servicio al eliminar worklist:', error);
-            throw new Error('No se pudo eliminar el worklist');
-        }
+        return posiblesTecnicas;
     }
-    // ==================== OPERACIONES ESPECÍFICAS DE WORKLIST ====================
-    /**
-     * Asigna técnicas a un worklist
-     * @param idWorklist ID del worklist
-     * @param data Datos con los IDs de las técnicas
-     * @param userId ID del usuario que realiza la operación
-     * @returns Promise<number> Número de técnicas asignadas
-     */
-    async setTecnicas(idWorklist, data, userId) {
-        try {
-            if (!idWorklist || idWorklist <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            if (!data.idsTecnicas ||
-                !Array.isArray(data.idsTecnicas) ||
-                data.idsTecnicas.length === 0) {
-                throw new BadRequestError_1.BadRequestError('Debe proporcionar al menos una técnica para asignar');
-            }
-            // Validar que todos los IDs sean números válidos
-            const idsInvalidos = data.idsTecnicas.filter((id) => !id || id <= 0);
-            if (idsInvalidos.length > 0) {
-                throw new BadRequestError_1.BadRequestError('Algunos IDs de técnicas son inválidos');
-            }
-            // Verificar que el worklist existe
-            await this.getById(idWorklist);
-            const tecnicasAsignadas = await this.worklistRepository.setTecnicas(idWorklist, data.idsTecnicas, userId);
-            return tecnicasAsignadas;
+    async createWorklist(data) {
+        // Validar que si se proporcionan técnicas, no estén vacías
+        if (data.tecnicas && data.tecnicas.length === 0) {
+            throw new Error('Si se proporcionan técnicas, el array no puede estar vacío');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError || error instanceof NotFoundError_1.NotFoundError) {
-                throw error;
-            }
-            console.error('Error en servicio al asignar técnicas:', error);
-            throw new Error('No se pudieron asignar las técnicas al worklist');
-        }
+        const nuevaWorklist = await this.workListRepo.create({
+            ...data,
+            create_dt: new Date(),
+        });
+        return {
+            ...nuevaWorklist.toJSON(),
+            tecnicasAsignadas: data.tecnicas ? data.tecnicas.length : 0,
+            mensaje: data.tecnicas
+                ? `Worklist creada con ${data.tecnicas.length} técnicas asignadas`
+                : 'Worklist creada sin técnicas asignadas',
+        };
     }
-    /**
-     * Remueve técnicas de un worklist
-     * @param idWorklist ID del worklist
-     * @param idsTecnicas IDs de las técnicas a remover (opcional)
-     * @param userId ID del usuario que realiza la operación
-     * @returns Promise<number> Número de técnicas removidas
-     */
-    async removeTecnicas(idWorklist, idsTecnicas, userId) {
-        try {
-            if (!idWorklist || idWorklist <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            // Si se proporcionan IDs específicos, validarlos
-            if (idsTecnicas && Array.isArray(idsTecnicas)) {
-                const idsInvalidos = idsTecnicas.filter((id) => !id || id <= 0);
-                if (idsInvalidos.length > 0) {
-                    throw new BadRequestError_1.BadRequestError('Algunos IDs de técnicas son inválidos');
-                }
-            }
-            // Verificar que el worklist existe
-            await this.getById(idWorklist);
-            const tecnicasRemovidas = await this.worklistRepository.removeTecnicas(idWorklist, idsTecnicas, userId);
-            return tecnicasRemovidas;
+    async updateWorklist(id, data) {
+        const worklist = await this.workListRepo.findById(id);
+        if (!worklist) {
+            throw new Error('Worklist no encontrada');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError || error instanceof NotFoundError_1.NotFoundError) {
-                throw error;
-            }
-            console.error('Error en servicio al remover técnicas:', error);
-            throw new Error('No se pudieron remover las técnicas del worklist');
-        }
+        return this.workListRepo.update(worklist, data);
     }
-    /**
-     * Obtiene estadísticas de un worklist
-     * @param idWorklist ID del worklist
-     * @returns Promise<WorklistStats> Estadísticas del worklist
-     */
-    async getStats(idWorklist) {
-        try {
-            if (!idWorklist || idWorklist <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            // Verificar que el worklist existe
-            await this.getById(idWorklist);
-            return await this.worklistRepository.getStats(idWorklist);
+    async deleteWorklist(id) {
+        const worklist = await this.workListRepo.findById(id);
+        if (!worklist) {
+            throw new Error('Worklist no encontrada');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError || error instanceof NotFoundError_1.NotFoundError) {
-                throw error;
-            }
-            console.error('Error en servicio al obtener estadísticas:', error);
-            throw new Error('No se pudieron obtener las estadísticas del worklist');
-        }
+        await this.workListRepo.delete(worklist);
+        return { message: 'Worklist eliminada correctamente' };
     }
-    /**
-     * Obtiene técnicas agrupadas por proceso de un worklist
-     * @param idWorklist ID del worklist
-     * @returns Promise<TecnicasPorProceso[]> Lista de técnicas agrupadas por proceso
-     */
-    async getTecnicasAgrupadasPorProceso(idWorklist) {
-        try {
-            if (!idWorklist || idWorklist <= 0) {
-                throw new BadRequestError_1.BadRequestError('ID de worklist inválido');
-            }
-            return await this.worklistRepository.getTecnicasAgrupadasPorProceso(idWorklist);
+    async setTecnicoLab(idWorklist, idTecnico) {
+        // Verificar que la worklist existe
+        const worklist = await this.workListRepo.findById(idWorklist);
+        if (!worklist) {
+            throw new Error('Worklist no encontrada');
         }
-        catch (error) {
-            if (error instanceof BadRequestError_1.BadRequestError) {
-                throw error;
-            }
-            console.error('Error en servicio al obtener técnicas agrupadas por proceso:', error);
-            throw new Error('No se pudieron obtener las técnicas agrupadas por proceso');
+        const resultado = await this.workListRepo.setTecnicoLab(idWorklist, idTecnico);
+        if (resultado[0] === 0) {
+            throw new Error('No se encontraron técnicas para actualizar en esta worklist');
         }
-    }
-    /**
-     * Obtiene técnicas sin asignar a ningún worklist
-     * @returns Promise<Tecnica[]> Lista de técnicas sin asignar
-     */
-    async getTecnicasSinAsignar() {
-        try {
-            return await this.worklistRepository.getTecnicasSinAsignar();
-        }
-        catch (error) {
-            console.error('Error en servicio al obtener técnicas sin asignar:', error);
-            throw new Error('No se pudieron obtener las técnicas sin asignar');
-        }
+        return {
+            message: 'Técnico de laboratorio asignado correctamente',
+            tecnicasActualizadas: resultado[0],
+        };
     }
 }
 exports.WorklistService = WorklistService;
-// Exportar instancia singleton del servicio
-exports.worklistService = new WorklistService();

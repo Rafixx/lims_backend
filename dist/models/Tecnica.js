@@ -3,6 +3,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Tecnica = void 0;
 const sequelize_1 = require("sequelize");
+const DimTecnicaProc_1 = require("./DimTecnicaProc");
+const Worklist_1 = require("./Worklist");
+const Usuario_1 = require("./Usuario");
 class Tecnica extends sequelize_1.Model {
     // ============== inicialización ============
     static initModel(sequelize) {
@@ -79,6 +82,32 @@ class Tecnica extends sequelize_1.Model {
             paranoid: true,
             deletedAt: 'delete_dt',
         });
+        this.addScope('withRefs', {
+            attributes: [
+                'id_tecnica',
+                'fecha_inicio_tec',
+                'estado',
+                'fecha_estado',
+                'comentarios',
+            ],
+            include: [
+                {
+                    model: DimTecnicaProc_1.DimTecnicaProc,
+                    as: 'tecnica_proc',
+                    attributes: ['id', 'tecnica_proc'],
+                },
+                {
+                    model: Worklist_1.Worklist,
+                    as: 'worklist',
+                    attributes: ['id_worklist', 'nombre'],
+                },
+                {
+                    model: Usuario_1.Usuario,
+                    as: 'tecnico_resp',
+                    attributes: ['id_usuario', 'nombre'],
+                },
+            ],
+        });
     }
     // ============== asociaciones ============
     static associate(models) {
@@ -94,7 +123,7 @@ class Tecnica extends sequelize_1.Model {
         // Técnica pertenece a un Usuario (técnico responsable)
         this.belongsTo(models.Usuario, {
             foreignKey: 'id_tecnico_resp',
-            as: 'tecnico',
+            as: 'tecnico_resp',
         });
         //Tecnica puede pertenecer a un Worklist
         this.belongsTo(models.Worklist, {

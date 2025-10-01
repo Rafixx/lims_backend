@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteMuestra = exports.updateMuestra = exports.createMuestra = exports.getMuestraById = exports.getMuestras = void 0;
+exports.getMuestrasStats = exports.deleteMuestra = exports.updateMuestra = exports.createMuestra = exports.getTecnicasById = exports.getMuestraById = exports.getMuestras = void 0;
 const muestra_service_1 = require("../services/muestra.service");
 const muestraService = new muestra_service_1.MuestraService();
 const getMuestras = async (req, res, next) => {
@@ -24,8 +24,30 @@ const getMuestraById = async (req, res, next) => {
     }
 };
 exports.getMuestraById = getMuestraById;
+const getTecnicasById = async (req, res, next) => {
+    const id = Number(req.params.id);
+    try {
+        const muestra = await muestraService.getTecnicasById(id);
+        res.status(200).json(muestra);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.getTecnicasById = getTecnicasById;
 const createMuestra = async (req, res, next) => {
     try {
+        // Validación básica del cuerpo de la petición
+        if (!req.body) {
+            return res
+                .status(400)
+                .json({ error: 'El cuerpo de la petición es requerido' });
+        }
+        if (!req.body.solicitud) {
+            return res
+                .status(400)
+                .json({ error: 'Los datos de la solicitud son requeridos' });
+        }
         const nuevaMuestra = await muestraService.createMuestra(req.body);
         res.status(201).json(nuevaMuestra);
     }
@@ -56,3 +78,13 @@ const deleteMuestra = async (req, res, next) => {
     }
 };
 exports.deleteMuestra = deleteMuestra;
+const getMuestrasStats = async (req, res, next) => {
+    try {
+        const stats = await muestraService.getMuestrasStats();
+        res.status(200).json(stats);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.getMuestrasStats = getMuestrasStats;

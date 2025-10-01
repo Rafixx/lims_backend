@@ -30,14 +30,16 @@ const worklist_routes_1 = require("./routes/worklist.routes");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+// test endpoint
+app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'lims_backend' }));
 // Registrar las rutas
 app.use('/api/solicitudes', solicitud_routes_1.solicitudRoutes);
 app.use('/api/muestras', muestra_routes_1.muestraRoutes);
 app.use('/api/tecnicas', tecnica_routes_1.tecnicaRoutes);
 app.use('/api/clientes', dimCliente_routes_1.dimClienteRoutes);
-app.use('/api/dimPlantillaTecnicas', dimPlantillaTecnica_routes_1.dimPlantillaTecnicaRoutes);
+app.use('/api/plantillasTecnicas', dimPlantillaTecnica_routes_1.dimPlantillaTecnicaRoutes);
 app.use('/api/pruebas', dimPrueba_routes_1.dimPruebaRoutes);
-app.use('/api/dimTecnicaProc', dimTecnicaProc_routes_1.dimTecnicaProcRoutes);
+app.use('/api/tecnicasProc', dimTecnicaProc_routes_1.dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuario_routes_1.usuarioRoutes);
 app.use('/api/roles', rol_routes_1.rolRoutes);
 app.use('/api/login', auth_routes_1.authRoutes);
@@ -50,7 +52,7 @@ app.use('/api/maquinas', dimMaquina_routes_1.dimMaquinaRoutes);
 app.use('/api/centros', dimCentro_routes_1.dimCentroRoutes);
 app.use('/api/criteriosValidacion', dimCriterioValidacion_routes_1.dimCriterioValidacionRoutes);
 app.use('/api/tecnicosLab', tecnicoLab_routes_1.tecnicoLabRoutes);
-app.use('/api/worklist', worklist_routes_1.worklistRouter);
+app.use('/api/worklists', worklist_routes_1.worklistRouter);
 // Middleware de manejo de errores
 app.use(error_middleware_1.errorHandler);
 exports.default = app;
