@@ -3,6 +3,7 @@ import { Worklist } from '../models/Worklist';
 import { Tecnica } from '../models/Tecnica';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
 import { Muestra } from '../models/Muestra';
+import { DimEstado } from '../models/DimEstado';
 
 interface CrearWorklistData extends Partial<Worklist> {
   tecnicas?: Array<{ id_tecnica: number }>;
@@ -23,9 +24,24 @@ export class WorklistRepository {
     });
   }
 
-  //getPosiblesTecnicaProc me devuelve las técnicas_proc únicas que tienen técnicas asociadas
-  // que no están completadas o canceladas
+  /**
+   * Obtiene las técnicas_proc únicas que tienen técnicas disponibles
+   * (no completadas, no canceladas, sin worklist asignado)
+   */
   async getPosiblesTecnicaProc() {
+    // Obtener IDs de estados finales para TECNICA
+    const estadosFinales = await DimEstado.findAll({
+      where: {
+        entidad: 'TECNICA',
+        es_final: true,
+        activo: true,
+      },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    const idsEstadosFinales = estadosFinales.map((e) => e.id);
+
     return DimTecnicaProc.findAll({
       attributes: ['tecnica_proc'],
       include: [
@@ -33,9 +49,9 @@ export class WorklistRepository {
           model: Tecnica,
           as: 'tecnicas',
           where: literal(`
-            "tecnicas"."estado" NOT IN ('COMPLETADA_TECNICA', 'CANCELADA_TECNICA') 
-            AND "tecnicas"."delete_dt" IS NULL
-            AND id_worklist IS NULL
+            "tecnicas"."delete_dt" IS NULL
+            AND "tecnicas"."id_worklist" IS NULL
+            ${idsEstadosFinales.length > 0 ? `AND ("tecnicas"."id_estado" IS NULL OR "tecnicas"."id_estado" NOT IN (${idsEstadosFinales.join(',')}))` : ''}
           `),
           attributes: [],
           required: true,
@@ -46,10 +62,34 @@ export class WorklistRepository {
     });
   }
 
+  /**
+   * Obtiene técnicas disponibles para un proceso específico
+   * (no completadas, no canceladas, sin worklist asignado)
+   */
   async getPosiblesTecnicas(tecnicaProc: string) {
+    // Obtener IDs de estados finales para TECNICA
+    const estadosFinales = await DimEstado.findAll({
+      where: {
+        entidad: 'TECNICA',
+        es_final: true,
+        activo: true,
+      },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    const idsEstadosFinales = estadosFinales.map((e) => e.id);
+
     return Tecnica.findAll({
-      attributes: ['id_tecnica'],
+      attributes: ['id_tecnica', 'id_estado'],
       include: [
+        {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'estado', 'color', 'descripcion'],
+          where: { entidad: 'TECNICA' },
+          required: false,
+        },
         {
           model: DimTecnicaProc,
           as: 'tecnica_proc',
@@ -64,11 +104,10 @@ export class WorklistRepository {
         },
       ],
       where: literal(`
-        "Tecnica"."estado" NOT IN ('COMPLETADA_TECNICA', 'CANCELADA_TECNICA') 
-        AND "Tecnica"."delete_dt" IS NULL
-        AND id_worklist IS NULL
+        "Tecnica"."delete_dt" IS NULL
+        AND "Tecnica"."id_worklist" IS NULL
+        ${idsEstadosFinales.length > 0 ? `AND ("Tecnica"."id_estado" IS NULL OR "Tecnica"."id_estado" NOT IN (${idsEstadosFinales.join(',')}))` : ''}
       `),
-      // raw: true,
     });
   }
 

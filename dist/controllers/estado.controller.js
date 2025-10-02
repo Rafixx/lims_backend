@@ -21,7 +21,8 @@ class EstadoController {
         this.getEstadoById = async (req, res, next) => {
             try {
                 const { id } = req.params;
-                const estado = await this.estadoRepository.findById(parseInt(id));
+                const estadoId = this.validateId(id);
+                const estado = await this.estadoRepository.findById(estadoId);
                 if (!estado) {
                     throw new NotFoundError_1.NotFoundError(`Estado con ID ${id} no encontrado`);
                 }
@@ -170,7 +171,8 @@ class EstadoController {
             try {
                 const { id } = req.params;
                 const estadoData = req.body;
-                const estado = await this.estadoRepository.findById(parseInt(id));
+                const estadoId = this.validateId(id);
+                const estado = await this.estadoRepository.findById(estadoId);
                 if (!estado) {
                     throw new NotFoundError_1.NotFoundError(`Estado con ID ${id} no encontrado`);
                 }
@@ -185,7 +187,8 @@ class EstadoController {
         this.deleteEstado = async (req, res, next) => {
             try {
                 const { id } = req.params;
-                const estado = await this.estadoRepository.findById(parseInt(id));
+                const estadoId = this.validateId(id);
+                const estado = await this.estadoRepository.findById(estadoId);
                 if (!estado) {
                     throw new NotFoundError_1.NotFoundError(`Estado con ID ${id} no encontrado`);
                 }
@@ -200,7 +203,8 @@ class EstadoController {
         this.activateEstado = async (req, res, next) => {
             try {
                 const { id } = req.params;
-                const estado = await this.estadoRepository.findById(parseInt(id));
+                const estadoId = this.validateId(id);
+                const estado = await this.estadoRepository.findById(estadoId);
                 if (!estado) {
                     throw new NotFoundError_1.NotFoundError(`Estado con ID ${id} no encontrado`);
                 }
@@ -213,6 +217,14 @@ class EstadoController {
         };
         this.estadoService = new estado_service_1.EstadoService();
         this.estadoRepository = new estado_repository_1.EstadoRepository();
+    }
+    // Método auxiliar para validar y parsear IDs
+    validateId(id) {
+        const parsedId = parseInt(id);
+        if (isNaN(parsedId)) {
+            throw new BadRequestError_1.BadRequestError(`ID inválido: "${id}". Debe ser un número.`);
+        }
+        return parsedId;
     }
 }
 exports.EstadoController = EstadoController;

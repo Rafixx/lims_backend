@@ -1,7 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
 import { WorklistService } from '../services/worklist.service';
+import { BadRequestError } from '../errors/BadRequestError';
 
 const worklistService = new WorklistService();
+
+/**
+ * Valida que un ID sea un número válido
+ */
+const validateId = (id: string): number => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId) || parsedId <= 0) {
+    throw new BadRequestError(
+      `ID inválido: "${id}". Debe ser un número positivo.`
+    );
+  }
+  return parsedId;
+};
 
 export const getWorklists = async (
   req: Request,
@@ -21,8 +35,8 @@ export const getWorklistById = async (
   res: Response,
   next: NextFunction
 ) => {
-  const id = Number(req.params.id);
   try {
+    const id = validateId(req.params.id);
     const worklist = await worklistService.getWorklistById(id);
     res.status(200).json(worklist);
   } catch (error) {
@@ -35,8 +49,8 @@ export const getTecnicasById = async (
   res: Response,
   next: NextFunction
 ) => {
-  const id = Number(req.params.id);
   try {
+    const id = validateId(req.params.id);
     const worklist = await worklistService.getTecnicasById(id);
     res.status(200).json(worklist);
   } catch (error) {
@@ -91,8 +105,8 @@ export const updateWorklist = async (
   res: Response,
   next: NextFunction
 ) => {
-  const id = Number(req.params.id);
   try {
+    const id = validateId(req.params.id);
     const worklistActualizada = await worklistService.updateWorklist(
       id,
       req.body
@@ -108,8 +122,8 @@ export const deleteWorklist = async (
   res: Response,
   next: NextFunction
 ) => {
-  const id = Number(req.params.id);
   try {
+    const id = validateId(req.params.id);
     const resultado = await worklistService.deleteWorklist(id);
     res.status(200).json(resultado);
   } catch (error) {
@@ -122,21 +136,21 @@ export const setTecnicoLab = async (
   res: Response,
   next: NextFunction
 ) => {
-  const idWorklist = Number(req.params.id);
-  const { id_tecnico } = req.body;
-
-  if (!id_tecnico) {
-    return res
-      .status(400)
-      .json({
-        error: 'El id_tecnico es requerido en el cuerpo de la petición',
-      });
-  }
-
   try {
+    const idWorklist = validateId(req.params.id);
+    const { id_tecnico } = req.body;
+
+    if (!id_tecnico) {
+      throw new BadRequestError(
+        'El id_tecnico es requerido en el cuerpo de la petición'
+      );
+    }
+
+    const idTecnico = validateId(String(id_tecnico));
+
     const resultado = await worklistService.setTecnicoLab(
       idWorklist,
-      Number(id_tecnico)
+      idTecnico
     );
     res.status(200).json(resultado);
   } catch (error) {

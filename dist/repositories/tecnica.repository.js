@@ -7,10 +7,18 @@ const Muestra_1 = require("../models/Muestra");
 const Tecnica_1 = require("../models/Tecnica");
 const Usuario_1 = require("../models/Usuario");
 const DimTipoMuestra_1 = require("../models/DimTipoMuestra");
+const DimEstado_1 = require("../models/DimEstado");
 class TecnicaRepository {
     async findById(id) {
         return Tecnica_1.Tecnica.findByPk(id, {
             include: [
+                {
+                    model: DimEstado_1.DimEstado,
+                    as: 'estadoInfo',
+                    attributes: ['id', 'estado', 'color', 'descripcion'],
+                    where: { entidad: 'TECNICA' },
+                    required: false,
+                },
                 {
                     model: DimTecnicaProc_1.DimTecnicaProc,
                     as: 'tecnica_proc',
@@ -28,6 +36,13 @@ class TecnicaRepository {
         return Tecnica_1.Tecnica.findAll({
             where: { id_muestra },
             include: [
+                {
+                    model: DimEstado_1.DimEstado,
+                    as: 'estadoInfo',
+                    attributes: ['id', 'estado', 'color', 'descripcion'],
+                    where: { entidad: 'TECNICA' },
+                    required: false,
+                },
                 {
                     model: DimTecnicaProc_1.DimTecnicaProc,
                     as: 'tecnica_proc',
@@ -57,6 +72,13 @@ class TecnicaRepository {
     async findAll() {
         return Tecnica_1.Tecnica.findAll({
             include: [
+                {
+                    model: DimEstado_1.DimEstado,
+                    as: 'estadoInfo',
+                    attributes: ['id', 'estado', 'color', 'descripcion'],
+                    where: { entidad: 'TECNICA' },
+                    required: false,
+                },
                 {
                     model: DimTecnicaProc_1.DimTecnicaProc,
                     as: 'tecnica_proc',
@@ -184,11 +206,19 @@ class TecnicaRepository {
                     'id_tecnica_proc',
                     'id_tecnico_resp',
                     'estado',
+                    'id_estado',
                     'fecha_inicio_tec',
                     'fecha_estado',
                     'comentarios',
                 ],
                 include: [
+                    {
+                        model: DimEstado_1.DimEstado,
+                        as: 'estadoInfo',
+                        attributes: ['id', 'estado', 'color', 'descripcion'],
+                        where: { entidad: 'TECNICA' },
+                        required: false,
+                    },
                     {
                         model: DimTecnicaProc_1.DimTecnicaProc,
                         as: 'tecnica_proc',

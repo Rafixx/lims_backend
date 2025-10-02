@@ -2,17 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload as BaseJwtPayload } from 'jsonwebtoken';
 
 // Extend the Request interface to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        username: string;
-        id_rol: number;
-      };
-    }
-  }
-}
+// declare global {
+//   namespace Express {
+//     interface Request {
+//       user?: {
+//         id: number;
+//         username: string;
+//         id_rol: number;
+//       };
+//     }
+//   }
+// }
 
 interface CustomJwtPayload extends BaseJwtPayload {
   id: number;
