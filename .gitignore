@@ -29,6 +29,13 @@ build/
 # Logs
 logs/
 *.log
+pm2-*.log
+
+# PM2
+.pm2/
+pids/
+*.pid
+*.seed
 
 # Testing
 coverage/
