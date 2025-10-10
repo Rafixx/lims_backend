@@ -24,7 +24,7 @@ Configura estos secretos en tu repositorio (Settings â†’ Secrets and variables â
 ```bash
 HOSTINGER_HOST=185.166.39.240
 HOSTINGER_USERNAME=root
-HOSTINGER_PASSWORD=@cc3s5R00tHO5T:NGer
+HOSTINGER_PASSWORD=
 ```
 
 ### 2. Preparar Servidor (Primera Vez)
