@@ -1,9 +1,11 @@
 # 📑 API Documentation - Sistema LIMS
 
 ## 📌 Descripción General
+
 Sistema de gestión de información de laboratorio (LIMS) que proporciona endpoints para la gestión de usuarios, autenticación y worklist de técnicas pendientes.
 
 **Base URL**
+
 ```
 http://localhost:3000/api
 ```
@@ -11,6 +13,7 @@ http://localhost:3000/api
 ---
 
 ## 🔑 Autenticación
+
 La API utiliza **JWT (JSON Web Tokens)** para la autenticación.  
 Debes incluir el token en los headers:
 
@@ -21,22 +24,26 @@ Authorization: Bearer <token>
 ---
 
 ## 📁 Módulo de Autenticación
+
 **Base URL:** `/api/auth`
 
 ### 1. Login de Usuario
+
 `POST /login`
 
 Autentica un usuario y devuelve un JWT token.
 
 #### Request Body
+
 ```json
-{  
-  "email": "usuario@ejemplo.com",  
-  "password": "password123"  
+{
+  "email": "usuario@ejemplo.com",
+  "password": "password123"
 }
 ```
 
 #### Respuesta de Éxito (200)
+
 ```json
 {
   "success": true,
@@ -55,6 +62,7 @@ Autentica un usuario y devuelve un JWT token.
 ```
 
 #### Respuesta de Error (401)
+
 ```json
 {
   "success": false,
@@ -65,9 +73,11 @@ Autentica un usuario y devuelve un JWT token.
 ---
 
 ### 2. Registro de Usuario
+
 `POST /register`
 
 #### Request Body
+
 ```json
 {
   "email": "nuevo@ejemplo.com",
@@ -79,6 +89,7 @@ Autentica un usuario y devuelve un JWT token.
 ```
 
 #### Respuesta de Éxito (201)
+
 ```json
 {
   "success": true,
@@ -98,14 +109,17 @@ Autentica un usuario y devuelve un JWT token.
 ---
 
 ### 3. Verificar Token
+
 `GET /verify`
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 #### Respuesta de Éxito (200)
+
 ```json
 {
   "success": true,
@@ -125,17 +139,21 @@ Authorization: Bearer <token>
 ---
 
 ## 👥 Módulo de Usuarios
+
 **Base URL:** `/api/usuarios`
 
 ### 1. Obtener Todos los Usuarios
+
 `GET /`
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 #### Respuesta de Éxito (200)
+
 ```json
 {
   "success": true,
@@ -157,14 +175,17 @@ Authorization: Bearer <token>
 ---
 
 ### 2. Obtener Usuario por ID
+
 `GET /:id`
 
 ---
 
 ### 3. Actualizar Usuario
+
 `PUT /:id`
 
 #### Request Body
+
 ```json
 {
   "nombre": "Juan Carlos",
@@ -176,114 +197,129 @@ Authorization: Bearer <token>
 ---
 
 ### 4. Eliminar Usuario
+
 `DELETE /:id`
 
 ---
 
 ## 📋 Módulo de Worklist
+
 **Base URL:** `/api/worklist`
 
 ### 1. Obtener Técnicas Pendientes
+
 `GET /tecnicas-pendientes`
 
 ---
 
 ### 2. Obtener Técnicas Agrupadas por Proceso
+
 `GET /tecnicas-agrupadas`
 
 ---
 
 ### 3. Obtener Estadísticas del Worklist
+
 `GET /estadisticas`
 
 ---
 
 ### 4. Obtener Técnicas por Proceso Específico
+
 `GET /proceso/:idTecnicaProc/tecnicas`
 
 ---
 
 ### 5. Otros Endpoints
-- `GET /tecnicas-con-proceso` - Técnicas con información del proceso  
-- `GET /procesos-pendientes` - Procesos con técnicas pendientes  
-- `GET /conteo` - Conteo total de técnicas pendientes  
-- `GET /proceso/:id/existe` - Validar existencia de proceso con técnicas  
+
+- `GET /tecnicas-con-proceso` - Técnicas con información del proceso
+- `GET /procesos-pendientes` - Procesos con técnicas pendientes
+- `GET /conteo` - Conteo total de técnicas pendientes
+- `GET /proceso/:id/existe` - Validar existencia de proceso con técnicas
 
 ---
 
-## 🏥 Módulo de Muestras *(Futuro)*
+## 🏥 Módulo de Muestras _(Futuro)_
+
 **Base URL:** `/api/muestras`
 
-- `GET /` - Obtener todas las muestras  
-- `GET /:id` - Obtener muestra por ID  
-- `POST /` - Crear nueva muestra  
-- `PUT /:id` - Actualizar muestra  
-- `DELETE /:id` - Eliminar muestra  
-- `GET /paciente/:idPaciente` - Muestras por paciente  
+- `GET /` - Obtener todas las muestras
+- `GET /:id` - Obtener muestra por ID
+- `POST /` - Crear nueva muestra
+- `PUT /:id` - Actualizar muestra
+- `DELETE /:id` - Eliminar muestra
+- `GET /paciente/:idPaciente` - Muestras por paciente
 
 ---
 
-## 🧪 Módulo de Técnicas *(Futuro)*
+## 🧪 Módulo de Técnicas _(Futuro)_
+
 **Base URL:** `/api/tecnicas`
 
-- `GET /` - Obtener todas las técnicas  
-- `GET /:id` - Obtener técnica por ID  
-- `POST /` - Crear nueva técnica  
-- `PUT /:id/estado` - Cambiar estado de técnica  
-- `GET /muestra/:idMuestra` - Técnicas por muestra  
+- `GET /` - Obtener todas las técnicas
+- `GET /:id` - Obtener técnica por ID
+- `POST /` - Crear nueva técnica
+- `PUT /:id/estado` - Cambiar estado de técnica
+- `GET /muestra/:idMuestra` - Técnicas por muestra
 
 ---
 
-## 📊 Módulo de Reportes *(Futuro)*
+## 📊 Módulo de Reportes _(Futuro)_
+
 **Base URL:** `/api/reportes`
 
-- `GET /dashboard` - Datos para dashboard  
-- `GET /productividad` - Reportes de productividad  
-- `GET /tiempos` - Análisis de tiempos de proceso  
-- `GET /export/:tipo` - Exportar reportes (PDF, Excel)  
+- `GET /dashboard` - Datos para dashboard
+- `GET /productividad` - Reportes de productividad
+- `GET /tiempos` - Análisis de tiempos de proceso
+- `GET /export/:tipo` - Exportar reportes (PDF, Excel)
 
 ---
 
 ## 📋 Estructura de Respuestas Estándar
+
 ### Éxito
+
 ```json
 { "success": true, "data": any, "message": "string" }
 ```
 
 ### Error
+
 ```json
 { "success": false, "message": "string", "error": any }
 ```
 
 ### Validación
+
 ```json
 {
   "success": false,
   "message": "Errores de validación",
-  "errors": [
-    { "field": "email", "message": "Email es requerido" }
-  ]
+  "errors": [{ "field": "email", "message": "Email es requerido" }]
 }
 ```
 
 ---
 
 ## 🔒 Códigos de Estado HTTP
-| Código | Descripción |
-|--------|-------------|
-| 200    | OK - Operación exitosa |
-| 201    | Created - Recurso creado exitosamente |
-| 400    | Bad Request - Parámetros inválidos |
-| 401    | Unauthorized - Token inválido o faltante |
-| 403    | Forbidden - Sin permisos suficientes |
-| 404    | Not Found - Recurso no encontrado |
+
+| Código | Descripción                                |
+| ------ | ------------------------------------------ |
+| 200    | OK - Operación exitosa                     |
+| 201    | Created - Recurso creado exitosamente      |
+| 400    | Bad Request - Parámetros inválidos         |
+| 401    | Unauthorized - Token inválido o faltante   |
+| 403    | Forbidden - Sin permisos suficientes       |
+| 404    | Not Found - Recurso no encontrado          |
 | 409    | Conflict - Conflicto (ej: email ya existe) |
 | 500    | Internal Server Error - Error del servidor |
 
 ---
 
 ## 🎯 Tipos de Datos Principales
+
 ### Usuario
+
 ```ts
 interface Usuario {
   id: number;
@@ -298,6 +334,7 @@ interface Usuario {
 ```
 
 ### Técnica
+
 ```ts
 interface Tecnica {
   id: number;
@@ -311,6 +348,7 @@ interface Tecnica {
 ```
 
 ### Proceso de Técnica
+
 ```ts
 interface DimTecnicaProc {
   id: number;
@@ -325,14 +363,15 @@ interface DimTecnicaProc {
 ## 🚀 Guía de Inicio Rápido para Frontend
 
 ### 1. Autenticación
+
 ```js
 const login = async (email, password) => {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password }),
   });
-  
+
   const result = await response.json();
   if (result.success) {
     localStorage.setItem('token', result.data.token);
@@ -343,6 +382,7 @@ const login = async (email, password) => {
 ```
 
 ### 2. Requests Autenticados
+
 ```js
 const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
@@ -350,15 +390,16 @@ const apiCall = async (endpoint, options = {}) => {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers
-    }
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
   });
   return response.json();
 };
 ```
 
 ### 3. Manejo de Estados
+
 ```js
 const [data, setData] = useState(null);
 const [loading, setLoading] = useState(false);
@@ -367,7 +408,7 @@ const [error, setError] = useState(null);
 const fetchData = async () => {
   setLoading(true);
   setError(null);
-  
+
   try {
     const result = await apiCall('/worklist/estadisticas');
     if (result.success) {
@@ -386,20 +427,59 @@ const fetchData = async () => {
 ---
 
 ## 📝 Notas Importantes
-- **Tokens JWT:** Expiran en 24 horas, implementar refresh automático  
-- **Rate Limiting:** Máximo 100 requests por minuto por IP  
-- **CORS:** Configurado para desarrollo local  
-- **Logs:** Todos los errores se registran en el servidor  
-- **Validaciones:** Usar los mensajes de error para mostrar al usuario  
-- **Paginación:** Será implementada en endpoints que retornen listas grandes  
+
+- **Tokens JWT:** Expiran en 24 horas, implementar refresh automático
+- **Rate Limiting:** Máximo 100 requests por minuto por IP
+- **CORS:** Configurado para desarrollo local
+- **Logs:** Todos los errores se registran en el servidor
+- **Validaciones:** Usar los mensajes de error para mostrar al usuario
+- **Paginación:** Será implementada en endpoints que retornen listas grandes
 
 ---
 
-## 🔄 Versionado de API
+## � Deployment
+
+### Despliegue Automático con GitHub Actions
+
+Este proyecto usa **GitHub Actions** para despliegue automático a Hostinger VPS.
+
+#### Flujo de Trabajo
+
+1. Desarrolla en rama `feature/xx`
+2. Crea Pull Request a `main`
+3. Merge a `main` → Deploy automático con PM2
+
+#### Configuración
+
+- **Servidor**: 185.166.39.240 (Hostinger VPS)
+- **PM2**: 2 instancias en cluster mode
+- **Puerto**: 3002
+- **Logs**: `/home/rafa/dev/epidisease/lims/logs/`
+
+#### Comandos Útiles
+
+```bash
+# Ver estado en servidor
+ssh root@185.166.39.240 "pm2 status"
+
+# Ver logs
+ssh root@185.166.39.240 "pm2 logs lims-backend"
+
+# Reiniciar aplicación
+ssh root@185.166.39.240 "pm2 reload lims-backend"
+```
+
+📚 **Documentación completa**: Ver [DEPLOY_GITHUB_ACTIONS.md](./src/_md/DEPLOY_GITHUB_ACTIONS.md)
+
+---
+
+## �🔄 Versionado de API
+
 Actualmente en versión **v1**.  
-Futuros cambios *breaking* serán versionados como `/api/v2/`
+Futuros cambios _breaking_ serán versionados como `/api/v2/`
 
 ---
 
 ## 📞 Soporte
+
 Para dudas o problemas con la API, contactar al equipo de backend o revisar los logs del servidor.

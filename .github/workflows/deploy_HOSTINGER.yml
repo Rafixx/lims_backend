@@ -1,0 +1,223 @@
+name: Deploy LIMS Backend to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    environment: HOSTINGER
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy_package
+          cp -r dist deploy_package/
+          cp package*.json deploy_package/
+          cp ecosystem.config.js deploy_package/
+          cp .env.production.example deploy_package/.env.example
+          tar -czf deploy.tar.gz -C deploy_package .
+
+      - name: Test SSH Connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          script: |
+            echo "Testing SSH connection..."
+            echo "Current directory: $(pwd)"
+            echo "Node version: $(node --version || echo 'Node not found')"
+            echo "PM2 version: $(pm2 --version || echo 'PM2 not found')"
+
+      - name: Copy deployment package to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          source: 'deploy.tar.gz'
+          target: '/home/rafa/deploy/epidisease/lims/'
+          strip_components: 0
+          rm: false
+
+      - name: Deploy to Hostinger with PM2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          script: |
+            set -e
+
+            # Variables
+            DEPLOY_DIR="/home/rafa/dev/epidisease/lims/lims_backend"
+            LOGS_DIR="/home/rafa/dev/epidisease/lims/logs"
+            BACKUP_DIR="/home/rafa/backups/lims_backend"
+            DEPLOY_PACKAGE="/home/rafa/deploy/epidisease/lims/deploy.tar.gz"
+            DATE=$(date +%Y%m%d_%H%M%S)
+
+            echo "=========================================="
+            echo "🚀 Starting LIMS Backend Deployment"
+            echo "=========================================="
+            echo "Time: $(date)"
+            echo "User: $(whoami)"
+            echo ""
+
+            # Verificar Node.js y PM2
+            echo "📋 Checking prerequisites..."
+            if ! command -v node &> /dev/null; then
+              echo "❌ Error: Node.js not found"
+              exit 1
+            fi
+            echo "✅ Node.js version: $(node --version)"
+
+            if ! command -v pm2 &> /dev/null; then
+              echo "⚠️  PM2 not found, installing..."
+              npm install -g pm2
+            fi
+            echo "✅ PM2 version: $(pm2 --version)"
+            echo ""
+
+            # Crear directorios necesarios
+            echo "📁 Creating directories..."
+            mkdir -p "$DEPLOY_DIR"
+            mkdir -p "$LOGS_DIR"
+            mkdir -p "$BACKUP_DIR"
+            echo "✅ Directories ready"
+            echo ""
+
+            # Backup de la versión actual (solo si existe dist)
+            if [ -d "$DEPLOY_DIR/dist" ]; then
+              echo "💾 Creating backup..."
+              BACKUP_PATH="$BACKUP_DIR/backup_$DATE"
+              mkdir -p "$BACKUP_PATH"
+              cp -r "$DEPLOY_DIR/dist" "$BACKUP_PATH/" 2>/dev/null || echo "⚠️  No dist to backup"
+              cp "$DEPLOY_DIR/package.json" "$BACKUP_PATH/" 2>/dev/null || echo "⚠️  No package.json to backup"
+              echo "✅ Backup created at: $BACKUP_PATH"
+              
+              # Mantener solo los últimos 5 backups
+              cd "$BACKUP_DIR"
+              ls -dt backup_* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+              echo "✅ Old backups cleaned (keeping last 5)"
+            else
+              echo "ℹ️  No previous deployment found, skipping backup"
+            fi
+            echo ""
+
+            # Extraer el paquete de deployment
+            echo "📦 Extracting deployment package..."
+            cd "$DEPLOY_DIR"
+            tar -xzf "$DEPLOY_PACKAGE"
+            echo "✅ Package extracted"
+            echo ""
+
+            # Verificar que existe el archivo .env
+            if [ ! -f "$DEPLOY_DIR/.env" ]; then
+              echo "⚠️  Warning: .env file not found!"
+              echo "ℹ️  Please create .env file with production configuration"
+              echo "ℹ️  You can use .env.example as template"
+              if [ -f "$DEPLOY_DIR/.env.example" ]; then
+                echo "ℹ️  Example file available at: $DEPLOY_DIR/.env.example"
+              fi
+              echo ""
+            else
+              echo "✅ .env file found"
+              echo ""
+            fi
+
+            # Instalar dependencias de producción
+            echo "📥 Installing production dependencies..."
+            npm ci --only=production
+            echo "✅ Dependencies installed"
+            echo ""
+
+            # Verificar que existe el build
+            if [ ! -d "$DEPLOY_DIR/dist" ]; then
+              echo "❌ Error: dist directory not found in deployment package"
+              exit 1
+            fi
+            echo "✅ Build files verified"
+            echo ""
+
+            # Desplegar con PM2
+            echo "🔄 Deploying with PM2..."
+            cd "$DEPLOY_DIR"
+
+            # Verificar si el proceso ya existe
+            if pm2 describe lims-backend > /dev/null 2>&1; then
+              echo "♻️  Reloading existing PM2 process (zero-downtime)..."
+              pm2 reload ecosystem.config.js --env production
+              echo "✅ Process reloaded"
+            else
+              echo "🆕 Starting new PM2 process..."
+              pm2 start ecosystem.config.js --env production
+              pm2 save
+              echo "✅ Process started"
+            fi
+            echo ""
+
+            # Configurar PM2 para iniciar en boot (solo si no está configurado)
+            if ! pm2 startup | grep -q "already"; then
+              echo "⚙️  Configuring PM2 startup..."
+              pm2 startup systemd -u root --hp /root
+              pm2 save
+              echo "✅ PM2 startup configured"
+            fi
+            echo ""
+
+            # Mostrar estado
+            echo "📊 Current PM2 Status:"
+            pm2 list
+            echo ""
+
+            # Mostrar logs recientes
+            echo "📋 Recent logs (last 20 lines):"
+            pm2 logs lims-backend --lines 20 --nostream
+            echo ""
+
+            # Limpiar archivo temporal
+            rm -f "$DEPLOY_PACKAGE"
+
+            echo "=========================================="
+            echo "✅ Deployment completed successfully!"
+            echo "=========================================="
+            echo "Time: $(date)"
+            echo ""
+            echo "📍 Useful commands:"
+            echo "  - View logs: pm2 logs lims-backend"
+            echo "  - Check status: pm2 status"
+            echo "  - Restart: pm2 restart lims-backend"
+            echo "  - Stop: pm2 stop lims-backend"
+            echo ""
+            echo "📁 Locations:"
+            echo "  - App: $DEPLOY_DIR"
+            echo "  - Logs: $LOGS_DIR"
+            echo "  - Backups: $BACKUP_DIR"
+            echo ""

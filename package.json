@@ -9,7 +9,15 @@
     "test": "NODE_ENV=test jest --runInBand",
     "dev": " NODE_ENV=development nodemon --watch 'src/**/*.ts' --exec ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "pm2:start": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop lims-backend",
+    "pm2:restart": "pm2 restart lims-backend",
+    "pm2:reload": "pm2 reload lims-backend",
+    "pm2:delete": "pm2 delete lims-backend",
+    "pm2:logs": "pm2 logs lims-backend",
+    "pm2:status": "pm2 status",
+    "pm2:monit": "pm2 monit"
   },
   "keywords": [],
   "author": "",
