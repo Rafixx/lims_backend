@@ -1,4 +1,4 @@
-import { MuestraArray } from '../models/Muestra_array';
+import { MuestraArray } from '../models/MuestraArray';
 import { Muestra } from '../models/Muestra';
 import { Transaction, Op } from 'sequelize';
 import { sequelize } from '../config/db.config';

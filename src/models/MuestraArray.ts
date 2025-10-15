@@ -7,7 +7,6 @@ import {
   CreationOptional,
   ModelStatic,
 } from 'sequelize';
-import { Muestra } from './Muestra';
 import { Usuario } from './Usuario';
 
 export class MuestraArray extends Model<
@@ -117,8 +116,7 @@ export class MuestraArray extends Model<
     this.addScope('withRefs', {
       include: [
         {
-          model: Muestra,
-          as: 'muestra',
+          association: 'muestra',
         },
         {
           model: Usuario,
@@ -137,6 +135,10 @@ export class MuestraArray extends Model<
     this.belongsTo(models.Muestra, {
       foreignKey: 'id_muestra',
       as: 'muestra',
+    });
+    this.hasMany(models.Tecnica, {
+      foreignKey: 'id_array',
+      as: 'tecnicas',
     });
     this.belongsTo(models.Usuario, {
       foreignKey: 'created_by',

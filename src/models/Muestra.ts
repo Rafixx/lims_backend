@@ -20,6 +20,7 @@ import { DimUbicacion } from './DimUbicacion';
 import { DimCliente } from './DimCliente';
 import { DimPrueba } from './DimPrueba';
 import { DimEstado } from './DimEstado';
+import { MuestraArray } from './MuestraArray';
 
 export class Muestra extends Model<
   InferAttributes<Muestra>,
@@ -216,6 +217,7 @@ export class Muestra extends Model<
         'f_destruccion',
         'f_devolucion',
         'estado_muestra',
+        'tipo_array',
       ],
       include: [
         {
@@ -283,6 +285,11 @@ export class Muestra extends Model<
           as: 'prueba',
           attributes: ['id', 'cod_prueba', 'prueba'],
         },
+        {
+          model: MuestraArray,
+          as: 'muestraArray',
+          attributes: ['id_array', 'codigo_placa', 'posicion_placa'],
+        },
       ],
     });
   }
@@ -330,6 +337,10 @@ export class Muestra extends Model<
       scope: {
         entidad: 'MUESTRA',
       },
+    });
+    this.hasMany(models.MuestraArray, {
+      foreignKey: 'id_muestra',
+      as: 'muestraArray',
     });
   }
 }

@@ -21,6 +21,7 @@ export class Tecnica extends Model<
   // ============== columnas ==============
   declare id_tecnica: CreationOptional<number>;
   declare id_muestra: number;
+  declare id_array?: number;
   declare id_tecnica_proc: number;
   declare id_tecnico_resp?: number;
   declare id_worklist?: number;
@@ -51,6 +52,14 @@ export class Tecnica extends Model<
           allowNull: false,
           validate: {
             notNull: { msg: 'id_muestra es requerido' },
+          },
+        },
+        id_array: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          references: {
+            model: 'muestra_array',
+            key: 'id_array',
           },
         },
         id_tecnica_proc: {
@@ -183,6 +192,11 @@ export class Tecnica extends Model<
     this.belongsTo(models.Muestra, {
       foreignKey: 'id_muestra',
       as: 'muestra',
+    });
+    // Técnica puede pertenecer a un MuestraArray (posición de array)
+    this.belongsTo(models.MuestraArray, {
+      foreignKey: 'id_array',
+      as: 'muestraArray',
     });
     this.belongsTo(models.DimTecnicaProc, {
       foreignKey: 'id_tecnica_proc',

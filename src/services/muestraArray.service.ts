@@ -3,7 +3,7 @@ import {
   CreateMuestraArrayDTO,
   UpdateMuestraArrayDTO,
 } from '../repositories/muestraArray.repository';
-import { MuestraArray } from '../models/Muestra_array';
+import { MuestraArray } from '../models/MuestraArray';
 import { BadRequestError } from '../errors/BadRequestError';
 import { NotFoundError } from '../errors/NotFoundError';
 
