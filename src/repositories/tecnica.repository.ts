@@ -1,10 +1,11 @@
 import { CreationAttributes, Op, fn, col } from 'sequelize';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
-import { Muestra } from '../models/Muestra';
+// import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
 import { Usuario } from '../models/Usuario';
-import { DimTipoMuestra } from '../models/DimTipoMuestra';
-import { DimEstado } from '../models/DimEstado';
+// import { DimTipoMuestra } from '../models/DimTipoMuestra';
+// import { DimEstado } from '../models/DimEstado';
+import { ESTADO_TECNICA } from '../constants/estados.constants';
 
 /**
  * Interfaz para técnica con información completa de muestra
@@ -43,45 +44,46 @@ export interface WorklistStats {
 
 export class TecnicaRepository {
   async findById(id: number) {
-    return Tecnica.findByPk(id, {
-      include: [
-        {
-          model: DimEstado,
-          as: 'estadoInfo',
-          attributes: ['id', 'estado', 'color', 'descripcion'],
-          where: { entidad: 'TECNICA' },
-          required: false,
-        },
-        {
-          model: DimTecnicaProc,
-          as: 'tecnica_proc',
-          attributes: ['id', 'tecnica_proc'],
-        },
-        {
-          model: Muestra,
-          as: 'muestra',
-          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
-        },
-      ],
-    });
+    return Tecnica.scope('withRefs').findByPk(id);
+    // return Tecnica.findByPk(id, {
+    //   include: [
+    //     {
+    //       model: DimEstado,
+    //       as: 'estadoInfo',
+    //       attributes: ['id', 'estado', 'color', 'descripcion'],
+    //       where: { entidad: 'TECNICA' },
+    //       required: false,
+    //     },
+    //     {
+    //       model: DimTecnicaProc,
+    //       as: 'tecnica_proc',
+    //       attributes: ['id', 'tecnica_proc'],
+    //     },
+    //     {
+    //       model: Muestra,
+    //       as: 'muestra',
+    //       attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
+    //     },
+    //   ],
+    // });
   }
   async findByMuestraId(id_muestra: number) {
-    return Tecnica.findAll({
+    return Tecnica.scope('withRefs').findAll({
       where: { id_muestra },
-      include: [
-        {
-          model: DimEstado,
-          as: 'estadoInfo',
-          attributes: ['id', 'estado', 'color', 'descripcion'],
-          where: { entidad: 'TECNICA' },
-          required: false,
-        },
-        {
-          model: DimTecnicaProc,
-          as: 'tecnica_proc',
-          attributes: ['id', 'tecnica_proc'],
-        },
-      ],
+      // include: [
+      //   {
+      //     model: DimEstado,
+      //     as: 'estadoInfo',
+      //     attributes: ['id', 'estado', 'color', 'descripcion'],
+      //     where: { entidad: 'TECNICA' },
+      //     required: false,
+      //   },
+      //   {
+      //     model: DimTecnicaProc,
+      //     as: 'tecnica_proc',
+      //     attributes: ['id', 'tecnica_proc'],
+      //   },
+      // ],
     });
   }
   // async findBySolicitudId(id_solicitud: number) {
@@ -104,27 +106,28 @@ export class TecnicaRepository {
   // }
 
   async findAll() {
-    return Tecnica.findAll({
-      include: [
-        {
-          model: DimEstado,
-          as: 'estadoInfo',
-          attributes: ['id', 'estado', 'color', 'descripcion'],
-          where: { entidad: 'TECNICA' },
-          required: false,
-        },
-        {
-          model: DimTecnicaProc,
-          as: 'tecnica_proc',
-          attributes: ['id', 'tecnica_proc'],
-        },
-        {
-          model: Muestra,
-          as: 'muestra',
-          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
-        },
-      ],
-    });
+    return Tecnica.scope('withRefs').findAll();
+    // return Tecnica.findAll({
+    //   include: [
+    //     {
+    //       model: DimEstado,
+    //       as: 'estadoInfo',
+    //       attributes: ['id', 'estado', 'color', 'descripcion'],
+    //       where: { entidad: 'TECNICA' },
+    //       required: false,
+    //     },
+    //     {
+    //       model: DimTecnicaProc,
+    //       as: 'tecnica_proc',
+    //       attributes: ['id', 'tecnica_proc'],
+    //     },
+    //     {
+    //       model: Muestra,
+    //       as: 'muestra',
+    //       attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
+    //     },
+    //   ],
+    // });
   }
   async create(data: CreationAttributes<Tecnica>) {
     return Tecnica.create(data);
@@ -171,7 +174,7 @@ export class TecnicaRepository {
   }
 
   /**
-   * Inicia una técnica (cambia estado a EN_PROGRESO)
+   * Inicia una técnica (cambia estado a EN_PROCESO)
    * @param idTecnica ID de la técnica
    * @returns Promise<Tecnica> Técnica actualizada
    */
@@ -182,14 +185,14 @@ export class TecnicaRepository {
         throw new Error('Técnica no encontrada');
       }
 
-      if (tecnica.estado !== 'PENDIENTE') {
+      if (tecnica.id_estado !== ESTADO_TECNICA.PENDIENTE) {
         throw new Error(
-          `No se puede iniciar una técnica en estado ${tecnica.estado}`
+          `No se puede iniciar una técnica en estado ${tecnica.id_estado}`
         );
       }
 
       await tecnica.update({
-        estado: 'EN_PROGRESO',
+        id_estado: ESTADO_TECNICA.EN_PROCESO,
         fecha_inicio_tec: new Date(),
         fecha_estado: new Date(),
       });
@@ -202,7 +205,7 @@ export class TecnicaRepository {
   }
 
   /**
-   * Completa una técnica (cambia estado a COMPLETADA)
+   * Completa una técnica (cambia estado a COMPLETADA_TECNICA)
    * @param idTecnica ID de la técnica
    * @param comentarios Comentarios opcionales
    * @returns Promise<Tecnica> Técnica actualizada
@@ -217,14 +220,14 @@ export class TecnicaRepository {
         throw new Error('Técnica no encontrada');
       }
 
-      if (tecnica.estado !== 'EN_PROGRESO') {
+      if (tecnica.id_estado !== ESTADO_TECNICA.EN_PROCESO) {
         throw new Error(
-          `No se puede completar una técnica en estado ${tecnica.estado}`
+          `No se puede completar una técnica en estado ${tecnica.id_estado}`
         );
       }
 
       const updateData: Partial<Tecnica> = {
-        estado: 'COMPLETADA',
+        id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA,
         fecha_estado: new Date(),
       };
 
@@ -255,56 +258,10 @@ export class TecnicaRepository {
 
       if (idTecnicaProc) {
         whereCondition.id_tecnica_proc = idTecnicaProc;
-        whereCondition.estado = 'PENDIENTE';
+        whereCondition.id_estado = ESTADO_TECNICA.PENDIENTE;
       }
 
-      const resultado = await Tecnica.findAll({
-        attributes: [
-          'id_tecnica',
-          'id_muestra',
-          'id_tecnica_proc',
-          'id_tecnico_resp',
-          'estado',
-          'id_estado',
-          'fecha_inicio_tec',
-          'fecha_estado',
-          'comentarios',
-        ],
-        include: [
-          {
-            model: DimEstado,
-            as: 'estadoInfo',
-            attributes: ['id', 'estado', 'color', 'descripcion'],
-            where: { entidad: 'TECNICA' },
-            required: false,
-          },
-          {
-            model: DimTecnicaProc,
-            as: 'tecnica_proc',
-            attributes: ['tecnica_proc', 'descripcion'],
-            required: true,
-          },
-          {
-            model: Muestra,
-            as: 'muestra',
-            attributes: ['id', 'codigo_muestra'],
-            required: false,
-            include: [
-              {
-                model: DimTipoMuestra,
-                as: 'tipo_muestra',
-                attributes: ['tipo_muestra'],
-                required: false,
-              },
-            ],
-          },
-          {
-            model: Usuario,
-            as: 'tecnico',
-            attributes: ['nombre', 'apellido'],
-            required: false,
-          },
-        ],
+      const resultado = await Tecnica.scope('withRefs').findAll({
         where: whereCondition,
         order: [['id_tecnica_proc', 'ASC']],
       });
@@ -366,7 +323,7 @@ export class TecnicaRepository {
         // Total pendientes
         Tecnica.count({
           where: {
-            estado: 'PENDIENTE',
+            id_estado: ESTADO_TECNICA.PENDIENTE,
             delete_dt: { [Op.is]: null },
           },
         }),
@@ -374,7 +331,7 @@ export class TecnicaRepository {
         // Total en progreso
         Tecnica.count({
           where: {
-            estado: 'EN_PROGRESO',
+            id_estado: ESTADO_TECNICA.EN_PROCESO,
             delete_dt: { [Op.is]: null },
           },
         }),
@@ -382,7 +339,7 @@ export class TecnicaRepository {
         // Total completadas hoy
         Tecnica.count({
           where: {
-            estado: 'COMPLETADA',
+            id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA,
             fecha_estado: {
               [Op.gte]: hoy,
               [Op.lt]: mañana,
@@ -407,7 +364,7 @@ export class TecnicaRepository {
             },
           ],
           where: {
-            estado: 'PENDIENTE',
+            id_estado: ESTADO_TECNICA.PENDIENTE,
             delete_dt: { [Op.is]: null },
           },
           group: ['Tecnica.id_tecnica_proc', 'tecnica_proc.tecnica_proc'],
@@ -421,7 +378,7 @@ export class TecnicaRepository {
             [fn('DISTINCT', col('id_tecnica_proc')), 'id_tecnica_proc'],
           ],
           where: {
-            estado: 'PENDIENTE',
+            id_estado: ESTADO_TECNICA.PENDIENTE,
             delete_dt: { [Op.is]: null },
           },
           raw: true,

@@ -13,6 +13,8 @@ import { DimTecnicaProc } from './DimTecnicaProc';
 import { Worklist } from './Worklist';
 import { Usuario } from './Usuario';
 import { DimEstado } from './DimEstado';
+import { Resultado } from './Resultado';
+import { Muestra } from './Muestra';
 
 export class Tecnica extends Model<
   InferAttributes<Tecnica>,
@@ -154,7 +156,6 @@ export class Tecnica extends Model<
       attributes: [
         'id_tecnica',
         'fecha_inicio_tec',
-        'estado',
         'id_estado',
         'fecha_estado',
         'comentarios',
@@ -178,9 +179,26 @@ export class Tecnica extends Model<
           attributes: ['id_worklist', 'nombre'],
         },
         {
+          model: Muestra,
+          as: 'muestra',
+          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
+        },
+        {
           model: Usuario,
           as: 'tecnico_resp',
           attributes: ['id_usuario', 'nombre'],
+        },
+        {
+          model: Resultado,
+          as: 'resultados',
+          attributes: [
+            'id_resultado',
+            'tipo_res',
+            'valor',
+            'valor_texto',
+            'valor_fecha',
+            'unidades',
+          ],
         },
       ],
     });
@@ -218,6 +236,10 @@ export class Tecnica extends Model<
       scope: {
         entidad: 'TECNICA',
       },
+    });
+    this.hasMany(models.Resultado, {
+      foreignKey: 'id_tecnica',
+      as: 'resultados',
     });
   }
 }
