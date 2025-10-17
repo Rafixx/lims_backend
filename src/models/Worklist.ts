@@ -12,6 +12,7 @@ import {
 import { Tecnica } from './Tecnica';
 import { Muestra } from './Muestra';
 import { Usuario } from './Usuario';
+import { Resultado } from './Resultado';
 
 export class Worklist extends Model<
   InferAttributes<Worklist>,
@@ -91,6 +92,18 @@ export class Worklist extends Model<
               model: Usuario,
               as: 'tecnico_resp',
               attributes: ['nombre'],
+            },
+            {
+              model: Resultado,
+              as: 'resultados',
+              attributes: [
+                'id_resultado',
+                'tipo_res',
+                'valor',
+                'valor_texto',
+                'valor_fecha',
+                'unidades',
+              ],
             },
           ],
           as: 'tecnicas',
