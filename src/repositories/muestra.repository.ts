@@ -2,6 +2,7 @@ import { Muestra } from '../models/Muestra';
 import { fn, col, literal } from 'sequelize';
 import { Tecnica } from '../models/Tecnica';
 import { Solicitud } from '../models/Solicitud';
+import { MuestraArray } from '../models/MuestraArray';
 import { sequelize } from '../config/db.config';
 
 interface MuestraStats {
@@ -78,6 +79,13 @@ interface CrearMuestraData {
     id_tecnica_proc: string | number;
     comentarios?: string;
   }>;
+  array_config?: {
+    code: string;
+    width: number;
+    heightLetter: string;
+    height: number;
+    totalPositions: number;
+  } | null;
 }
 
 export class MuestraRepository {
@@ -115,7 +123,8 @@ export class MuestraRepository {
       if (isNaN(clienteId)) {
         throw new Error('ID de cliente debe ser un número válido');
       }
-
+      // console.log('Data: ', data);
+      // console.log('Data array_config: ', data.array_config);
       // Preparar datos de la solicitud
       const solicitudData = {
         id_cliente: clienteId,
@@ -197,13 +206,118 @@ export class MuestraRepository {
         id_criterio_val: criterioValidacionId,
         id_ubicacion: ubicacionId,
         id_prueba: pruebaId,
+        tipo_array: data.array_config ? true : false, // Marcar como array si viene configuración
       };
 
       // Crear la muestra dentro de la transacción
       const nuevaMuestra = await Muestra.create(muestraData, { transaction });
 
-      // Si se proporcionaron técnicas, crearlas
-      if (data.tecnicas && data.tecnicas.length > 0) {
+      // Si se proporcionó configuración de array, crear posiciones y técnicas
+      if (data.array_config && data.array_config.totalPositions > 0) {
+        const { code, width, heightLetter } = data.array_config;
+
+        // Validar que tengamos la técnica para crear
+        if (!data.tecnicas || data.tecnicas.length === 0) {
+          throw new Error(
+            'Se requiere al menos una técnica para crear un array'
+          );
+        }
+
+        const idTecnicaProc = Number(data.tecnicas[0].id_tecnica_proc);
+        if (isNaN(idTecnicaProc)) {
+          throw new Error('ID de técnica proceso debe ser un número válido');
+        }
+
+        // Generar todas las posiciones del array
+        const arrayPositions = [];
+        const tecnicasArray = [];
+
+        // Convertir heightLetter a número (A=1, B=2, ..., Z=26)
+        const maxLetterIndex =
+          heightLetter.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+
+        let positionIndex = 1;
+
+        // Generar posiciones: primero por filas (letras), luego por columnas (números)
+        for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
+          const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
+
+          for (let col = 1; col <= width; col++) {
+            const posicion = `${col}${letter}`; // Ejemplo: 1A, 2A, 3A, ... 7A, 1B, 2B, ...
+
+            // Crear el registro de array
+            arrayPositions.push({
+              id_muestra: nuevaMuestra.id_muestra,
+              id_posicion: positionIndex,
+              codigo_placa: code,
+              posicion_placa: posicion,
+              f_creacion: new Date(),
+            });
+
+            positionIndex++;
+          }
+        }
+
+        // Crear todos los registros de MuestraArray en batch
+        const createdArrays = await MuestraArray.bulkCreate(arrayPositions, {
+          transaction,
+          returning: true, // Para obtener los IDs generados
+        });
+
+        console.log(
+          `✅ Creados ${createdArrays.length} registros de MuestraArray`
+        );
+        console.log(
+          'Primeros 3 IDs generados:',
+          createdArrays.slice(0, 3).map((a) => ({
+            id_array: a.id_array,
+            posicion: a.posicion_placa,
+          }))
+        );
+
+        // Verificar que se generaron los IDs
+        if (createdArrays.length === 0 || !createdArrays[0].id_array) {
+          throw new Error(
+            'No se pudieron obtener los IDs de los arrays creados'
+          );
+        }
+
+        // Crear las técnicas asociadas a cada posición del array
+        for (const arrayRecord of createdArrays) {
+          if (!arrayRecord.id_array) {
+            console.error('⚠️ Array sin ID:', arrayRecord);
+            throw new Error(
+              `No se pudo obtener el ID del array para la posición ${arrayRecord.posicion_placa}`
+            );
+          }
+
+          tecnicasArray.push({
+            id_muestra: nuevaMuestra.id_muestra,
+            id_array: arrayRecord.id_array,
+            id_tecnica_proc: idTecnicaProc,
+            id_estado: 8,
+            fecha_estado: new Date(),
+            comentarios: data.tecnicas[0].comentarios || undefined,
+            f_creacion: new Date(),
+          });
+        }
+
+        console.log(
+          `✅ Preparadas ${tecnicasArray.length} técnicas con id_array`
+        );
+        console.log(
+          'Primeras 3 técnicas:',
+          tecnicasArray.slice(0, 3).map((t) => ({
+            id_array: t.id_array,
+            id_tecnica_proc: t.id_tecnica_proc,
+          }))
+        );
+
+        // Crear todas las técnicas del array en batch
+        await Tecnica.bulkCreate(tecnicasArray, { transaction });
+        console.log('✅ Técnicas del array creadas exitosamente');
+      } else if (data.tecnicas && data.tecnicas.length > 0) {
+        // Si NO es array, crear técnicas normales (lógica original)
         const tecnicasData = data.tecnicas.map((tecnica) => {
           // Validar y convertir id_tecnica_proc
           const idTecnicaProc = Number(tecnica.id_tecnica_proc);
@@ -216,7 +330,7 @@ export class MuestraRepository {
           return {
             id_muestra: nuevaMuestra.id_muestra,
             id_tecnica_proc: idTecnicaProc,
-            estado: 'PENDIENTE_TECNICA',
+            id_estado: 8,
             fecha_estado: new Date(),
             comentarios: tecnica.comentarios || undefined,
             f_creacion: new Date(),
