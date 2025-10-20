@@ -6,6 +6,7 @@ import { Muestra } from '../models/Muestra';
 import { DimEstado } from '../models/DimEstado';
 import { ResultadoRepository } from './resultado.repository';
 import { Resultado } from '../models/Resultado';
+import { TecnicaRepository } from './tecnica.repository';
 
 interface CrearWorklistData extends Partial<Worklist> {
   tecnicas?: Array<{ id_tecnica: number }>;
@@ -18,9 +19,11 @@ interface TecnicaConResultados extends Tecnica {
 
 export class WorklistRepository {
   private resultadoRepository: ResultadoRepository;
+  private tecnicaRepository: TecnicaRepository;
 
   constructor() {
     this.resultadoRepository = new ResultadoRepository();
+    this.tecnicaRepository = new TecnicaRepository();
   }
 
   async findById(id: number) {
@@ -165,12 +168,22 @@ export class WorklistRepository {
   }
 
   async setTecnicoLab(idWorklist: number, idTecnico: number) {
-    return Tecnica.update(
-      { id_tecnico_resp: idTecnico },
-      {
-        where: { id_worklist: idWorklist },
-      }
-    );
+    // Obtener todas las técnicas del worklist
+    const tecnicas = await this.findTecnicasById(idWorklist);
+
+    if (!tecnicas || tecnicas.length === 0) {
+      throw new Error(
+        `No se encontraron técnicas para el worklist ${idWorklist}`
+      );
+    }
+
+    // Asignar el técnico a cada técnica del worklist
+    for (const tecnica of tecnicas) {
+      await this.tecnicaRepository.asignarTecnico(
+        tecnica.id_tecnica,
+        idTecnico
+      );
+    }
   }
 
   /**
@@ -225,6 +238,7 @@ export class WorklistRepository {
         });
 
         resultadosCreados.push(resultado);
+        await this.tecnicaRepository.completarTecnica(tecnica.id_tecnica);
       } catch (error) {
         console.error(
           `Error al crear resultado para técnica ${tecnica.id_tecnica}:`,

@@ -165,6 +165,9 @@ export class TecnicaRepository {
         id_tecnico_resp: idTecnicoResp,
         fecha_estado: new Date(),
       });
+      // console.log('tecnica', tecnica);
+
+      await this.iniciarTecnica(idTecnica);
 
       return tecnica;
     } catch (error) {
@@ -190,7 +193,6 @@ export class TecnicaRepository {
           `No se puede iniciar una técnica en estado ${tecnica.id_estado}`
         );
       }
-
       await tecnica.update({
         id_estado: ESTADO_TECNICA.EN_PROCESO,
         fecha_inicio_tec: new Date(),

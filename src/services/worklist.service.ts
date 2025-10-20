@@ -93,20 +93,11 @@ export class WorklistService {
       throw new Error('Worklist no encontrada');
     }
 
-    const resultado = await this.workListRepo.setTecnicoLab(
-      idWorklist,
-      idTecnico
-    );
-
-    if (resultado[0] === 0) {
-      throw new Error(
-        'No se encontraron técnicas para actualizar en esta worklist'
-      );
-    }
+    // Asignar el técnico a todas las técnicas del worklist
+    await this.workListRepo.setTecnicoLab(idWorklist, idTecnico);
 
     return {
       message: 'Técnico de laboratorio asignado correctamente',
-      tecnicasActualizadas: resultado[0],
     };
   }
 

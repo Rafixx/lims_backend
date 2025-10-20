@@ -13,6 +13,7 @@ import { Tecnica } from './Tecnica';
 import { Muestra } from './Muestra';
 import { Usuario } from './Usuario';
 import { Resultado } from './Resultado';
+import { DimEstado } from './DimEstado';
 
 export class Worklist extends Model<
   InferAttributes<Worklist>,
@@ -84,6 +85,13 @@ export class Worklist extends Model<
           model: Tecnica,
           include: [
             {
+              model: DimEstado,
+              as: 'estadoInfo',
+              attributes: ['id', 'estado', 'color', 'descripcion'],
+              where: { entidad: 'TECNICA' },
+              required: false,
+            },
+            {
               model: Muestra,
               as: 'muestra',
               attributes: ['codigo_epi', 'codigo_externo'],
@@ -107,7 +115,6 @@ export class Worklist extends Model<
             },
           ],
           as: 'tecnicas',
-          attributes: ['estado'],
         },
       ],
     });
