@@ -342,5 +342,9 @@ export class Muestra extends Model<
       foreignKey: 'id_muestra',
       as: 'muestraArray',
     });
+    this.hasMany(models.Resultado, {
+      foreignKey: 'id_muestra',
+      as: 'resultados',
+    });
   }
 }

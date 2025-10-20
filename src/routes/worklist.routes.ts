@@ -9,6 +9,7 @@ import {
   updateWorklist,
   getPosiblesTecnicas,
   setTecnicoLab,
+  importDataResults,
 } from '../controllers/worklist.controller';
 
 const router = Router();
@@ -44,6 +45,9 @@ router.put('/:id', updateWorklist);
 
 // PUT /api/worklists/:id/setTecnicoLab - Asignar técnico a worklist
 router.put('/:id/setTecnicoLab', setTecnicoLab);
+
+// POST /api/worklists/:id/importDataResults - Importar datos de resultados
+router.post('/:id/importDataResults', importDataResults);
 
 // DELETE /api/worklists/:id - Eliminar worklist
 router.delete('/:id', deleteWorklist);

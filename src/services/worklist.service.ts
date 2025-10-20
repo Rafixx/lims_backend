@@ -93,20 +93,30 @@ export class WorklistService {
       throw new Error('Worklist no encontrada');
     }
 
-    const resultado = await this.workListRepo.setTecnicoLab(
-      idWorklist,
-      idTecnico
-    );
-
-    if (resultado[0] === 0) {
-      throw new Error(
-        'No se encontraron técnicas para actualizar en esta worklist'
-      );
-    }
+    // Asignar el técnico a todas las técnicas del worklist
+    await this.workListRepo.setTecnicoLab(idWorklist, idTecnico);
 
     return {
       message: 'Técnico de laboratorio asignado correctamente',
-      tecnicasActualizadas: resultado[0],
+    };
+  }
+
+  /**
+   * Importa datos de resultados para un worklist
+   * @param idWorklist ID del worklist
+   * @returns Promise con el resultado de la operación
+   */
+  async importDataResults(idWorklist: number) {
+    const resultado = await this.workListRepo.importDataResults(idWorklist);
+
+    if (!resultado.success) {
+      throw new Error(resultado.message);
+    }
+
+    return {
+      success: true,
+      message: resultado.message,
+      resultadosCreados: resultado.resultadosCreados,
     };
   }
 }

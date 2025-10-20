@@ -4,12 +4,28 @@ import { Tecnica } from '../models/Tecnica';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
 import { Muestra } from '../models/Muestra';
 import { DimEstado } from '../models/DimEstado';
+import { ResultadoRepository } from './resultado.repository';
+import { Resultado } from '../models/Resultado';
+import { TecnicaRepository } from './tecnica.repository';
 
 interface CrearWorklistData extends Partial<Worklist> {
   tecnicas?: Array<{ id_tecnica: number }>;
 }
 
+// Interfaz para Tecnica con resultados cargados
+interface TecnicaConResultados extends Tecnica {
+  resultados?: Resultado[];
+}
+
 export class WorklistRepository {
+  private resultadoRepository: ResultadoRepository;
+  private tecnicaRepository: TecnicaRepository;
+
+  constructor() {
+    this.resultadoRepository = new ResultadoRepository();
+    this.tecnicaRepository = new TecnicaRepository();
+  }
+
   async findById(id: number) {
     return Worklist.scope('withRefs').findByPk(id);
   }
@@ -152,11 +168,90 @@ export class WorklistRepository {
   }
 
   async setTecnicoLab(idWorklist: number, idTecnico: number) {
-    return Tecnica.update(
-      { id_tecnico_resp: idTecnico },
-      {
-        where: { id_worklist: idWorklist },
-      }
+    // Obtener todas las técnicas del worklist
+    const tecnicas = await this.findTecnicasById(idWorklist);
+
+    if (!tecnicas || tecnicas.length === 0) {
+      throw new Error(
+        `No se encontraron técnicas para el worklist ${idWorklist}`
+      );
+    }
+
+    // Asignar el técnico a cada técnica del worklist
+    for (const tecnica of tecnicas) {
+      await this.tecnicaRepository.asignarTecnico(
+        tecnica.id_tecnica,
+        idTecnico
+      );
+    }
+  }
+
+  /**
+   * Importa datos de resultados para un worklist
+   * @param idWorklist ID del worklist
+   * @returns Promise<{ success: boolean; message: string; resultadosCreados: number }>
+   */
+  async importDataResults(idWorklist: number): Promise<{
+    success: boolean;
+    message: string;
+    resultadosCreados?: number;
+  }> {
+    // Validar que el worklist existe
+    const worklist = await Worklist.findByPk(idWorklist);
+    if (!worklist) {
+      return {
+        success: false,
+        message: `Worklist con ID ${idWorklist} no encontrado`,
+      };
+    }
+
+    // Obtener todas las técnicas del worklist que no tienen resultados
+    const tecnicas = await this.findTecnicasById(idWorklist);
+
+    // Filtrar solo las técnicas que NO tienen resultados asociados
+    // Cast a TecnicaConResultados para acceder a la propiedad resultados
+    const tecnicasSinResultados = (tecnicas as TecnicaConResultados[]).filter(
+      (tecnica) => !tecnica.resultados || tecnica.resultados.length === 0
     );
+
+    if (!tecnicasSinResultados || tecnicasSinResultados.length === 0) {
+      return {
+        success: false,
+        message: `Las Tecnicas ya tienen resultados en el worklist ${idWorklist}`,
+      };
+    }
+
+    // Generar resultados para cada técnica
+    const resultadosCreados = [];
+
+    for (const tecnica of tecnicasSinResultados) {
+      // Generar valor aleatorio entre 0.00 y 5.99
+      const valorAleatorio = (Math.random() * 6).toFixed(2);
+
+      try {
+        const resultado = await this.resultadoRepository.create({
+          id_tecnica: tecnica.id_tecnica,
+          id_muestra: tecnica.id_muestra,
+          valor: valorAleatorio,
+          tipo_res: 'NUMERICO',
+          f_resultado: new Date(),
+        });
+
+        resultadosCreados.push(resultado);
+        await this.tecnicaRepository.completarTecnica(tecnica.id_tecnica);
+      } catch (error) {
+        console.error(
+          `Error al crear resultado para técnica ${tecnica.id_tecnica}:`,
+          error
+        );
+        // Continuar con las demás técnicas
+      }
+    }
+
+    return {
+      success: true,
+      message: `Importación completada. ${resultadosCreados.length} resultados creados de ${tecnicasSinResultados.length} técnicas sin resultados previos`,
+      resultadosCreados: resultadosCreados.length,
+    };
   }
 }
