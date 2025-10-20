@@ -41,7 +41,6 @@ jobs:
           cp -r dist deploy_package/
           cp package*.json deploy_package/
           cp ecosystem.config.js deploy_package/
-          cp .env.production.example deploy_package/.env.example
           tar -czf deploy.tar.gz -C deploy_package .
 
       - name: Test SSH Connection
@@ -141,11 +140,8 @@ jobs:
             # Verificar que existe el archivo .env
             if [ ! -f "$DEPLOY_DIR/.env" ]; then
               echo "⚠️  Warning: .env file not found!"
-              echo "ℹ️  Please create .env file with production configuration"
-              echo "ℹ️  You can use .env.example as template"
-              if [ -f "$DEPLOY_DIR/.env.example" ]; then
-                echo "ℹ️  Example file available at: $DEPLOY_DIR/.env.example"
-              fi
+              echo "ℹ️  Please create .env file with production configuration manually on the server"
+              echo "ℹ️  Required variables: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SCHEMA, JWT_SECRET, PORT"
               echo ""
             else
               echo "✅ .env file found"
