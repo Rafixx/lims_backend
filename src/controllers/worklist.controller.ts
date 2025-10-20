@@ -157,3 +157,20 @@ export const setTecnicoLab = async (
     next(error);
   }
 };
+
+/**
+ * Importa datos de resultados para un worklist
+ */
+export const importDataResults = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const idWorklist = validateId(req.params.id);
+    const resultado = await worklistService.importDataResults(idWorklist);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};

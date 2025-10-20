@@ -155,6 +155,7 @@ export class Tecnica extends Model<
     this.addScope('withRefs', {
       attributes: [
         'id_tecnica',
+        'id_muestra',
         'fecha_inicio_tec',
         'id_estado',
         'fecha_estado',

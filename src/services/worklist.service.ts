@@ -109,4 +109,23 @@ export class WorklistService {
       tecnicasActualizadas: resultado[0],
     };
   }
+
+  /**
+   * Importa datos de resultados para un worklist
+   * @param idWorklist ID del worklist
+   * @returns Promise con el resultado de la operación
+   */
+  async importDataResults(idWorklist: number) {
+    const resultado = await this.workListRepo.importDataResults(idWorklist);
+
+    if (!resultado.success) {
+      throw new Error(resultado.message);
+    }
+
+    return {
+      success: true,
+      message: resultado.message,
+      resultadosCreados: resultado.resultadosCreados,
+    };
+  }
 }

@@ -86,7 +86,6 @@ export class ResultadoRepository {
     transaction?: Transaction
   ): Promise<Resultado> {
     const t = transaction || (await sequelize.transaction());
-
     try {
       const nuevoResultado = await Resultado.create(
         {
