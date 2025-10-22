@@ -167,7 +167,7 @@ export class TecnicaRepository {
       });
       // console.log('tecnica', tecnica);
 
-      await this.iniciarTecnica(idTecnica);
+      await this.asignarTecnica(idTecnica);
 
       return tecnica;
     } catch (error) {
@@ -177,33 +177,29 @@ export class TecnicaRepository {
   }
 
   /**
+   * Inicia una técnica (cambia estado a ASIGNADA)
+   * @param idTecnica ID de la técnica
+   * @returns Promise<Tecnica> Técnica actualizada
+   */
+  async asignarTecnica(idTecnica: number): Promise<Tecnica> {
+    return await this.cambiarEstadoTecnica(
+      idTecnica,
+      ESTADO_TECNICA.PENDIENTE,
+      ESTADO_TECNICA.ASIGNADA
+    );
+  }
+
+  /**
    * Inicia una técnica (cambia estado a EN_PROCESO)
    * @param idTecnica ID de la técnica
    * @returns Promise<Tecnica> Técnica actualizada
    */
   async iniciarTecnica(idTecnica: number): Promise<Tecnica> {
-    try {
-      const tecnica = await Tecnica.findByPk(idTecnica);
-      if (!tecnica) {
-        throw new Error('Técnica no encontrada');
-      }
-
-      if (tecnica.id_estado !== ESTADO_TECNICA.PENDIENTE) {
-        throw new Error(
-          `No se puede iniciar una técnica en estado ${tecnica.id_estado}`
-        );
-      }
-      await tecnica.update({
-        id_estado: ESTADO_TECNICA.EN_PROCESO,
-        fecha_inicio_tec: new Date(),
-        fecha_estado: new Date(),
-      });
-
-      return tecnica;
-    } catch (error) {
-      console.error('Error al iniciar técnica:', error);
-      throw new Error('Error al iniciar la técnica');
-    }
+    return await this.cambiarEstadoTecnica(
+      idTecnica,
+      ESTADO_TECNICA.ASIGNADA,
+      ESTADO_TECNICA.EN_PROCESO
+    );
   }
 
   /**
@@ -216,32 +212,46 @@ export class TecnicaRepository {
     idTecnica: number,
     comentarios?: string
   ): Promise<Tecnica> {
+    return await this.cambiarEstadoTecnica(
+      idTecnica,
+      ESTADO_TECNICA.EN_PROCESO,
+      ESTADO_TECNICA.COMPLETADA_TECNICA,
+      comentarios
+    );
+  }
+
+  async cambiarEstadoTecnica(
+    idTecnica: number,
+    estadoOrigen: number,
+    estadoDestino: number,
+    observaciones?: string
+  ): Promise<Tecnica> {
     try {
       const tecnica = await Tecnica.findByPk(idTecnica);
       if (!tecnica) {
         throw new Error('Técnica no encontrada');
       }
 
-      if (tecnica.id_estado !== ESTADO_TECNICA.EN_PROCESO) {
+      if (tecnica.id_estado !== estadoOrigen) {
         throw new Error(
-          `No se puede completar una técnica en estado ${tecnica.id_estado}`
+          `No se puede cambiar el estado a ${estadoDestino} de una técnica en estado ${tecnica.id_estado}`
         );
       }
 
       const updateData: Partial<Tecnica> = {
-        id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA,
+        id_estado: estadoDestino,
         fecha_estado: new Date(),
       };
 
-      if (comentarios) {
-        updateData.comentarios = comentarios;
+      if (observaciones) {
+        updateData.comentarios = observaciones;
       }
 
       await tecnica.update(updateData);
       return tecnica;
     } catch (error) {
-      console.error('Error al completar técnica:', error);
-      throw new Error('Error al completar la técnica');
+      console.error('Error al cambiar estado de técnica:', error);
+      throw new Error('Error al cambiar estado de la técnica');
     }
   }
 

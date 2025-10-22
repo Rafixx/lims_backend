@@ -174,3 +174,17 @@ export const importDataResults = async (
     next(error);
   }
 };
+
+export const startTecnicasInWorklist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const idWorklist = validateId(req.params.id);
+    const resultado = await worklistService.startTecnicasInWorklist(idWorklist);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};

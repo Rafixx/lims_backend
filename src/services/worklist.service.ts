@@ -119,4 +119,19 @@ export class WorklistService {
       resultadosCreados: resultado.resultadosCreados,
     };
   }
+
+  async startTecnicasInWorklist(idWorklist: number) {
+    // Verificar que la worklist existe
+    const worklist = await this.workListRepo.findById(idWorklist);
+    if (!worklist) {
+      throw new Error('Worklist no encontrada');
+    }
+
+    // Iniciar todas las técnicas del worklist
+    await this.workListRepo.startTecnicasInWorklist(idWorklist);
+
+    return {
+      message: 'Técnicas del worklist iniciadas correctamente',
+    };
+  }
 }

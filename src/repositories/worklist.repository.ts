@@ -186,6 +186,22 @@ export class WorklistRepository {
     }
   }
 
+  async startTecnicasInWorklist(idWorklist: number) {
+    // Obtener todas las técnicas del worklist
+    const tecnicas = await this.findTecnicasById(idWorklist);
+
+    if (!tecnicas || tecnicas.length === 0) {
+      throw new Error(
+        `No se encontraron técnicas para el worklist ${idWorklist}`
+      );
+    }
+
+    // Iniciar cada técnica del worklist
+    for (const tecnica of tecnicas) {
+      await this.tecnicaRepository.iniciarTecnica(tecnica.id_tecnica);
+    }
+  }
+
   /**
    * Importa datos de resultados para un worklist
    * @param idWorklist ID del worklist

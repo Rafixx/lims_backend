@@ -72,6 +72,7 @@ export class DimPlantillaTecnica extends Model<
         timestamps: false,
       }
     );
+    return this;
   }
 
   static associate(models: Record<string, ModelStatic<Model>>) {
@@ -79,6 +80,40 @@ export class DimPlantillaTecnica extends Model<
     this.hasMany(models.DimTecnicaProc, {
       foreignKey: 'id_plantilla_tecnica',
       as: 'dimTecnicasProc',
+    });
+    this.hasMany(models.DimPipeta, {
+      foreignKey: 'id_plantilla_tecnica',
+      as: 'dimPipetas',
+    });
+    this.hasMany(models.DimMaquina, {
+      foreignKey: 'id_plantilla_tecnica',
+      as: 'dimMaquinas',
+    });
+    this.hasMany(models.DimReactivo, {
+      foreignKey: 'id_plantilla_tecnica',
+      as: 'dimReactivos',
+    });
+
+    // Definir scope después de que las asociaciones estén configuradas
+    this.addScope('withRefs', {
+      include: [
+        {
+          model: models.DimTecnicaProc,
+          as: 'dimTecnicasProc',
+        },
+        {
+          model: models.DimPipeta,
+          as: 'dimPipetas',
+        },
+        {
+          model: models.DimMaquina,
+          as: 'dimMaquinas',
+        },
+        {
+          model: models.DimReactivo,
+          as: 'dimReactivos',
+        },
+      ],
     });
   }
 }
