@@ -21,6 +21,8 @@ import { DimCriterioValidacion } from './DimCriterioValidacion';
 import { DimEstado } from './DimEstado';
 import { MuestraArray } from './MuestraArray';
 import { Resultado } from './Resultado';
+import { ResRawNanodrop } from './importResult/ResRawNanodrop';
+import ResRawQubit from './importResult/ResRawQubit';
 
 type ModelWithAssociate = ModelStatic<Model> & {
   associate?(models: Record<string, ModelStatic<Model>>): void;
@@ -49,6 +51,8 @@ export function initModels(sequelize: Sequelize) {
   DimEstado.initModel(sequelize);
   MuestraArray.initModel(sequelize);
   Resultado.initModel(sequelize);
+  ResRawNanodrop.initModel(sequelize);
+  ResRawQubit.initModel(sequelize);
 
   // 2) Ahora sí construye el map de clases
   const models = {
@@ -73,6 +77,8 @@ export function initModels(sequelize: Sequelize) {
     DimEstado,
     MuestraArray,
     Resultado,
+    ResRawNanodrop,
+    ResRawQubit,
   } as const;
 
   // 3) Asociaciones

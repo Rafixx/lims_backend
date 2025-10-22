@@ -102,12 +102,39 @@ export class WorklistService {
   }
 
   /**
-   * Importa datos de resultados para un worklist
+   * Importa datos de resultados para un worklist desde un archivo CSV
    * @param idWorklist ID del worklist
+   * @param csvBuffer Buffer del archivo CSV
    * @returns Promise con el resultado de la operación
    */
-  async importDataResults(idWorklist: number) {
-    const resultado = await this.workListRepo.importDataResults(idWorklist);
+  async importDataResults(idWorklist: number, csvBuffer: Buffer) {
+    const resultado = await this.workListRepo.importDataResults(
+      idWorklist,
+      csvBuffer
+    );
+
+    if (!resultado.success) {
+      throw new Error(resultado.message);
+    }
+
+    return {
+      success: true,
+      message: resultado.message,
+      resultadosCreados: resultado.resultadosCreados,
+    };
+  }
+
+  /**
+   * Importa datos de resultados de Qubit para un worklist desde un archivo CSV
+   * @param idWorklist ID del worklist
+   * @param csvBuffer Buffer del archivo CSV de Qubit
+   * @returns Promise con el resultado de la operación
+   */
+  async importQubitDataResults(idWorklist: number, csvBuffer: Buffer) {
+    const resultado = await this.workListRepo.importQubitDataResults(
+      idWorklist,
+      csvBuffer
+    );
 
     if (!resultado.success) {
       throw new Error(resultado.message);

@@ -159,7 +159,7 @@ export const setTecnicoLab = async (
 };
 
 /**
- * Importa datos de resultados para un worklist
+ * Importa datos de resultados para un worklist desde un archivo CSV
  */
 export const importDataResults = async (
   req: Request,
@@ -168,7 +168,52 @@ export const importDataResults = async (
 ) => {
   try {
     const idWorklist = validateId(req.params.id);
-    const resultado = await worklistService.importDataResults(idWorklist);
+
+    // Verificar que se haya subido un archivo
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se ha proporcionado ningún archivo CSV',
+      });
+    }
+
+    // Procesar el archivo CSV
+    const resultado = await worklistService.importDataResults(
+      idWorklist,
+      req.file.buffer
+    );
+
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Importa datos de resultados de Qubit para un worklist desde un archivo CSV
+ */
+export const importQubitDataResults = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const idWorklist = validateId(req.params.id);
+
+    // Verificar que se haya subido un archivo
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se ha proporcionado ningún archivo CSV de Qubit',
+      });
+    }
+
+    // Procesar el archivo CSV de Qubit
+    const resultado = await worklistService.importQubitDataResults(
+      idWorklist,
+      req.file.buffer
+    );
+
     res.status(200).json(resultado);
   } catch (error) {
     next(error);
