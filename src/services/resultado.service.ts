@@ -144,6 +144,33 @@ export class ResultadoService {
     return this.resultadoRepository.createBatch(resultados);
   }
 
+  /**
+   * Importa datos de resultados para un worklist desde un archivo CSV
+   * @param idWorklist ID del worklist
+   * @param csvBuffer Buffer del archivo CSV
+   * @returns Promise con el resultado de la operación
+   */
+  async setCSVtoRAW(
+    // idWorklist: number,
+    csvBuffer: Buffer
+  ) {
+    const resultado = await this.resultadoRepository.setCSVtoRAW(
+      // idWorklist,
+      csvBuffer
+    );
+
+    if (!resultado.success) {
+      throw new Error(resultado.message);
+    }
+    // console.log('Resultado:', resultado);
+    return {
+      success: true,
+      message: resultado.message,
+      type: resultado.type,
+      resultadosCreados: resultado.resultadosCreados,
+    };
+  }
+
   // ============ MÉTODOS DE ANÁLISIS Y VALIDACIÓN (SIN IMPLEMENTAR) ============
 
   /**

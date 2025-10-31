@@ -1,5 +1,5 @@
 // src/repositories/resRawNanodrop.repository.ts
-import { ResRawNanodrop } from '../models/importResult/ResRawNanodrop';
+import { ResRawNanodrop } from '../models/ResRawNanodrop';
 import { Transaction } from 'sequelize';
 
 export interface CreateResRawNanodropDTO {

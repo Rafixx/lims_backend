@@ -1,4 +1,4 @@
-import ResRawQubit from '../models/importResult/ResRawQubit';
+import ResRawQubit from '../models/ResRawQubit';
 import { Transaction, InferCreationAttributes } from 'sequelize';
 
 export type CreateResRawQubitDTO = Omit<

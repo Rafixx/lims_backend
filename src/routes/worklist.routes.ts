@@ -9,11 +9,10 @@ import {
   updateWorklist,
   getPosiblesTecnicas,
   setTecnicoLab,
-  importDataResults,
-  importQubitDataResults,
+  // importDataResults,
   startTecnicasInWorklist,
 } from '../controllers/worklist.controller';
-import { uploadCSV } from '../middlewares/upload.middleware';
+// import { uploadCSV } from '../middlewares/upload.middleware';
 
 const router = Router();
 
@@ -53,18 +52,11 @@ router.put('/:id/setTecnicoLab', setTecnicoLab);
 router.put('/:id/startTecnicas', startTecnicasInWorklist);
 
 // POST /api/worklists/:id/importDataResults - Importar datos de resultados desde CSV
-router.post(
-  '/:id/importDataResults',
-  uploadCSV.single('file'),
-  importDataResults
-);
-
-// POST /api/worklists/:id/importQubitDataResults - Importar datos de resultados de Qubit desde CSV
-router.post(
-  '/:id/importQubitDataResults',
-  uploadCSV.single('file'),
-  importQubitDataResults
-);
+// router.post(
+//   '/:id/importDataResults',
+//   uploadCSV.single('file'),
+//   importDataResults
+// );
 
 // DELETE /api/worklists/:id - Eliminar worklist
 router.delete('/:id', deleteWorklist);

@@ -101,51 +101,29 @@ export class WorklistService {
     };
   }
 
-  /**
-   * Importa datos de resultados para un worklist desde un archivo CSV
-   * @param idWorklist ID del worklist
-   * @param csvBuffer Buffer del archivo CSV
-   * @returns Promise con el resultado de la operación
-   */
-  async importDataResults(idWorklist: number, csvBuffer: Buffer) {
-    const resultado = await this.workListRepo.importDataResults(
-      idWorklist,
-      csvBuffer
-    );
+  // /**
+  //  * Importa datos de resultados para un worklist desde un archivo CSV
+  //  * @param idWorklist ID del worklist
+  //  * @param csvBuffer Buffer del archivo CSV
+  //  * @returns Promise con el resultado de la operación
+  //  */
+  // async importDataResults(idWorklist: number, csvBuffer: Buffer) {
+  //   const resultado = await this.workListRepo.importDataResults(
+  //     idWorklist,
+  //     csvBuffer
+  //   );
 
-    if (!resultado.success) {
-      throw new Error(resultado.message);
-    }
-
-    return {
-      success: true,
-      message: resultado.message,
-      resultadosCreados: resultado.resultadosCreados,
-    };
-  }
-
-  /**
-   * Importa datos de resultados de Qubit para un worklist desde un archivo CSV
-   * @param idWorklist ID del worklist
-   * @param csvBuffer Buffer del archivo CSV de Qubit
-   * @returns Promise con el resultado de la operación
-   */
-  async importQubitDataResults(idWorklist: number, csvBuffer: Buffer) {
-    const resultado = await this.workListRepo.importQubitDataResults(
-      idWorklist,
-      csvBuffer
-    );
-
-    if (!resultado.success) {
-      throw new Error(resultado.message);
-    }
-
-    return {
-      success: true,
-      message: resultado.message,
-      resultadosCreados: resultado.resultadosCreados,
-    };
-  }
+  //   if (!resultado.success) {
+  //     throw new Error(resultado.message);
+  //   }
+  //   // console.log('Resultado:', resultado);
+  //   return {
+  //     success: true,
+  //     message: resultado.message,
+  //     type: resultado.type,
+  //     resultadosCreados: resultado.resultadosCreados,
+  //   };
+  // }
 
   async startTecnicasInWorklist(idWorklist: number) {
     // Verificar que la worklist existe

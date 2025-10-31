@@ -1201,6 +1201,113 @@ ALTER TABLE lims_pre.worklist_id_worklist_seq OWNER TO postgres;
 ALTER SEQUENCE lims_pre.worklist_id_worklist_seq OWNED BY lims_pre.worklist.id_worklist;
 
 
+/* Tablas para Resultados generados por las máquinas */
+
+-- Tablas RAW para insertar contenido de los ficheros generados sin procesar
+-- Su contenido se truncará después de cada Insert a la tabla final
+
+CREATE TABLE res_raw_nanodrop (
+	id SERIAL PRIMARY KEY,
+	fecha VARCHAR(50),
+	sample_code VARCHAR(50),
+	an_cant VARCHAR(50),
+	a260_280 VARCHAR(50),
+	a260_230 VARCHAR(50),
+	a260 VARCHAR(50),
+	a280 VARCHAR(50),
+	an_factor VARCHAR(50),
+	correcion_lb VARCHAR(50),
+	absorbancia_lb VARCHAR(50),
+	corregida VARCHAR(50),
+	porc_corregido VARCHAR(50),
+	impureza1 VARCHAR(50),
+	impureza1_a260 VARCHAR(50),
+	impureza1_porc VARCHAR(50),
+	impureza1_mm VARCHAR(50),
+	impureza2 VARCHAR(50),
+	impureza2_a260 VARCHAR(50),
+	impureza2_porc VARCHAR(50),
+	impureza2_mm VARCHAR(50),
+	impureza3 VARCHAR(50),
+	impureza3_a260 VARCHAR(50),
+	impureza3_porc VARCHAR(50),
+	impureza3_mm VARCHAR(50),
+	createdAt timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+CREATE TABLE res_raw_qubit (
+	id SERIAL PRIMARY KEY,
+	run_id VARCHAR(50),
+	assay_name VARCHAR(50),
+	test_name VARCHAR(50),
+	test_date VARCHAR(50),
+	qubit_tube_conc VARCHAR(50),
+	qubit_units VARCHAR(50),
+	orig_conc VARCHAR(50),
+	orig_conc_units VARCHAR(50),
+	sample_volume_ul VARCHAR(50),
+	dilution_factor VARCHAR(50),
+	std1_rfu VARCHAR(50),
+	std2_rfu VARCHAR(50),
+	std3_rfu VARCHAR(50),
+	excitation VARCHAR(50),
+	emission VARCHAR(50),
+	green_rfu VARCHAR(50),
+	far_red_rfu VARCHAR(50),
+	fecha TIMESTAMP,
+	createdAt timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Tablas finales por cada máquina, dando formato
+-- La idea es almacenar X días la información que se cargue, controlando con el campo "Procesado"
+CREATE TABLE res_final_nanodrop (
+	id SERIAL PRIMARY KEY,
+	codigo_epi VARCHAR, -- REFERENCES muestra(codigo_epi), --camp sample_code de tabla RAW
+	valor_conc_nucleico NUMERIC, --camp an_cant de tabla RAW
+	valor_uds VARCHAR DEFAULT 'ng/uL',
+    valor_fecha VARCHAR, --camp fecha de tabla RAW
+	ratio260_280 NUMERIC, --camp a260_280 de tabla RAW
+	ratio260_230 NUMERIC, --camp a260_230 de tabla RAW
+	abs_260 NUMERIC, --camp a260 de tabla RAW
+	abs_280 NUMERIC, --camp a280 de tabla RAW
+	--an_factor NUMERIC,
+	--correcion_lb NUMERIC,
+	--absorbancia_lb NUMERIC,
+	analizador VARCHAR DEFAULT 'NanoDrop',
+	procesado BOOLEAN DEFAULT FALSE,
+	create_dt timestamp DEFAULT now(),
+    update_dt timestamp DEFAULT now(),
+    created_by int,
+    updated_by int   
+);
+
+
+CREATE TABLE res_final_qubit (
+	id SERIAL PRIMARY KEY,
+	codigo_epi VARCHAR, -- REFERENCES muestra(codigo_epi), --camp test_name de tabla RAW
+	valor VARCHAR, --camp orig_conc de tabla RAW
+	valor_uds VARCHAR, --camp orig_conc_units de tabla RAW
+	valor_fecha VARCHAR, --camp test_date de tabla RAW 
+    tipo_ensayo VARCHAR, --camp assay_name de tabla RAW (dsDNA, RNA, etc.)
+	qubit_valor VARCHAR(50), --camp qubit_conc de tabla RAW
+	qubit_uds VARCHAR(50), --camp qubit_conc_uds de tabla RAW
+	--sample_volume_ul VARCHAR(50),
+	--dilution_factor VARCHAR(50),
+	analizador VARCHAR DEFAULT 'Qubit',
+	procesado BOOLEAN DEFAULT FALSE,
+	create_dt timestamp DEFAULT now(),
+    update_dt timestamp DEFAULT now(),
+    created_by int,
+    updated_by int   
+);
+
+/* Fin de Tablas para Resultados */
+
+
+
 --
 -- TOC entry 3367 (class 2604 OID 27754)
 -- Name: dim_cat_resultados id; Type: DEFAULT; Schema: lims_pre; Owner: postgres
