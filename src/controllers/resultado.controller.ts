@@ -229,3 +229,51 @@ export const setCSVtoRAW = async (
     next(error);
   }
 };
+
+/**
+ * Procesa datos RAW con mapeo de worklist
+ * POST /api/resultados/processWithMapping
+ * Body: { id_worklist, mapeo: { sample_code: codigo_epi }, tipo: 'NANODROP' | 'QUBIT' }
+ */
+export const processWithMapping = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id_worklist, mapeo, tipo } = req.body;
+
+    // Validaciones
+    if (!id_worklist || id_worklist <= 0) {
+      throw new BadRequestError('id_worklist es requerido y debe ser positivo');
+    }
+
+    if (!mapeo || typeof mapeo !== 'object') {
+      throw new BadRequestError('mapeo es requerido y debe ser un objeto');
+    }
+
+    if (!tipo || !['NANODROP', 'QUBIT'].includes(tipo)) {
+      throw new BadRequestError('tipo debe ser "NANODROP" o "QUBIT"');
+    }
+
+    // Ejecutar procesamiento según el tipo
+    let resultado;
+    if (tipo === 'NANODROP') {
+      resultado = await resultadoNanodropService.processWithMapping(
+        id_worklist,
+        mapeo,
+        0 // TODO: Obtener ID del usuario autenticado
+      );
+    } else {
+      resultado = await resultadoQubitService.processWithMapping(
+        id_worklist,
+        mapeo,
+        0 // TODO: Obtener ID del usuario autenticado
+      );
+    }
+
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};

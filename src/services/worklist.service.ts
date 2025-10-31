@@ -1,4 +1,6 @@
 import { WorklistRepository } from '../repositories/worklist.repository';
+import resultadoNanodropService from './resultadoNanodrop.service';
+import resultadoQubitService from './resultadoQubit.service';
 
 interface CrearWorklistDTO {
   nombre?: string;
@@ -101,29 +103,53 @@ export class WorklistService {
     };
   }
 
-  // /**
-  //  * Importa datos de resultados para un worklist desde un archivo CSV
-  //  * @param idWorklist ID del worklist
-  //  * @param csvBuffer Buffer del archivo CSV
-  //  * @returns Promise con el resultado de la operación
-  //  */
-  // async importDataResults(idWorklist: number, csvBuffer: Buffer) {
-  //   const resultado = await this.workListRepo.importDataResults(
-  //     idWorklist,
-  //     csvBuffer
-  //   );
+  /**
+   * Importa datos de resultados para un worklist usando mapeo de filas
+   * RAW → FINAL → RESULTADO
+   * @param idWorklist ID del worklist
+   * @param mapping Record<number, number> - Índice de fila RAW → id_tecnica
+   * @param tipo 'NANODROP' | 'QUBIT'
+   * @returns Promise con el resultado de la operación
+   */
+  async importDataResults(
+    idWorklist: number,
+    mapping: Record<number, number>,
+    tipo: 'NANODROP' | 'QUBIT'
+  ) {
+    // Verificar que la worklist existe
+    const worklist = await this.workListRepo.findById(idWorklist);
+    if (!worklist) {
+      throw new Error('Worklist no encontrada');
+    }
 
-  //   if (!resultado.success) {
-  //     throw new Error(resultado.message);
-  //   }
-  //   // console.log('Resultado:', resultado);
-  //   return {
-  //     success: true,
-  //     message: resultado.message,
-  //     type: resultado.type,
-  //     resultadosCreados: resultado.resultadosCreados,
-  //   };
-  // }
+    // Delegar al servicio correspondiente
+    let resultado;
+    if (tipo === 'NANODROP') {
+      resultado = await resultadoNanodropService.processWithMapping(
+        idWorklist,
+        mapping,
+        0 // TODO: Obtener ID del usuario autenticado
+      );
+    } else {
+      resultado = await resultadoQubitService.processWithMapping(
+        idWorklist,
+        mapping,
+        0 // TODO: Obtener ID del usuario autenticado
+      );
+    }
+
+    if (!resultado.success) {
+      throw new Error(resultado.message);
+    }
+
+    return {
+      success: true,
+      message: resultado.message,
+      recordsProcessed: resultado.recordsProcessed,
+      resultsCreated: resultado.resultsCreated,
+      errors: resultado.errors,
+    };
+  }
 
   async startTecnicasInWorklist(idWorklist: number) {
     // Verificar que la worklist existe

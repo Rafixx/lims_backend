@@ -2,9 +2,11 @@
 import { Transaction } from 'sequelize';
 import { ResRawNanodrop } from '../models/ResRawNanodrop';
 import { Muestra } from '../models/Muestra';
+import { Tecnica } from '../models/Tecnica';
 import { ResFinalNanodropRepository } from '../repositories/resFinalNanodrop.repository';
 import { ResultadoRepository } from '../repositories/resultado.repository';
 import { sequelize } from '../config/db.config';
+import { ESTADO_TECNICA } from '../constants/estados.constants';
 
 interface ProcessNanodropResult {
   success: boolean;
@@ -12,6 +14,11 @@ interface ProcessNanodropResult {
   recordsProcessed: number;
   resultsCreated: number;
   errors: string[];
+}
+
+// Tipo para Tecnica con Muestra incluida
+interface TecnicaConMuestra extends Tecnica {
+  muestra?: Muestra | null;
 }
 
 /**
@@ -255,6 +262,195 @@ export class ResultadoNanodropService {
       const errorMsg =
         error instanceof Error ? error.message : 'Error desconocido';
       console.error('❌ Error en processUnprocessedFinal:', errorMsg);
+
+      return {
+        success: false,
+        message: `Error durante el procesamiento: ${errorMsg}`,
+        recordsProcessed: 0,
+        resultsCreated: 0,
+        errors: [...errors, errorMsg],
+      };
+    }
+  }
+
+  /**
+   * PASO 2 CON MAPEO: Procesa registros de ResRaw → ResFinal → Resultado
+   * Usa el worklist para obtener técnicas y un mapeo por índice de fila
+   *
+   * @param idWorklist ID del worklist para obtener técnicas
+   * @param mapeo Record<number, number> - Índice de fila RAW → id_tecnica
+   * @param createdBy ID del usuario que ejecuta el proceso
+   * @returns Resultado del procesamiento
+   */
+  async processWithMapping(
+    idWorklist: number,
+    mapeo: Record<number, number>,
+    createdBy: number
+  ): Promise<ProcessNanodropResult> {
+    const transaction: Transaction = await sequelize.transaction();
+    const errors: string[] = [];
+    let recordsProcessed = 0;
+    let resultsCreated = 0;
+
+    try {
+      // 1. Obtener todos los registros raw
+      const rawRecords = await ResRawNanodrop.findAll({ transaction });
+
+      if (rawRecords.length === 0) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: 'No hay datos en la tabla res_raw_nanodrop',
+          recordsProcessed: 0,
+          resultsCreated: 0,
+          errors: [],
+        };
+      }
+
+      console.log(
+        `📊 [PROCESO CON MAPEO] Procesando ${rawRecords.length} registros raw con worklist ${idWorklist}...`
+      );
+
+      // 2. Obtener técnicas del worklist
+      const tecnicas = (await Tecnica.findAll({
+        where: { id_worklist: idWorklist },
+        include: [
+          {
+            model: Muestra,
+            as: 'muestra',
+            attributes: ['id_muestra', 'codigo_epi'],
+          },
+        ],
+        transaction,
+      })) as unknown as TecnicaConMuestra[];
+
+      if (tecnicas.length === 0) {
+        await transaction.rollback();
+        return {
+          success: false,
+          message: `No se encontraron técnicas para el worklist ${idWorklist}`,
+          recordsProcessed: 0,
+          resultsCreated: 0,
+          errors: [],
+        };
+      }
+
+      console.log(`✅ Encontradas ${tecnicas.length} técnicas en el worklist`);
+
+      // 3. Procesar cada registro raw usando el mapeo por índice
+      for (let index = 0; index < rawRecords.length; index++) {
+        const raw = rawRecords[index];
+
+        try {
+          if (!raw.sample_code) {
+            errors.push(`Registro raw índice ${index}: sample_code vacío`);
+            continue;
+          }
+
+          // 3.1 Transformar y guardar en res_final_nanodrop
+          const parseFloat = (value: string | null): number | null => {
+            if (!value) return null;
+            const numStr = value.replace(',', '.');
+            const num = Number(numStr);
+            return !isNaN(num) ? num : null;
+          };
+
+          await this.resFinalNanodropRepository.create(
+            {
+              codigo_epi: raw.sample_code,
+              valor_conc_nucleico: parseFloat(raw.an_cant),
+              valor_uds: 'ng/uL',
+              ratio260_280: parseFloat(raw.a260_280),
+              ratio260_230: parseFloat(raw.a260_230),
+              abs_260: parseFloat(raw.a260),
+              abs_280: parseFloat(raw.a280),
+              analizador: 'NanoDrop',
+              valor_fecha: raw.fecha || null,
+              procesado: false,
+              created_by: createdBy,
+              updated_by: null,
+            },
+            transaction
+          );
+
+          recordsProcessed++;
+
+          // 3.2 Buscar id_tecnica usando el mapeo por índice
+          const idTecnicaMapeado = mapeo[index];
+          if (!idTecnicaMapeado) {
+            errors.push(
+              `Registro raw índice ${index}: No hay mapeo para este índice`
+            );
+            continue;
+          }
+
+          // 3.3 Buscar la técnica por id_tecnica
+          const tecnicaMatch = tecnicas.find(
+            (t) => t.id_tecnica === idTecnicaMapeado
+          );
+
+          if (!tecnicaMatch || !tecnicaMatch.muestra) {
+            errors.push(
+              `Registro raw índice ${index}: No se encontró técnica con id_tecnica=${idTecnicaMapeado}`
+            );
+            continue;
+          }
+
+          // 3.4 Crear resultado
+          await this.resultadoRepository.create(
+            {
+              id_muestra: tecnicaMatch.muestra.id_muestra,
+              id_tecnica: tecnicaMatch.id_tecnica,
+              tipo_res: 'ESPECTROFOTOMETRIA',
+              valor: raw.an_cant || undefined,
+              valor_texto: `A260/280: ${raw.a260_280 || 'N/A'} | A260/230: ${raw.a260_230 || 'N/A'}`,
+              unidades: 'ng/uL',
+              f_resultado: new Date(),
+              validado: false,
+              created_by: createdBy,
+            },
+            transaction
+          );
+
+          // 3.5 Cambiar el estado de la técnica a COMPLETADA
+          await Tecnica.update(
+            {
+              id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA,
+              fecha_estado: new Date(),
+            },
+            {
+              where: { id_tecnica: tecnicaMatch.id_tecnica },
+              transaction,
+            }
+          );
+
+          resultsCreated++;
+        } catch (error) {
+          const errorMsg = `Error procesando registro raw índice ${index}: ${
+            error instanceof Error ? error.message : 'Error desconocido'
+          }`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
+        }
+      }
+
+      await transaction.commit();
+      console.log(
+        `✅ [PROCESO CON MAPEO] Completado: ${recordsProcessed} registros → Final, ${resultsCreated} resultados creados`
+      );
+
+      return {
+        success: resultsCreated > 0,
+        message: `Proceso completado: ${recordsProcessed} registros procesados, ${resultsCreated} resultados creados`,
+        recordsProcessed,
+        resultsCreated,
+        errors,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      const errorMsg =
+        error instanceof Error ? error.message : 'Error desconocido';
+      console.error('❌ Error en processWithMapping:', errorMsg);
 
       return {
         success: false,

@@ -9,7 +9,7 @@ import {
   updateWorklist,
   getPosiblesTecnicas,
   setTecnicoLab,
-  // importDataResults,
+  importDataResults,
   startTecnicasInWorklist,
 } from '../controllers/worklist.controller';
 // import { uploadCSV } from '../middlewares/upload.middleware';
@@ -51,12 +51,8 @@ router.put('/:id/setTecnicoLab', setTecnicoLab);
 // PUT /api/worklists/:id/startTecnicas - Iniciar técnicas de un worklist
 router.put('/:id/startTecnicas', startTecnicasInWorklist);
 
-// POST /api/worklists/:id/importDataResults - Importar datos de resultados desde CSV
-// router.post(
-//   '/:id/importDataResults',
-//   uploadCSV.single('file'),
-//   importDataResults
-// );
+// POST /api/worklists/:id/importDataResults - Procesar datos RAW con mapeo
+router.post('/:id/importDataResults', importDataResults);
 
 // DELETE /api/worklists/:id - Eliminar worklist
 router.delete('/:id', deleteWorklist);

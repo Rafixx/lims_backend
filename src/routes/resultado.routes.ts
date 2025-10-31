@@ -11,6 +11,7 @@ import {
   getRawNanodropResultados,
   getRawQubitResultados,
   setCSVtoRAW,
+  processWithMapping,
 } from '../controllers/resultado.controller';
 import { uploadCSV } from '../middlewares/upload.middleware';
 
@@ -35,6 +36,9 @@ router.post('/batch', createResultadosBatch);
 
 // POST /api/resultados/setCSVtoRAW - Establecer datos CSV a RAW
 router.post('/setCSVtoRAW', uploadCSV.single('file'), setCSVtoRAW);
+
+// POST /api/resultados/processWithMapping - Procesar RAW con mapeo de worklist
+router.post('/processWithMapping', processWithMapping);
 
 // ========== RUTAS GENERALES ==========
 

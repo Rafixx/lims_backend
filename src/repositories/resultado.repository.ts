@@ -10,8 +10,6 @@ import {
   ResRawQubitRepository,
   CreateResRawQubitDTO,
 } from './resRawQubit.repository';
-import resultadoNanodropService from '../services/resultadoNanodrop.service';
-import resultadoQubitService from '../services/resultadoQubit.service';
 
 export interface CreateResultadoDTO {
   id_muestra: number;
@@ -43,14 +41,10 @@ export interface UpdateResultadoDTO {
 type ImportType = 'NANODROP' | 'QUBIT';
 
 export class ResultadoRepository {
-  private resultadoRepository: ResultadoRepository;
-  // private tecnicaRepository: TecnicaRepository;
   private resRawNanodropRepository: ResRawNanodropRepository;
   private resRawQubitRepository: ResRawQubitRepository;
 
   constructor() {
-    this.resultadoRepository = new ResultadoRepository();
-    // this.tecnicaRepository = new TecnicaRepository();
     this.resRawNanodropRepository = new ResRawNanodropRepository();
     this.resRawQubitRepository = new ResRawQubitRepository();
   }
@@ -465,36 +459,6 @@ export class ResultadoRepository {
       message: 'Datos raw de Nanodrop importados correctamente',
       type: 'NANODROP',
     };
-
-    // Procesar los datos: raw → final → resultado
-    // El servicio maneja toda la lógica de transformación y relaciones
-    console.log('🔄 Iniciando procesamiento de datos Nanodrop...');
-
-    const procesamientoResult =
-      await resultadoNanodropService.processRawToFinal(
-        0 // TODO: Obtener ID del usuario logueado
-      );
-
-    if (!procesamientoResult.success) {
-      return {
-        success: false,
-        message: `Error en el procesamiento: ${procesamientoResult.message}`,
-        resultadosCreados: 0,
-      };
-    }
-
-    // Generar mensaje con detalles del procesamiento
-    const mensajeBase = `✅ Importación completada: ${procesamientoResult.recordsProcessed} registros procesados, ${procesamientoResult.resultsCreated} resultados creados`;
-    const mensajeErrores =
-      procesamientoResult.errors.length > 0
-        ? `\n⚠️ Advertencias: ${procesamientoResult.errors.slice(0, 3).join('; ')}${procesamientoResult.errors.length > 3 ? '...' : ''}`
-        : '';
-
-    return {
-      success: true,
-      message: mensajeBase + mensajeErrores,
-      resultadosCreados: procesamientoResult.resultsCreated,
-    };
   }
 
   /**
@@ -599,35 +563,6 @@ export class ResultadoRepository {
       success: true,
       message: 'Datos raw de Qubit importados correctamente',
       type: 'QUBIT',
-    };
-
-    // Procesar los datos: raw → final → resultado
-    // El servicio maneja toda la lógica de transformación y relaciones
-    console.log('🔄 Iniciando procesamiento de datos Qubit...');
-
-    const procesamientoResult = await resultadoQubitService.processRawToFinal(
-      0 // TODO: Obtener ID del usuario logueado
-    );
-
-    if (!procesamientoResult.success) {
-      return {
-        success: false,
-        message: `Error en el procesamiento: ${procesamientoResult.message}`,
-        resultadosCreados: 0,
-      };
-    }
-
-    // Generar mensaje con detalles del procesamiento
-    const mensajeBase = `✅ Importación Qubit completada: ${procesamientoResult.recordsProcessed} registros procesados, ${procesamientoResult.resultsCreated} resultados creados`;
-    const mensajeErrores =
-      procesamientoResult.errors.length > 0
-        ? `\n⚠️ Advertencias: ${procesamientoResult.errors.slice(0, 3).join('; ')}${procesamientoResult.errors.length > 3 ? '...' : ''}`
-        : '';
-
-    return {
-      success: true,
-      message: mensajeBase + mensajeErrores,
-      resultadosCreados: procesamientoResult.resultsCreated,
     };
   }
 
