@@ -7,6 +7,7 @@ import { muestraRoutes } from './routes/muestra.routes';
 import { tecnicaRoutes } from './routes/tecnica.routes';
 import { dimClienteRoutes } from './routes/dimCliente.routes';
 import { dimPlantillaTecnicaRoutes } from './routes/dimPlantillaTecnica.routes';
+import { dimPlantillaPasosRoutes } from './routes/dimPlantillaPasos.routes';
 import { dimPruebaRoutes } from './routes/dimPrueba.routes';
 import { dimTecnicaProcRoutes } from './routes/dimTecnicaProc.routes';
 import { authRoutes } from './routes/auth.routes';
@@ -41,6 +42,7 @@ app.use('/api/muestras', muestraRoutes);
 app.use('/api/tecnicas', tecnicaRoutes);
 app.use('/api/clientes', dimClienteRoutes);
 app.use('/api/plantillasTecnicas', dimPlantillaTecnicaRoutes);
+app.use('/api/plantillasPasos', dimPlantillaPasosRoutes);
 app.use('/api/pruebas', dimPruebaRoutes);
 app.use('/api/tecnicasProc', dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuarioRoutes);
@@ -58,6 +60,7 @@ app.use('/api/tecnicosLab', tecnicoLabRoutes);
 app.use('/api/worklists', worklistRouter);
 app.use('/api/resultados', resultadoRouter);
 app.use('/api/estados', estadoRoutes);
+app.use('/api/plantillasPasos', dimPlantillaPasosRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);

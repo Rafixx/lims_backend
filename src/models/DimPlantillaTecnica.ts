@@ -93,6 +93,10 @@ export class DimPlantillaTecnica extends Model<
       foreignKey: 'id_plantilla_tecnica',
       as: 'dimReactivos',
     });
+    this.hasMany(models.DimPlantillaPasos, {
+      foreignKey: 'id_plantilla_tecnica',
+      as: 'dimPlantillaPasos',
+    });
 
     // Definir scope después de que las asociaciones estén configuradas
     this.addScope('withRefs', {
@@ -112,6 +116,10 @@ export class DimPlantillaTecnica extends Model<
         {
           model: models.DimReactivo,
           as: 'dimReactivos',
+        },
+        {
+          model: models.DimPlantillaPasos,
+          as: 'dimPlantillaPasos',
         },
       ],
     });

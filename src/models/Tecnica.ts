@@ -238,7 +238,7 @@ export class Tecnica extends Model<
         entidad: 'TECNICA',
       },
     });
-    this.hasOne(models.Resultado, {
+    this.hasMany(models.Resultado, {
       foreignKey: 'id_tecnica',
       as: 'resultados',
     });

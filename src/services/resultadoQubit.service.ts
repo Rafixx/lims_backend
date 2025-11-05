@@ -8,6 +8,8 @@ import { ResultadoRepository } from '../repositories/resultado.repository';
 import { sequelize } from '../config/db.config';
 import { ESTADO_TECNICA } from '../constants/estados.constants';
 import { TecnicaRepository } from '../repositories/tecnica.repository';
+import { resultadosKeyFields } from '../constants/resultadosKeyFields';
+import { parseDateES } from '../utils/helper';
 
 interface ProcessQubitResult {
   success: boolean;
@@ -213,27 +215,45 @@ export class ResultadoQubitService {
             continue;
           }
 
-          // Crear resultado
-          const fechaResultado = finalRecord.valor_fecha
-            ? new Date(finalRecord.valor_fecha)
-            : new Date();
+          // Parsear fecha en formato español DD/MM/YYYY HH:MM:SS
+          const fechaResultado =
+            parseDateES(finalRecord.valor_fecha ?? undefined, true) ||
+            new Date();
 
-          await this.resultadoRepository.create(
-            {
-              id_muestra: muestra.id_muestra,
-              id_tecnica: 0, // TODO: Implementar relación con técnica
-              tipo_res: 'FLUOROMETRIA',
-              valor: finalRecord.valor || undefined,
-              valor_texto: `${finalRecord.tipo_ensayo || 'N/A'} | Qubit: ${finalRecord.qubit_valor || 'N/A'} ${finalRecord.qubit_uds || ''}`,
-              unidades: finalRecord.valor_uds || 'ng/uL',
-              f_resultado: fechaResultado,
-              validado: false,
-              created_by: createdBy,
-            },
-            transaction
-          );
+          // Generar un resultado por cada campo definido en resultadosKeyFields.QUBIT
+          for (const keyField of resultadosKeyFields.QUBIT) {
+            // Obtener el valor del campo dinámicamente
+            const valorCampo =
+              finalRecord[keyField.valor as keyof typeof finalRecord];
+            const unidadesCampo =
+              finalRecord[keyField.unidades as keyof typeof finalRecord];
 
-          resultsCreated++;
+            // Si el campo no tiene valor, lo omitimos
+            if (valorCampo === null || valorCampo === undefined) {
+              console.log(
+                `⚠️ Campo ${keyField.valor} vacío en registro ID ${finalRecord.id}, se omite`
+              );
+              continue;
+            }
+
+            await this.resultadoRepository.create(
+              {
+                id_muestra: muestra.id_muestra,
+                id_tecnica: 0, // TODO: Implementar relación con técnica
+                tipo_res: 'FLUOROMETRIA',
+                valor: valorCampo?.toString() || undefined,
+                valor_texto: `Campo: ${keyField.valor} | Tipo ensayo: ${finalRecord.tipo_ensayo || 'N/A'}`,
+                unidades: unidadesCampo?.toString() || 'ng/uL',
+                valor_fecha: fechaResultado,
+                f_resultado: fechaResultado,
+                validado: false,
+                created_by: createdBy,
+              },
+              transaction
+            );
+
+            resultsCreated++;
+          }
 
           // Marcar como procesado
           await this.resFinalQubitRepository.markAsProcessed(
@@ -347,7 +367,12 @@ export class ResultadoQubitService {
         const raw = rawRecords[index];
 
         try {
+          console.log(
+            `🔍 Procesando registro ${index}: test_name="${raw.test_name}"`
+          );
+
           if (!raw.test_name) {
+            console.log(`❌ Registro ${index}: test_name vacío`);
             errors.push(`Registro raw índice ${index}: test_name vacío`);
             continue;
           }
@@ -376,11 +401,17 @@ export class ResultadoQubitService {
             transaction
           );
 
+          console.log(`✅ Registro ${index} guardado en res_final_qubit`);
           recordsProcessed++;
 
           // 3.2 Buscar id_tecnica usando el mapeo por índice
           const idTecnicaMapeado = mapeo[index];
+          console.log(
+            `🔍 Mapeo para índice ${index}: id_tecnica=${idTecnicaMapeado}`
+          );
+
           if (!idTecnicaMapeado) {
+            console.log(`❌ Registro ${index}: No hay mapeo para este índice`);
             errors.push(
               `Registro raw índice ${index}: No hay mapeo para este índice`
             );
@@ -392,30 +423,94 @@ export class ResultadoQubitService {
             (t) => t.id_tecnica === idTecnicaMapeado
           );
 
+          console.log(
+            `🔍 Técnica encontrada:`,
+            tecnicaMatch
+              ? `id=${tecnicaMatch.id_tecnica}, muestra=${tecnicaMatch.muestra?.codigo_epi}`
+              : 'NO ENCONTRADA'
+          );
+
           if (!tecnicaMatch || !tecnicaMatch.muestra) {
+            console.log(
+              `❌ Registro ${index}: Técnica o muestra no encontrada`
+            );
             errors.push(
               `Registro raw índice ${index}: No se encontró técnica con id_tecnica=${idTecnicaMapeado}`
             );
             continue;
           }
 
-          // 3.4 Crear resultado
-          await this.resultadoRepository.create(
-            {
-              id_muestra: tecnicaMatch.muestra.id_muestra,
-              id_tecnica: tecnicaMatch.id_tecnica,
-              tipo_res: 'FLUOROMETRIA',
-              valor: raw.orig_conc || undefined,
-              valor_texto: `Qubit: ${raw.qubit_tube_conc || 'N/A'} | Assay: ${raw.assay_name || 'N/A'}`,
-              unidades: raw.orig_conc_units || 'ng/uL',
-              f_resultado: new Date(),
-              validado: false,
-              created_by: createdBy,
-            },
-            transaction
+          // 3.4 Obtener el registro final que acabamos de crear
+          console.log(
+            `🔍 Buscando registro final con codigo_epi="${raw.test_name}"`
+          );
+          const finalRecords =
+            await this.resFinalQubitRepository.findByCodigoEpi(raw.test_name);
+
+          console.log(
+            `📦 Registros finales encontrados: ${finalRecords.length}`
           );
 
-          // 3.5 Cambiar el estado de la técnica a COMPLETADA
+          if (finalRecords.length === 0) {
+            console.log(
+              `❌ Registro ${index}: No se encontró el registro final`
+            );
+            errors.push(
+              `Registro raw índice ${index}: No se encontró el registro final con codigo_epi=${raw.test_name}`
+            );
+            continue;
+          }
+
+          // Tomar el registro más reciente
+          const registro = finalRecords[finalRecords.length - 1];
+          console.log(
+            `✅ Registro final obtenido: id=${registro.id}, valor="${registro.valor}", qubit_valor="${registro.qubit_valor}"`
+          );
+
+          // Parsear fecha en formato español DD/MM/YYYY HH:MM:SS
+          const fechaResultado =
+            parseDateES(registro.valor_fecha ?? undefined, true) || new Date();
+          console.log(`📅 Fecha parseada: ${fechaResultado.toISOString()}`);
+
+          // 3.5 Crear múltiples resultados según resultadosKeyFields.QUBIT
+          console.log(
+            `📊 Procesando ${resultadosKeyFields.QUBIT.length} campos para técnica ${tecnicaMatch.id_tecnica}`
+          );
+
+          for (const keyField of resultadosKeyFields.QUBIT) {
+            const valorCampo =
+              registro[keyField.valor as keyof typeof registro];
+            const unidadesCampo =
+              registro[keyField.unidades as keyof typeof registro];
+
+            console.log(`  → Campo: ${keyField.valor} = ${valorCampo}`);
+
+            if (valorCampo === null || valorCampo === undefined) {
+              console.log(`  ⚠️ Campo ${keyField.valor} vacío, se omite`);
+              continue;
+            }
+
+            await this.resultadoRepository.create(
+              {
+                id_muestra: tecnicaMatch.muestra.id_muestra,
+                id_tecnica: tecnicaMatch.id_tecnica,
+                tipo_res: keyField.valor,
+                valor: valorCampo?.toString() || undefined,
+                valor_texto: ``,
+                unidades: unidadesCampo?.toString() || '',
+                valor_fecha: fechaResultado,
+                f_resultado: new Date(),
+                validado: false,
+                created_by: createdBy,
+              },
+              transaction
+            );
+
+            console.log(`  ✅ Resultado creado para campo ${keyField.valor}`);
+            resultsCreated++;
+          }
+
+          // 3.6 Cambiar el estado de la técnica a COMPLETADA
           await Tecnica.update(
             {
               id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA,
@@ -426,8 +521,6 @@ export class ResultadoQubitService {
               transaction,
             }
           );
-
-          resultsCreated++;
         } catch (error) {
           const errorMsg = `Error procesando registro raw índice ${index}: ${
             error instanceof Error ? error.message : 'Error desconocido'

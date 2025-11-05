@@ -7,6 +7,8 @@ import { ResFinalNanodropRepository } from '../repositories/resFinalNanodrop.rep
 import { ResultadoRepository } from '../repositories/resultado.repository';
 import { sequelize } from '../config/db.config';
 import { ESTADO_TECNICA } from '../constants/estados.constants';
+import { resultadosKeyFields } from '../constants/resultadosKeyFields';
+import { parseDateES } from '../utils/helper';
 
 interface ProcessNanodropResult {
   success: boolean;
@@ -208,29 +210,57 @@ export class ResultadoNanodropService {
             continue;
           }
 
-          // Crear resultado
+          // Fecha del resultado
           const fechaResultado = finalRecord.valor_fecha
             ? new Date(finalRecord.valor_fecha)
             : new Date();
 
-          await this.resultadoRepository.create(
-            {
-              id_muestra: muestra.id_muestra,
-              id_tecnica: 0, // TODO: Implementar relación con técnica
-              tipo_res: 'ESPECTROFOTOMETRIA',
-              valor: finalRecord.valor_conc_nucleico?.toString() || undefined,
-              valor_texto: `A260/280: ${finalRecord.ratio260_280 || 'N/A'} | A260/230: ${finalRecord.ratio260_230 || 'N/A'}`,
-              unidades: finalRecord.valor_uds || 'ng/uL',
-              f_resultado: fechaResultado,
-              validado: false,
-              created_by: createdBy,
-            },
-            transaction
+          // Generar un resultado por cada campo definido en resultadosKeyFields.NANODROP
+          console.log(
+            `📊 Procesando registro final ID ${finalRecord.id} con ${resultadosKeyFields.NANODROP.length} campos`
           );
 
-          resultsCreated++;
+          for (const keyField of resultadosKeyFields.NANODROP) {
+            // Obtener el valor del campo dinámicamente
+            const valorCampo =
+              finalRecord[keyField.valor as keyof typeof finalRecord];
+            const unidadesCampo =
+              finalRecord[keyField.unidades as keyof typeof finalRecord];
 
-          // Marcar como procesado
+            console.log(
+              `  → Campo: ${keyField.valor} = ${valorCampo} (${typeof valorCampo})`
+            );
+            console.log(
+              `  → Unidades: ${keyField.unidades} = ${unidadesCampo}`
+            );
+
+            // Si el campo no tiene valor, lo omitimos
+            if (valorCampo === null || valorCampo === undefined) {
+              console.log(
+                `  ⚠️ Campo ${keyField.valor} vacío en registro ID ${finalRecord.id}, se omite`
+              );
+              continue;
+            }
+
+            await this.resultadoRepository.create(
+              {
+                id_muestra: muestra.id_muestra,
+                id_tecnica: 0, // TODO: Implementar relación con técnica
+                tipo_res: 'ESPECTROFOTOMETRIA',
+                valor: valorCampo?.toString() || undefined,
+                valor_texto: `Campo: ${keyField.valor}`,
+                unidades: unidadesCampo?.toString() || 'ng/uL',
+                valor_fecha: fechaResultado,
+                f_resultado: fechaResultado,
+                validado: false,
+                created_by: createdBy,
+              },
+              transaction
+            );
+
+            console.log(`  ✅ Resultado creado para campo ${keyField.valor}`);
+            resultsCreated++;
+          } // Marcar como procesado
           await this.resFinalNanodropRepository.markAsProcessed(
             finalRecord.id,
             createdBy,
@@ -396,23 +426,65 @@ export class ResultadoNanodropService {
             continue;
           }
 
-          // 3.4 Crear resultado
-          await this.resultadoRepository.create(
-            {
-              id_muestra: tecnicaMatch.muestra.id_muestra,
-              id_tecnica: tecnicaMatch.id_tecnica,
-              tipo_res: 'ESPECTROFOTOMETRIA',
-              valor: raw.an_cant || undefined,
-              valor_texto: `A260/280: ${raw.a260_280 || 'N/A'} | A260/230: ${raw.a260_230 || 'N/A'}`,
-              unidades: 'ng/uL',
-              f_resultado: new Date(),
-              validado: false,
-              created_by: createdBy,
-            },
-            transaction
+          // 3.4 Obtener el registro final que acabamos de crear
+          const finalRecords =
+            await this.resFinalNanodropRepository.findByCodigoEpi(
+              raw.sample_code
+            );
+
+          if (finalRecords.length === 0) {
+            errors.push(
+              `Registro raw índice ${index}: No se encontró el registro final con codigo_epi=${raw.sample_code}`
+            );
+            continue;
+          }
+
+          // Tomar el registro más reciente
+          const registro = finalRecords[finalRecords.length - 1];
+
+          // Parsear fecha en formato español DD/MM/YYYY HH:MM:SS
+          const fechaResultado =
+            parseDateES(registro.valor_fecha ?? undefined, true) || new Date();
+
+          // 3.5 Crear múltiples resultados según resultadosKeyFields.NANODROP
+          console.log(
+            `📊 Procesando ${resultadosKeyFields.NANODROP.length} campos para técnica ${tecnicaMatch.id_tecnica}`
           );
 
-          // 3.5 Cambiar el estado de la técnica a COMPLETADA
+          for (const keyField of resultadosKeyFields.NANODROP) {
+            const valorCampo =
+              registro[keyField.valor as keyof typeof registro];
+            const unidadesCampo =
+              registro[keyField.unidades as keyof typeof registro];
+
+            console.log(`  → Campo: ${keyField.valor} = ${valorCampo}`);
+
+            if (valorCampo === null || valorCampo === undefined) {
+              console.log(`  ⚠️ Campo ${keyField.valor} vacío, se omite`);
+              continue;
+            }
+
+            await this.resultadoRepository.create(
+              {
+                id_muestra: tecnicaMatch.muestra.id_muestra,
+                id_tecnica: tecnicaMatch.id_tecnica,
+                tipo_res: keyField.valor,
+                valor: valorCampo?.toString() || undefined,
+                valor_texto: ``,
+                unidades: unidadesCampo?.toString() || '',
+                valor_fecha: fechaResultado,
+                f_resultado: new Date(),
+                validado: false,
+                created_by: createdBy,
+              },
+              transaction
+            );
+
+            console.log(`  ✅ Resultado creado para campo ${keyField.valor}`);
+            resultsCreated++;
+          }
+
+          // 3.6 Cambiar el estado de la técnica a COMPLETADA
           await Tecnica.update(
             {
               id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA,
@@ -423,8 +495,6 @@ export class ResultadoNanodropService {
               transaction,
             }
           );
-
-          resultsCreated++;
         } catch (error) {
           const errorMsg = `Error procesando registro raw índice ${index}: ${
             error instanceof Error ? error.message : 'Error desconocido'
