@@ -14,6 +14,7 @@ import { DimPlantillaTecnica } from './DimPlantillaTecnica';
 import { DimPipeta } from './DimPipeta';
 import { DimReactivo } from './DimReactivo';
 import { DimMaquina } from './DimMaquina';
+import { DimPlantillaPasos } from './DimPlantillaPasos';
 
 export class DimTecnicaProc extends Model<
   InferAttributes<DimTecnicaProc>,
@@ -108,6 +109,10 @@ export class DimTecnicaProc extends Model<
             {
               model: DimMaquina,
               as: 'dimMaquinas',
+            },
+            {
+              model: DimPlantillaPasos,
+              as: 'dimPlantillaPasos',
             },
           ],
 

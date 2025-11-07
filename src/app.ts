@@ -22,6 +22,7 @@ import { dimMaquinaRoutes } from './routes/dimMaquina.routes';
 import { dimCentroRoutes } from './routes/dimCentro.routes';
 import { dimCriterioValidacionRoutes } from './routes/dimCriterioValidacion.routes';
 import { tecnicoLabRoutes } from './routes/tecnicoLab.routes';
+import { tecnicaReactivoRoutes } from './routes/tecnicaReactivo.routes';
 import { worklistRouter } from './routes/worklist.routes';
 import { resultadoRouter } from './routes/resultado.routes';
 import estadoRoutes from './routes/estado.routes';
@@ -57,10 +58,10 @@ app.use('/api/maquinas', dimMaquinaRoutes);
 app.use('/api/centros', dimCentroRoutes);
 app.use('/api/criteriosValidacion', dimCriterioValidacionRoutes);
 app.use('/api/tecnicosLab', tecnicoLabRoutes);
+app.use('/api/tecnicasReactivos', tecnicaReactivoRoutes);
 app.use('/api/worklists', worklistRouter);
 app.use('/api/resultados', resultadoRouter);
 app.use('/api/estados', estadoRoutes);
-app.use('/api/plantillasPasos', dimPlantillaPasosRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);
