@@ -6,9 +6,17 @@ import {
   createTecnicaReactivo,
   updateTecnicaReactivo,
   deleteTecnicaReactivo,
+  batchUpdateTecnicasReactivos,
 } from '../controllers/tecnicaReactivo.controller';
 
 const router = Router();
+
+// ========== RUTAS ESPECÍFICAS (DEBEN IR PRIMERO) ==========
+
+// PATCH /api/tecnicasReactivos/batch - Actualización masiva de lotes
+router.patch('/batch', batchUpdateTecnicasReactivos);
+
+// ========== RUTAS GENERALES ==========
 
 // GET /api/tecnicasReactivos - Obtener todas las relaciones técnica-reactivo
 router.get('/', getAllTecnicaReactivos);

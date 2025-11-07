@@ -7,6 +7,9 @@ import { DimEstado } from '../models/DimEstado';
 // import { ResultadoRepository } from './resultado.repository';
 // import { Resultado } from '../models/Resultado';
 import { TecnicaRepository } from './tecnica.repository';
+import { TecnicaReactivo } from '../models/TecnicaReactivo';
+import { DimReactivo } from '../models/DimReactivo';
+import { DimPlantillaTecnica } from '../models/DimPlantillaTecnica';
 // import { parseCSV } from '../utils/csvParser';
 // import {
 //   ResRawNanodropRepository,
@@ -140,6 +143,87 @@ export class WorklistRepository {
         ${idsEstadosFinales.length > 0 ? `AND ("Tecnica"."id_estado" IS NULL OR "Tecnica"."id_estado" NOT IN (${idsEstadosFinales.join(',')}))` : ''}
       `),
     });
+  }
+
+  async getTecnicasReactivosById(id_worklist: number) {
+    return Tecnica.findAll({
+      attributes: ['id_tecnica'],
+      where: { id_worklist },
+      include: [
+        {
+          model: DimTecnicaProc,
+          as: 'tecnica_proc',
+          attributes: ['tecnica_proc'],
+          include: [
+            {
+              model: DimPlantillaTecnica,
+              as: 'plantillaTecnica',
+              include: [
+                {
+                  model: DimReactivo,
+                  as: 'dimReactivos',
+                  include: [
+                    {
+                      model: TecnicaReactivo,
+                      as: 'tecnicasReactivos',
+                      attributes: ['id', 'volumen', 'lote', 'id_reactivo'],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: Muestra,
+          as: 'muestra',
+          attributes: ['codigo_epi', 'codigo_externo'],
+        },
+      ],
+    });
+  }
+
+  /**
+   * Versión optimizada que devuelve técnicas con reactivos en estructura plana
+   * Incluye estadísticas de lotes completados
+   */
+  async getTecnicasReactivosOptimizado(id_worklist: number) {
+    const tecnicas = await Tecnica.findAll({
+      attributes: ['id_tecnica'],
+      where: { id_worklist },
+      include: [
+        {
+          model: DimTecnicaProc,
+          as: 'tecnica_proc',
+          attributes: ['id', 'tecnica_proc'],
+        },
+        {
+          model: Muestra,
+          as: 'muestra',
+          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
+        },
+        {
+          model: TecnicaReactivo,
+          as: 'tecnicasReactivos',
+          attributes: ['id', 'volumen', 'lote', 'id_reactivo'],
+          include: [
+            {
+              model: DimReactivo,
+              as: 'reactivo',
+              attributes: [
+                'id',
+                'num_referencia',
+                'reactivo',
+                'lote',
+                'volumen_formula',
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    return tecnicas;
   }
 
   async create(data: CrearWorklistData) {

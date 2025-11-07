@@ -1,9 +1,8 @@
 // src/types/express.d.ts
+// Extensión de tipos para Express Request
 
-import 'express';
-
-declare module 'express-serve-static-core' {
-  interface Request {
+declare namespace Express {
+  export interface Request {
     user?: {
       id: number;
       username: string;

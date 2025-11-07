@@ -1,9 +1,11 @@
 import { Muestra } from '../models/Muestra';
 import { fn, col, literal } from 'sequelize';
 import { Tecnica } from '../models/Tecnica';
+import { TecnicaReactivo } from '../models/TecnicaReactivo';
 import { Solicitud } from '../models/Solicitud';
 import { MuestraArray } from '../models/MuestraArray';
 import { sequelize } from '../config/db.config';
+import { DimReactivoService } from '../services/dimReactivo.service';
 
 interface MuestraStats {
   total: number;
@@ -89,6 +91,8 @@ interface CrearMuestraData {
 }
 
 export class MuestraRepository {
+  constructor(private dimReactivoService: DimReactivoService) {}
+
   async findById(id: number) {
     return Muestra.scope('withRefs').findByPk(id);
   }
@@ -314,8 +318,73 @@ export class MuestraRepository {
         );
 
         // Crear todas las técnicas del array en batch
-        await Tecnica.bulkCreate(tecnicasArray, { transaction });
+        const tecnicasCreadas = await Tecnica.bulkCreate(tecnicasArray, {
+          transaction,
+          returning: true,
+        });
         console.log('✅ Técnicas del array creadas exitosamente');
+
+        // Crear TecnicasReactivos para cada técnica creada
+        const tecnicasReactivosData: Array<{
+          id_tecnica: number;
+          id_reactivo: number;
+          created_by?: number;
+        }> = [];
+
+        // Obtener los id_tecnica_proc únicos
+        const uniqueTecnicaProcs = [
+          ...new Set(tecnicasArray.map((t) => t.id_tecnica_proc)),
+        ];
+
+        // Para cada id_tecnica_proc, obtener sus reactivos
+        for (const idTecnicaProc of uniqueTecnicaProcs) {
+          const reactivos =
+            await this.dimReactivoService.getDimReactivoByIdTecnicaProc(
+              idTecnicaProc
+            );
+
+          // Para cada técnica que tenga este id_tecnica_proc
+          const tecnicasConEsteProc = tecnicasCreadas.filter(
+            (t) => t.id_tecnica_proc === idTecnicaProc
+          );
+
+          // Para cada técnica, crear un registro por cada reactivo
+          for (const tecnica of tecnicasConEsteProc) {
+            for (const reactivo of reactivos) {
+              const registro: {
+                id_tecnica: number;
+                id_reactivo: number;
+                created_by?: number;
+              } = {
+                id_tecnica: tecnica.id_tecnica,
+                id_reactivo: reactivo.id,
+              };
+
+              // Solo añadir created_by si es un número válido
+              const tecnicoId = data.tecnico_resp?.id_usuario;
+              if (tecnicoId && typeof tecnicoId === 'number') {
+                registro.created_by = tecnicoId;
+              } else if (tecnicoId && typeof tecnicoId === 'string') {
+                const parsedId = Number(tecnicoId);
+                if (!isNaN(parsedId)) {
+                  registro.created_by = parsedId;
+                }
+              }
+
+              tecnicasReactivosData.push(registro);
+            }
+          }
+        }
+
+        // Crear todos los TecnicasReactivos en batch
+        if (tecnicasReactivosData.length > 0) {
+          await TecnicaReactivo.bulkCreate(tecnicasReactivosData, {
+            transaction,
+          });
+          console.log(
+            `✅ Creados ${tecnicasReactivosData.length} registros de TecnicasReactivos para array`
+          );
+        }
       } else if (data.tecnicas && data.tecnicas.length > 0) {
         // Si NO es array, crear técnicas normales (lógica original)
         const tecnicasData = data.tecnicas.map((tecnica) => {
@@ -338,7 +407,72 @@ export class MuestraRepository {
         });
 
         // Crear todas las técnicas de una vez dentro de la transacción
-        await Tecnica.bulkCreate(tecnicasData, { transaction });
+        const tecnicasCreadas = await Tecnica.bulkCreate(tecnicasData, {
+          transaction,
+          returning: true,
+        });
+
+        // Crear TecnicasReactivos para cada técnica creada
+        const tecnicasReactivosData: Array<{
+          id_tecnica: number;
+          id_reactivo: number;
+          created_by?: number;
+        }> = [];
+
+        // Obtener los id_tecnica_proc únicos
+        const uniqueTecnicaProcs = [
+          ...new Set(tecnicasData.map((t) => t.id_tecnica_proc)),
+        ];
+
+        // Para cada id_tecnica_proc, obtener sus reactivos
+        for (const idTecnicaProc of uniqueTecnicaProcs) {
+          const reactivos =
+            await this.dimReactivoService.getDimReactivoByIdTecnicaProc(
+              idTecnicaProc
+            );
+
+          // Para cada técnica que tenga este id_tecnica_proc
+          const tecnicasConEsteProc = tecnicasCreadas.filter(
+            (t) => t.id_tecnica_proc === idTecnicaProc
+          );
+
+          // Para cada técnica, crear un registro por cada reactivo
+          for (const tecnica of tecnicasConEsteProc) {
+            for (const reactivo of reactivos) {
+              const registro: {
+                id_tecnica: number;
+                id_reactivo: number;
+                created_by?: number;
+              } = {
+                id_tecnica: tecnica.id_tecnica,
+                id_reactivo: reactivo.id,
+              };
+
+              // Solo añadir created_by si es un número válido
+              const tecnicoId = data.tecnico_resp?.id_usuario;
+              if (tecnicoId && typeof tecnicoId === 'number') {
+                registro.created_by = tecnicoId;
+              } else if (tecnicoId && typeof tecnicoId === 'string') {
+                const parsedId = Number(tecnicoId);
+                if (!isNaN(parsedId)) {
+                  registro.created_by = parsedId;
+                }
+              }
+
+              tecnicasReactivosData.push(registro);
+            }
+          }
+        }
+
+        // Crear todos los TecnicasReactivos en batch
+        if (tecnicasReactivosData.length > 0) {
+          await TecnicaReactivo.bulkCreate(tecnicasReactivosData, {
+            transaction,
+          });
+          console.log(
+            `✅ Creados ${tecnicasReactivosData.length} registros de TecnicasReactivos para técnicas normales`
+          );
+        }
       }
 
       // Confirmar la transacción

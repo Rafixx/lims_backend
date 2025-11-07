@@ -87,6 +87,35 @@ export const getPosiblesTecnicas = async (
   }
 };
 
+export const getTecnicasReactivosById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = validateId(req.params.id);
+    const tecnicasReactivos =
+      await worklistService.getTecnicasReactivosById(id);
+    res.status(200).json(tecnicasReactivos);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTecnicasReactivosOptimizado = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = validateId(req.params.id);
+    const resultado = await worklistService.getTecnicasReactivosOptimizado(id);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createWorklist = async (
   req: Request,
   res: Response,
@@ -174,19 +203,19 @@ export const importDataResults = async (
     const { mapping, type } = req.body;
 
     // Log para debugging
-    console.log(
-      '📥 [importDataResults] Request body:',
-      JSON.stringify(req.body, null, 2)
-    );
-    console.log('📥 [importDataResults] mapping type:', typeof mapping);
-    console.log('📥 [importDataResults] type:', type);
+    // console.log(
+    //   '📥 [importDataResults] Request body:',
+    //   JSON.stringify(req.body, null, 2)
+    // );
+    // console.log('📥 [importDataResults] mapping type:', typeof mapping);
+    // console.log('📥 [importDataResults] type:', type);
 
     // Validaciones
     if (!mapping || typeof mapping !== 'object') {
-      console.error('❌ [importDataResults] Validación mapping falló:', {
-        mapping,
-        type: typeof mapping,
-      });
+      // console.error('❌ [importDataResults] Validación mapping falló:', {
+      //   mapping,
+      //   type: typeof mapping,
+      // });
       return res.status(400).json({
         success: false,
         message: 'Se requiere el campo "mapping" como objeto',
@@ -194,7 +223,7 @@ export const importDataResults = async (
     }
 
     if (!type || !['NANODROP', 'QUBIT'].includes(type)) {
-      console.error('❌ [importDataResults] Validación type falló:', { type });
+      // console.error('❌ [importDataResults] Validación type falló:', { type });
       return res.status(400).json({
         success: false,
         message: 'El campo "type" debe ser "NANODROP" o "QUBIT"',

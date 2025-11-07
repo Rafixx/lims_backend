@@ -89,5 +89,9 @@ export class DimReactivo extends Model<
       foreignKey: 'id_plantilla_tecnica',
       as: 'plantilla_tecnica',
     });
+    DimReactivo.hasMany(models.TecnicaReactivo, {
+      foreignKey: 'id_reactivo',
+      as: 'tecnicasReactivos',
+    });
   }
 }

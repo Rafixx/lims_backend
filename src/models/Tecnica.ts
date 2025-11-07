@@ -242,5 +242,9 @@ export class Tecnica extends Model<
       foreignKey: 'id_tecnica',
       as: 'resultados',
     });
+    this.hasMany(models.TecnicaReactivo, {
+      foreignKey: 'id_tecnica',
+      as: 'tecnicasReactivos',
+    });
   }
 }

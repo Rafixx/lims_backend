@@ -50,6 +50,111 @@ export class WorklistService {
     return posiblesTecnicas;
   }
 
+  async getTecnicasReactivosById(id_worklist: number) {
+    const tecnicasReactivos =
+      await this.workListRepo.getTecnicasReactivosById(id_worklist);
+    if (!tecnicasReactivos) {
+      throw new Error('Técnicas con reactivos no encontradas');
+    }
+    return tecnicasReactivos;
+  }
+
+  async getTecnicasReactivosOptimizado(id_worklist: number) {
+    const tecnicas =
+      await this.workListRepo.getTecnicasReactivosOptimizado(id_worklist);
+
+    if (!tecnicas || tecnicas.length === 0) {
+      return {
+        worklistId: id_worklist,
+        tecnicas: [],
+        estadisticas: {
+          totalTecnicas: 0,
+          totalReactivos: 0,
+          lotesCompletos: 0,
+          lotesPendientes: 0,
+        },
+      };
+    }
+
+    // Transformar a estructura optimizada
+    let totalReactivos = 0;
+    let lotesCompletos = 0;
+    let lotesPendientes = 0;
+
+    const tecnicasFormateadas = tecnicas.map((tecnica) => {
+      const tecnicaJson = tecnica.toJSON() as {
+        id_tecnica: number;
+        tecnica_proc?: { id: number; tecnica_proc: string };
+        muestra?: {
+          id_muestra: number;
+          codigo_epi: string;
+          codigo_externo: string;
+        };
+        tecnicasReactivos?: Array<{
+          id: number;
+          lote?: string;
+          volumen?: string;
+          id_reactivo: number;
+          reactivo?: {
+            id: number;
+            num_referencia?: string;
+            reactivo: string;
+            lote?: string;
+            volumen_formula?: string;
+          };
+        }>;
+      };
+
+      const reactivos =
+        tecnicaJson.tecnicasReactivos?.map((tr) => {
+          totalReactivos++;
+
+          const tieneLotelote =
+            tr.lote !== null && tr.lote !== undefined && tr.lote.trim() !== '';
+
+          if (tieneLotelote) {
+            lotesCompletos++;
+          } else {
+            lotesPendientes++;
+          }
+
+          return {
+            id: tr.reactivo?.id,
+            idTecnicaReactivo: tr.id,
+            nombre: tr.reactivo?.reactivo || 'Sin nombre',
+            numReferencia: tr.reactivo?.num_referencia,
+            lote: tr.lote,
+            volumen: tr.volumen,
+            volumenFormula: tr.reactivo?.volumen_formula,
+            loteReactivo: tr.reactivo?.lote,
+          };
+        }) || [];
+
+      return {
+        idTecnica: tecnicaJson.id_tecnica,
+        nombreTecnica: tecnicaJson.tecnica_proc?.tecnica_proc || 'Sin nombre',
+        idTecnicaProc: tecnicaJson.tecnica_proc?.id,
+        muestra: {
+          id: tecnicaJson.muestra?.id_muestra,
+          codigoEpi: tecnicaJson.muestra?.codigo_epi,
+          codigoExterno: tecnicaJson.muestra?.codigo_externo,
+        },
+        reactivos,
+      };
+    });
+
+    return {
+      worklistId: id_worklist,
+      tecnicas: tecnicasFormateadas,
+      estadisticas: {
+        totalTecnicas: tecnicas.length,
+        totalReactivos,
+        lotesCompletos,
+        lotesPendientes,
+      },
+    };
+  }
+
   async createWorklist(data: CrearWorklistDTO) {
     // Validar que si se proporcionan técnicas, no estén vacías
     if (data.tecnicas && data.tecnicas.length === 0) {
