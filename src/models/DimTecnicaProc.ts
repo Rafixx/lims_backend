@@ -11,6 +11,10 @@ import {
 } from 'sequelize';
 import { DimPrueba } from './DimPrueba';
 import { DimPlantillaTecnica } from './DimPlantillaTecnica';
+import { DimPipeta } from './DimPipeta';
+import { DimReactivo } from './DimReactivo';
+import { DimMaquina } from './DimMaquina';
+import { DimPlantillaPasos } from './DimPlantillaPasos';
 
 export class DimTecnicaProc extends Model<
   InferAttributes<DimTecnicaProc>,
@@ -93,6 +97,25 @@ export class DimTecnicaProc extends Model<
       include: [
         {
           model: DimPlantillaTecnica,
+          include: [
+            {
+              model: DimPipeta,
+              as: 'dimPipetas',
+            },
+            {
+              model: DimReactivo,
+              as: 'dimReactivos',
+            },
+            {
+              model: DimMaquina,
+              as: 'dimMaquinas',
+            },
+            {
+              model: DimPlantillaPasos,
+              as: 'dimPlantillaPasos',
+            },
+          ],
+
           as: 'plantillaTecnica',
           attributes: ['id', 'cod_plantilla_tecnica', 'tecnica'],
           required: false,

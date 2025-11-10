@@ -1,4 +1,5 @@
 import { MuestraRepository } from '../repositories/muestra.repository';
+import { DimReactivoService } from './dimReactivo.service';
 
 interface CreateMuestraDTO {
   id_muestra?: number;
@@ -84,7 +85,14 @@ interface UpdateMuestraDTO {
 }
 
 export class MuestraService {
-  constructor(private readonly muestraRepo = new MuestraRepository()) {}
+  private dimReactivoService: DimReactivoService;
+  private readonly muestraRepo: MuestraRepository;
+
+  constructor(muestraRepo?: MuestraRepository) {
+    this.dimReactivoService = new DimReactivoService();
+    this.muestraRepo =
+      muestraRepo || new MuestraRepository(this.dimReactivoService);
+  }
 
   async createMuestra(data: CreateMuestraDTO) {
     // Validar que los datos obligatorios estén presentes

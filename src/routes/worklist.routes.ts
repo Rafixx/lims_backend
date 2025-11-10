@@ -10,7 +10,11 @@ import {
   getPosiblesTecnicas,
   setTecnicoLab,
   importDataResults,
+  startTecnicasInWorklist,
+  getTecnicasReactivosById,
+  getTecnicasReactivosOptimizado,
 } from '../controllers/worklist.controller';
+// import { uploadCSV } from '../middlewares/upload.middleware';
 
 const router = Router();
 
@@ -18,18 +22,29 @@ const router = Router();
 
 // GET /api/worklists/posibles-tecnicas-proc - Obtener procesos con técnicas disponibles
 router.get('/posibles-tecnicas-proc', getPosiblesTecnicaProc);
+
 // Alias para compatibilidad con URL antigua (camelCase)
 router.get('/posiblesTecnicasProc', getPosiblesTecnicaProc);
 
 // GET /api/worklists/posibles-tecnicas/:tecnicaProc - Obtener técnicas disponibles por proceso
 router.get('/posibles-tecnicas/:tecnicaProc', getPosiblesTecnicas);
+
 // Alias para compatibilidad con URL antigua (camelCase)
 router.get('/posiblesTecnicas/:tecnicaProc', getPosiblesTecnicas);
+
+// GET /api/worklists/tecnicasReactivos/:id - Obtener técnicas con reactivos por worklist ID
+router.get('/tecnicasReactivos/:id', getTecnicasReactivosById);
 
 // ========== RUTAS GENERALES ==========
 
 // GET /api/worklists - Listar todos los worklists
 router.get('/', getWorklists);
+
+// GET /api/worklists/:id - Obtener worklist por ID
+router.get('/:id', getWorklistById);
+
+// GET /api/worklists/:id/tecnicas-reactivos - Obtener técnicas con reactivos optimizado
+router.get('/:id/tecnicas-reactivos', getTecnicasReactivosOptimizado);
 
 // GET /api/worklists/:id - Obtener worklist por ID
 router.get('/:id', getWorklistById);
@@ -46,7 +61,10 @@ router.put('/:id', updateWorklist);
 // PUT /api/worklists/:id/setTecnicoLab - Asignar técnico a worklist
 router.put('/:id/setTecnicoLab', setTecnicoLab);
 
-// POST /api/worklists/:id/importDataResults - Importar datos de resultados
+// PUT /api/worklists/:id/startTecnicas - Iniciar técnicas de un worklist
+router.put('/:id/startTecnicas', startTecnicasInWorklist);
+
+// POST /api/worklists/:id/importDataResults - Procesar datos RAW con mapeo
 router.post('/:id/importDataResults', importDataResults);
 
 // DELETE /api/worklists/:id - Eliminar worklist

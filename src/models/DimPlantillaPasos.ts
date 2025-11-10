@@ -9,15 +9,26 @@ import {
 } from 'sequelize';
 import { DimPlantillaTecnica } from './DimPlantillaTecnica';
 
-export class DimReactivo extends Model<
-  InferAttributes<DimReactivo>,
-  InferCreationAttributes<DimReactivo>
+// CREATE TABLE lims_pre.dim_plantilla_pasos (
+// 	id serial4 NOT NULL,
+// 	codigo varchar(20) NULL,
+// 	descripcion varchar(100) NOT NULL,
+// 	orden int4 null,
+// 	activa bool DEFAULT true NULL,
+// 	created_by int4 NULL,
+// 	update_dt timestamp DEFAULT now() NULL,
+// 	id_plantilla_tecnica int4 NULL,
+// 	CONSTRAINT dim_plantilla_pasos_pkey PRIMARY KEY (id)
+// );
+
+export class DimPlantillaPasos extends Model<
+  InferAttributes<DimPlantillaPasos>,
+  InferCreationAttributes<DimPlantillaPasos>
 > {
   declare id: CreationOptional<number>;
-  declare num_referencia?: string;
-  declare reactivo: string;
-  declare lote?: string;
-  declare volumen_formula?: string;
+  declare codigo?: string;
+  declare descripcion: string;
+  declare orden?: number;
   declare activa?: boolean;
   declare created_by?: number;
   declare update_dt?: Date;
@@ -26,30 +37,26 @@ export class DimReactivo extends Model<
   declare plantilla_tecnica?: DimPlantillaTecnica;
 
   static initModel(sequelize: Sequelize) {
-    DimReactivo.init(
+    DimPlantillaPasos.init(
       {
         id: {
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true,
         },
-        num_referencia: {
-          type: DataTypes.STRING(50),
+        codigo: {
+          type: DataTypes.STRING(20),
           allowNull: true,
         },
-        reactivo: {
+        descripcion: {
           type: DataTypes.STRING(100),
           allowNull: false,
           validate: {
-            notNull: { msg: 'El campo reactivo es requerido' },
+            notNull: { msg: 'El campo descripcion es requerido' },
           },
         },
-        lote: {
-          type: DataTypes.STRING(20),
-          allowNull: true,
-        },
-        volumen_formula: {
-          type: DataTypes.STRING(20),
+        orden: {
+          type: DataTypes.INTEGER,
           allowNull: true,
         },
         activa: {
@@ -73,7 +80,7 @@ export class DimReactivo extends Model<
       },
       {
         sequelize,
-        tableName: 'dim_reactivos',
+        tableName: 'dim_plantilla_pasos',
         schema: process.env.DB_SCHEMA,
         timestamps: true,
         createdAt: false,
@@ -84,14 +91,10 @@ export class DimReactivo extends Model<
   }
 
   static associate(models: Record<string, ModelStatic<Model>>) {
-    // cada reactivo puede vincularse a una plantilla técnica
-    DimReactivo.belongsTo(models.DimPlantillaTecnica, {
+    // cada paso puede vincularse a una plantilla técnica
+    DimPlantillaPasos.belongsTo(models.DimPlantillaTecnica, {
       foreignKey: 'id_plantilla_tecnica',
       as: 'plantilla_tecnica',
-    });
-    DimReactivo.hasMany(models.TecnicaReactivo, {
-      foreignKey: 'id_reactivo',
-      as: 'tecnicasReactivos',
     });
   }
 }

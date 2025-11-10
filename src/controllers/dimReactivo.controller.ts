@@ -31,6 +31,21 @@ export const getDimReactivoById = async (
   }
 };
 
+export const getDimReactivoByIdTecnicaProc = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const idTecnicaProc = Number(req.params.idTecnicaProc);
+  try {
+    const reactivos =
+      await dimReactivoService.getDimReactivoByIdTecnicaProc(idTecnicaProc);
+    res.status(200).json(reactivos);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createDimReactivo = async (
   req: Request,
   res: Response,

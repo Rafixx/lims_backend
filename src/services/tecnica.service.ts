@@ -3,6 +3,8 @@ import {
   TecnicaConMuestra,
   WorklistStats,
 } from '../repositories/tecnica.repository';
+import { DimReactivoService } from './dimReactivo.service';
+import { TecnicaReactivoService } from './tecnicaReactivo.service';
 
 interface CreateTecnicaDTO {
   id_muestra: number;
@@ -14,7 +16,11 @@ interface CreateTecnicaDTO {
 }
 
 export class TecnicaService {
-  constructor(private readonly tecnicaRepo = new TecnicaRepository()) {}
+  constructor(
+    private readonly tecnicaRepo = new TecnicaRepository(),
+    private readonly dimReactivoService = new DimReactivoService(),
+    private readonly tecnicaReactivoService = new TecnicaReactivoService()
+  ) {}
 
   async getAllTecnicas() {
     return this.tecnicaRepo.findAll();
@@ -42,34 +48,43 @@ export class TecnicaService {
     }));
   }
 
-  // async getTecnicaBySolicitudId(id_solicitud: number) {
-  //   if (!id_solicitud) {
-  //     throw new Error('ID de solicitud no proporcionado');
-  //   }
-  //   const tecnicas = await this.tecnicaRepo.findBySolicitudId(id_solicitud);
-  //   if (!tecnicas) {
-  //     throw new Error('Técnica no encontrada');
-  //   }
-  //   return tecnicas.map((tecnica) => ({
-  //     id: tecnica_proc?.id,
-  //     tecnica_proc: tecnica_proc.tecnica_proc?.tecnica_proc,
-  //   }));
-  // }
-  // async getTecnicaBySolicitudId(id_solicitud: number) {
-  //   const tecnicas = await this.tecnicaRepo.findBySolicitudId(id_solicitud);
-
-  //   return tecnicas.map((tecnica) => ({
-  //     id: tecnica.tecnica_proc?.id,
-  //     tecnica_proc: tecnica.tecnica_proc?.tecnica_proc,
-  //   }));
-  // }
-
   async createTecnica(data: CreateTecnicaDTO) {
-    return this.tecnicaRepo.create({
+    // 1. Crear la técnica
+    const nuevaTecnica = await this.tecnicaRepo.create({
       ...data,
       fecha_inicio_tec: data.fecha_inicio_tec ?? new Date(),
       estado: data.estado ?? 'CREADA',
     });
+
+    // 2. Obtener los reactivos asociados a la técnica de proceso
+    try {
+      const reactivos =
+        await this.dimReactivoService.getDimReactivoByIdTecnicaProc(
+          data.id_tecnica_proc
+        );
+
+      console.log('Reactivos obtenidos para la técnica de proceso:', reactivos);
+      // 3. Crear registros en TecnicasReactivos para cada reactivo
+      if (reactivos && reactivos.length > 0) {
+        const tecnicasReactivosPromises = reactivos.map((reactivo) =>
+          this.tecnicaReactivoService.createTecnicaReactivo({
+            id_tecnica: nuevaTecnica.id_tecnica,
+            id_reactivo: reactivo.id,
+            // volumen: reactivo.volumen_formula || undefined,
+            // lote: reactivo.lote || undefined,
+            created_by: data.id_tecnico_resp,
+          })
+        );
+
+        await Promise.all(tecnicasReactivosPromises);
+      }
+    } catch (error) {
+      console.error('Error al crear relaciones técnica-reactivo:', error);
+      // No lanzamos error para no interrumpir la creación de la técnica
+      // pero registramos el problema
+    }
+
+    return nuevaTecnica;
   }
 
   async updateTecnica(id: number, data: Partial<CreateTecnicaDTO>) {

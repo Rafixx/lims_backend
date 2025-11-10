@@ -13,7 +13,7 @@ export class DimPlantillaTecnicaService {
   }
 
   async getPlantillaTecnicaById(id: number) {
-    const plantilla = await DimPlantillaTecnica.findByPk(id);
+    const plantilla = await DimPlantillaTecnica.scope('withRefs').findByPk(id);
     if (!plantilla) {
       throw new Error('Plantilla Técnica no encontrada');
     }
@@ -21,7 +21,7 @@ export class DimPlantillaTecnicaService {
   }
 
   async getAllPlantillasTecnicas() {
-    return DimPlantillaTecnica.findAll();
+    return DimPlantillaTecnica.scope('withRefs').findAll();
   }
 
   async updatePlantillaTecnica(

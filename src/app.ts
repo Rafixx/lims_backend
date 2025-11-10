@@ -7,6 +7,7 @@ import { muestraRoutes } from './routes/muestra.routes';
 import { tecnicaRoutes } from './routes/tecnica.routes';
 import { dimClienteRoutes } from './routes/dimCliente.routes';
 import { dimPlantillaTecnicaRoutes } from './routes/dimPlantillaTecnica.routes';
+import { dimPlantillaPasosRoutes } from './routes/dimPlantillaPasos.routes';
 import { dimPruebaRoutes } from './routes/dimPrueba.routes';
 import { dimTecnicaProcRoutes } from './routes/dimTecnicaProc.routes';
 import { authRoutes } from './routes/auth.routes';
@@ -21,7 +22,9 @@ import { dimMaquinaRoutes } from './routes/dimMaquina.routes';
 import { dimCentroRoutes } from './routes/dimCentro.routes';
 import { dimCriterioValidacionRoutes } from './routes/dimCriterioValidacion.routes';
 import { tecnicoLabRoutes } from './routes/tecnicoLab.routes';
+import { tecnicaReactivoRoutes } from './routes/tecnicaReactivo.routes';
 import { worklistRouter } from './routes/worklist.routes';
+import { resultadoRouter } from './routes/resultado.routes';
 import estadoRoutes from './routes/estado.routes';
 
 const app = express();
@@ -40,6 +43,7 @@ app.use('/api/muestras', muestraRoutes);
 app.use('/api/tecnicas', tecnicaRoutes);
 app.use('/api/clientes', dimClienteRoutes);
 app.use('/api/plantillasTecnicas', dimPlantillaTecnicaRoutes);
+app.use('/api/plantillasPasos', dimPlantillaPasosRoutes);
 app.use('/api/pruebas', dimPruebaRoutes);
 app.use('/api/tecnicasProc', dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuarioRoutes);
@@ -54,7 +58,9 @@ app.use('/api/maquinas', dimMaquinaRoutes);
 app.use('/api/centros', dimCentroRoutes);
 app.use('/api/criteriosValidacion', dimCriterioValidacionRoutes);
 app.use('/api/tecnicosLab', tecnicoLabRoutes);
+app.use('/api/tecnicasReactivos', tecnicaReactivoRoutes);
 app.use('/api/worklists', worklistRouter);
+app.use('/api/resultados', resultadoRouter);
 app.use('/api/estados', estadoRoutes);
 
 // Middleware de manejo de errores

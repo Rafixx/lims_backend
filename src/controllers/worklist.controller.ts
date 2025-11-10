@@ -87,6 +87,35 @@ export const getPosiblesTecnicas = async (
   }
 };
 
+export const getTecnicasReactivosById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = validateId(req.params.id);
+    const tecnicasReactivos =
+      await worklistService.getTecnicasReactivosById(id);
+    res.status(200).json(tecnicasReactivos);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTecnicasReactivosOptimizado = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = validateId(req.params.id);
+    const resultado = await worklistService.getTecnicasReactivosOptimizado(id);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createWorklist = async (
   req: Request,
   res: Response,
@@ -159,7 +188,10 @@ export const setTecnicoLab = async (
 };
 
 /**
- * Importa datos de resultados para un worklist
+ * Importa datos de resultados para un worklist desde un archivo CSV
+ * Procesa RAW → FINAL → RESULTADO usando mapeo de filas
+ * POST /api/worklists/:id/importDataResults
+ * Body: { mapping: Record<number, number>, type: 'NANODROP' | 'QUBIT' }
  */
 export const importDataResults = async (
   req: Request,
@@ -168,7 +200,57 @@ export const importDataResults = async (
 ) => {
   try {
     const idWorklist = validateId(req.params.id);
-    const resultado = await worklistService.importDataResults(idWorklist);
+    const { mapping, type } = req.body;
+
+    // Log para debugging
+    // console.log(
+    //   '📥 [importDataResults] Request body:',
+    //   JSON.stringify(req.body, null, 2)
+    // );
+    // console.log('📥 [importDataResults] mapping type:', typeof mapping);
+    // console.log('📥 [importDataResults] type:', type);
+
+    // Validaciones
+    if (!mapping || typeof mapping !== 'object') {
+      // console.error('❌ [importDataResults] Validación mapping falló:', {
+      //   mapping,
+      //   type: typeof mapping,
+      // });
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere el campo "mapping" como objeto',
+      });
+    }
+
+    if (!type || !['NANODROP', 'QUBIT'].includes(type)) {
+      // console.error('❌ [importDataResults] Validación type falló:', { type });
+      return res.status(400).json({
+        success: false,
+        message: 'El campo "type" debe ser "NANODROP" o "QUBIT"',
+      });
+    }
+
+    // Procesar con mapeo
+    const resultado = await worklistService.importDataResults(
+      idWorklist,
+      mapping,
+      type
+    );
+
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const startTecnicasInWorklist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const idWorklist = validateId(req.params.id);
+    const resultado = await worklistService.startTecnicasInWorklist(idWorklist);
     res.status(200).json(resultado);
   } catch (error) {
     next(error);

@@ -16,7 +16,8 @@ export class DimTecnicaProcService {
   }
 
   async getTecnicaProcById(id: number) {
-    const tecnicaProc = await DimTecnicaProc.findByPk(id);
+    const tecnicaProc =
+      await DimTecnicaProc.scope('withPlantilla').findByPk(id);
     if (!tecnicaProc) {
       throw new Error('Técnica Proc no encontrada');
     }
@@ -24,7 +25,7 @@ export class DimTecnicaProcService {
   }
 
   async getAllTecnicasProc() {
-    return DimTecnicaProc.findAll();
+    return DimTecnicaProc.scope('withPlantilla').findAll();
   }
 
   async updateTecnicaProc(id: number, data: Partial<CreateDimTecnicaProcDTO>) {

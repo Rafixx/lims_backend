@@ -1,4 +1,6 @@
 import { WorklistRepository } from '../repositories/worklist.repository';
+import resultadoNanodropService from './resultadoNanodrop.service';
+import resultadoQubitService from './resultadoQubit.service';
 
 interface CrearWorklistDTO {
   nombre?: string;
@@ -46,6 +48,111 @@ export class WorklistService {
       throw new Error('Técnicas no encontradas');
     }
     return posiblesTecnicas;
+  }
+
+  async getTecnicasReactivosById(id_worklist: number) {
+    const tecnicasReactivos =
+      await this.workListRepo.getTecnicasReactivosById(id_worklist);
+    if (!tecnicasReactivos) {
+      throw new Error('Técnicas con reactivos no encontradas');
+    }
+    return tecnicasReactivos;
+  }
+
+  async getTecnicasReactivosOptimizado(id_worklist: number) {
+    const tecnicas =
+      await this.workListRepo.getTecnicasReactivosOptimizado(id_worklist);
+
+    if (!tecnicas || tecnicas.length === 0) {
+      return {
+        worklistId: id_worklist,
+        tecnicas: [],
+        estadisticas: {
+          totalTecnicas: 0,
+          totalReactivos: 0,
+          lotesCompletos: 0,
+          lotesPendientes: 0,
+        },
+      };
+    }
+
+    // Transformar a estructura optimizada
+    let totalReactivos = 0;
+    let lotesCompletos = 0;
+    let lotesPendientes = 0;
+
+    const tecnicasFormateadas = tecnicas.map((tecnica) => {
+      const tecnicaJson = tecnica.toJSON() as {
+        id_tecnica: number;
+        tecnica_proc?: { id: number; tecnica_proc: string };
+        muestra?: {
+          id_muestra: number;
+          codigo_epi: string;
+          codigo_externo: string;
+        };
+        tecnicasReactivos?: Array<{
+          id: number;
+          lote?: string;
+          volumen?: string;
+          id_reactivo: number;
+          reactivo?: {
+            id: number;
+            num_referencia?: string;
+            reactivo: string;
+            lote?: string;
+            volumen_formula?: string;
+          };
+        }>;
+      };
+
+      const reactivos =
+        tecnicaJson.tecnicasReactivos?.map((tr) => {
+          totalReactivos++;
+
+          const tieneLotelote =
+            tr.lote !== null && tr.lote !== undefined && tr.lote.trim() !== '';
+
+          if (tieneLotelote) {
+            lotesCompletos++;
+          } else {
+            lotesPendientes++;
+          }
+
+          return {
+            id: tr.reactivo?.id,
+            idTecnicaReactivo: tr.id,
+            nombre: tr.reactivo?.reactivo || 'Sin nombre',
+            numReferencia: tr.reactivo?.num_referencia,
+            lote: tr.lote,
+            volumen: tr.volumen,
+            volumenFormula: tr.reactivo?.volumen_formula,
+            loteReactivo: tr.reactivo?.lote,
+          };
+        }) || [];
+
+      return {
+        idTecnica: tecnicaJson.id_tecnica,
+        nombreTecnica: tecnicaJson.tecnica_proc?.tecnica_proc || 'Sin nombre',
+        idTecnicaProc: tecnicaJson.tecnica_proc?.id,
+        muestra: {
+          id: tecnicaJson.muestra?.id_muestra,
+          codigoEpi: tecnicaJson.muestra?.codigo_epi,
+          codigoExterno: tecnicaJson.muestra?.codigo_externo,
+        },
+        reactivos,
+      };
+    });
+
+    return {
+      worklistId: id_worklist,
+      tecnicas: tecnicasFormateadas,
+      estadisticas: {
+        totalTecnicas: tecnicas.length,
+        totalReactivos,
+        lotesCompletos,
+        lotesPendientes,
+      },
+    };
   }
 
   async createWorklist(data: CrearWorklistDTO) {
@@ -102,12 +209,39 @@ export class WorklistService {
   }
 
   /**
-   * Importa datos de resultados para un worklist
+   * Importa datos de resultados para un worklist usando mapeo de filas
+   * RAW → FINAL → RESULTADO
    * @param idWorklist ID del worklist
+   * @param mapping Record<number, number> - Índice de fila RAW → id_tecnica
+   * @param tipo 'NANODROP' | 'QUBIT'
    * @returns Promise con el resultado de la operación
    */
-  async importDataResults(idWorklist: number) {
-    const resultado = await this.workListRepo.importDataResults(idWorklist);
+  async importDataResults(
+    idWorklist: number,
+    mapping: Record<number, number>,
+    tipo: 'NANODROP' | 'QUBIT'
+  ) {
+    // Verificar que la worklist existe
+    const worklist = await this.workListRepo.findById(idWorklist);
+    if (!worklist) {
+      throw new Error('Worklist no encontrada');
+    }
+
+    // Delegar al servicio correspondiente
+    let resultado;
+    if (tipo === 'NANODROP') {
+      resultado = await resultadoNanodropService.processWithMapping(
+        idWorklist,
+        mapping,
+        0 // TODO: Obtener ID del usuario autenticado
+      );
+    } else {
+      resultado = await resultadoQubitService.processWithMapping(
+        idWorklist,
+        mapping,
+        0 // TODO: Obtener ID del usuario autenticado
+      );
+    }
 
     if (!resultado.success) {
       throw new Error(resultado.message);
@@ -116,7 +250,24 @@ export class WorklistService {
     return {
       success: true,
       message: resultado.message,
-      resultadosCreados: resultado.resultadosCreados,
+      recordsProcessed: resultado.recordsProcessed,
+      resultsCreated: resultado.resultsCreated,
+      errors: resultado.errors,
+    };
+  }
+
+  async startTecnicasInWorklist(idWorklist: number) {
+    // Verificar que la worklist existe
+    const worklist = await this.workListRepo.findById(idWorklist);
+    if (!worklist) {
+      throw new Error('Worklist no encontrada');
+    }
+
+    // Iniciar todas las técnicas del worklist
+    await this.workListRepo.startTecnicasInWorklist(idWorklist);
+
+    return {
+      message: 'Técnicas del worklist iniciadas correctamente',
     };
   }
 }
