@@ -65,6 +65,7 @@ export class ResRawNanodrop extends Model<
   declare impureza3_a260: string;
   declare impureza3_porc: string;
   declare impureza3_mm: string;
+  declare position: string | null; // ✅ NUEVO CAMPO
   declare createdAt: CreationOptional<Date>;
 
   static initModel(sequelize: Sequelize) {
@@ -170,6 +171,11 @@ export class ResRawNanodrop extends Model<
         impureza3_mm: {
           type: DataTypes.STRING,
           allowNull: false,
+        },
+        position: {
+          type: DataTypes.STRING,
+          allowNull: true,
+          comment: 'Posición en placa/rack (opcional, puede venir del CSV)',
         },
         createdAt: {
           type: DataTypes.DATE,

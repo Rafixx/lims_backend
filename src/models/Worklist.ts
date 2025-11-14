@@ -14,6 +14,7 @@ import { Muestra } from './Muestra';
 import { Usuario } from './Usuario';
 import { Resultado } from './Resultado';
 import { DimEstado } from './DimEstado';
+import { MuestraArray } from './MuestraArray';
 
 export class Worklist extends Model<
   InferAttributes<Worklist>,
@@ -95,6 +96,16 @@ export class Worklist extends Model<
               model: Muestra,
               as: 'muestra',
               attributes: ['codigo_epi', 'codigo_externo'],
+            },
+            {
+              model: MuestraArray,
+              as: 'muestraArray',
+              attributes: [
+                'id_array',
+                'id_muestra',
+                'codigo_placa',
+                'posicion_placa',
+              ],
             },
             {
               model: Usuario,

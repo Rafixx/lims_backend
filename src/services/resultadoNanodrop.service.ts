@@ -96,6 +96,7 @@ export class ResultadoNanodropService {
               abs_260: parseNumeric(raw.a260),
               abs_280: parseNumeric(raw.a280),
               analizador: 'NanoDrop',
+              position: raw.position || null,
               procesado: false,
               created_by: createdBy,
               updated_by: createdBy,
@@ -396,6 +397,7 @@ export class ResultadoNanodropService {
               abs_280: parseFloat(raw.a280),
               analizador: 'NanoDrop',
               valor_fecha: raw.fecha || null,
+              position: raw.position || null, // ✅ Propagar position desde RAW
               procesado: false,
               created_by: createdBy,
               updated_by: null,

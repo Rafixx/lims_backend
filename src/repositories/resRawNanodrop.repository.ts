@@ -27,6 +27,7 @@ export interface CreateResRawNanodropDTO {
   impureza3_a260: string;
   impureza3_porc: string;
   impureza3_mm: string;
+  position?: string | null; // ✅ NUEVO CAMPO
 }
 
 export class ResRawNanodropRepository {

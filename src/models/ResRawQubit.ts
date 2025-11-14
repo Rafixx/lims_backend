@@ -30,6 +30,7 @@ export class ResRawQubit extends Model<
   declare green_rfu: string | null;
   declare far_red_rfu: string | null;
   declare fecha: Date | null;
+  declare position: string | null;
   declare createdAt: CreationOptional<Date>;
 
   public static initModel(sequelize: Sequelize): typeof ResRawQubit {
@@ -111,6 +112,11 @@ export class ResRawQubit extends Model<
         fecha: {
           type: DataTypes.DATE,
           allowNull: true,
+        },
+        position: {
+          type: DataTypes.STRING,
+          allowNull: true,
+          comment: 'Posición en placa/rack (opcional, puede venir del CSV)',
         },
         createdAt: {
           type: DataTypes.DATE,

@@ -38,6 +38,7 @@ export class ResFinalQubit extends Model<
   declare qubit_uds: string | null;
   declare analizador: string;
   declare procesado: boolean;
+  declare position: string | null;
   declare create_dt: CreationOptional<Date>;
   declare update_dt: CreationOptional<Date>;
   declare created_by: number | null;
@@ -100,6 +101,11 @@ export class ResFinalQubit extends Model<
           allowNull: false,
           defaultValue: false,
           comment: 'Indica si el registro ha sido procesado',
+        },
+        position: {
+          type: DataTypes.STRING,
+          allowNull: true,
+          comment: 'Posición en placa/rack (opcional, puede venir del CSV)',
         },
         create_dt: {
           type: DataTypes.DATE,

@@ -441,6 +441,7 @@ export class ResultadoRepository {
         impureza3_a260: registro['Impureza 3 A260'] || '',
         impureza3_porc: registro['Impureza 3 %CV'] || '',
         impureza3_mm: registro['Impureza 3 mM'] || '',
+        position: registro['Posición placa'] || null, // ✅ NUEVO CAMPO
       })
     );
 
@@ -546,6 +547,12 @@ export class ResultadoRepository {
         green_rfu: registro['Green RFU'] || null,
         far_red_rfu: registro['Far Red RFU'] || null,
         fecha: parseFechaQubit(registro['Test Date'] || ''),
+        position:
+          registro['Position'] ||
+          registro['Well'] ||
+          registro['Posición'] ||
+          registro['Pocillo'] ||
+          null, // ✅ NUEVO CAMPO con múltiples posibles nombres
       })
     );
 
