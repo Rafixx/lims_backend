@@ -138,3 +138,16 @@ export const cambiarEstadoMuestra = async (
     next(error);
   }
 };
+
+export const getCodigoEpi = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const codigo = await muestraService.getCodigoEpi();
+    res.status(200).json(codigo);
+  } catch (error) {
+    next(error);
+  }
+};

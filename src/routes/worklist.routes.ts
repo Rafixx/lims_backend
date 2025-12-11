@@ -13,6 +13,7 @@ import {
   startTecnicasInWorklist,
   getTecnicasReactivosById,
   getTecnicasReactivosOptimizado,
+  getWorkListCode,
 } from '../controllers/worklist.controller';
 // import { uploadCSV } from '../middlewares/upload.middleware';
 
@@ -39,6 +40,12 @@ router.get('/tecnicasReactivos/:id', getTecnicasReactivosById);
 
 // GET /api/worklists - Listar todos los worklists
 router.get('/', getWorklists);
+
+// GET /api/worklists/codigo - Obtener código secuencial para una nueva worklist
+router.get('/codigo', getWorkListCode);
+
+// Alias: GET /api/worklists/getWorkListCode - compatibilidad con nombre histórico
+router.get('/getWorkListCode', getWorkListCode);
 
 // GET /api/worklists/:id - Obtener worklist por ID
 router.get('/:id', getWorklistById);

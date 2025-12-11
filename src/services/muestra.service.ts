@@ -1,5 +1,9 @@
 import { MuestraRepository } from '../repositories/muestra.repository';
 import { DimReactivoService } from './dimReactivo.service';
+import {
+  ContadorRepository,
+  NextCounterValue,
+} from '../repositories/contador.repository';
 
 interface CreateMuestraDTO {
   id_muestra?: number;
@@ -87,11 +91,16 @@ interface UpdateMuestraDTO {
 export class MuestraService {
   private dimReactivoService: DimReactivoService;
   private readonly muestraRepo: MuestraRepository;
+  private readonly contadorRepo: ContadorRepository;
 
-  constructor(muestraRepo?: MuestraRepository) {
+  constructor(
+    muestraRepo?: MuestraRepository,
+    contadorRepo?: ContadorRepository
+  ) {
     this.dimReactivoService = new DimReactivoService();
     this.muestraRepo =
       muestraRepo || new MuestraRepository(this.dimReactivoService);
+    this.contadorRepo = contadorRepo || new ContadorRepository();
   }
 
   async createMuestra(data: CreateMuestraDTO) {
@@ -153,5 +162,36 @@ export class MuestraService {
 
   async getMuestrasStats() {
     return this.muestraRepo.getMuestrasStats();
+  }
+
+  async getCodigoEpi() {
+    const { year, value } = await this.getNextSequenceValue();
+    const codigo = this.formatCodigoEpi(year, value);
+
+    return {
+      codigo_epi: codigo,
+      secuencia: value,
+      year,
+    };
+  }
+
+  private async getNextSequenceValue(): Promise<NextCounterValue> {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    return this.contadorRepo.getNextValue('muestra', currentYear);
+  }
+
+  private formatCodigoEpi(year: number, sequence: number): string {
+    const configuredDigits = Number(
+      process.env.CODIGO_EPI_SEQUENCE_DIGITS ?? '5'
+    );
+    const digits =
+      Number.isFinite(configuredDigits) && configuredDigits >= 4
+        ? Math.min(configuredDigits, 8)
+        : 5;
+    const yearPrefix = year.toString().slice(-2);
+    const paddedSequence = sequence.toString().padStart(digits, '0');
+
+    return `${yearPrefix}.${paddedSequence}`;
   }
 }

@@ -1,6 +1,10 @@
 import { WorklistRepository } from '../repositories/worklist.repository';
 import resultadoNanodropService from './resultadoNanodrop.service';
 import resultadoQubitService from './resultadoQubit.service';
+import {
+  ContadorRepository,
+  NextCounterValue,
+} from '../repositories/contador.repository';
 
 interface CrearWorklistDTO {
   nombre?: string;
@@ -10,7 +14,10 @@ interface CrearWorklistDTO {
 }
 
 export class WorklistService {
-  constructor(private readonly workListRepo = new WorklistRepository()) {}
+  constructor(
+    private readonly workListRepo = new WorklistRepository(),
+    private readonly contadorRepo = new ContadorRepository()
+  ) {}
 
   async getWorklistById(id: number) {
     const worklist = await this.workListRepo.findById(id);
@@ -269,5 +276,35 @@ export class WorklistService {
     return {
       message: 'Técnicas del worklist iniciadas correctamente',
     };
+  }
+
+  async getWorklistCode() {
+    const { year, value } = await this.getNextSequenceValue();
+    const codigo = this.formatWorklistCode(year, value);
+
+    return {
+      codigo_worklist: codigo,
+      secuencia: value,
+      year,
+    };
+  }
+
+  private async getNextSequenceValue(): Promise<NextCounterValue> {
+    const year = new Date().getFullYear();
+    return this.contadorRepo.getNextValue('worklist', year);
+  }
+
+  private formatWorklistCode(year: number, sequence: number): string {
+    const configuredDigits = Number(
+      process.env.WORKLIST_CODE_DIGITS ?? '5'
+    );
+    const digits =
+      Number.isFinite(configuredDigits) && configuredDigits >= 4
+        ? Math.min(configuredDigits, 8)
+        : 5;
+    const yearPrefix = year.toString().slice(-2);
+    const paddedSequence = sequence.toString().padStart(digits, '0');
+
+    return `L${yearPrefix}.${paddedSequence}`;
   }
 }

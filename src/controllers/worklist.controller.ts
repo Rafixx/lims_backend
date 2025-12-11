@@ -256,3 +256,16 @@ export const startTecnicasInWorklist = async (
     next(error);
   }
 };
+
+export const getWorkListCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const codigo = await worklistService.getWorklistCode();
+    res.status(200).json(codigo);
+  } catch (error) {
+    next(error);
+  }
+};
