@@ -93,7 +93,11 @@ export class TecnicaRepository {
       });
       // console.log('tecnica', tecnica);
 
-      await this.asignarTecnica(idTecnica);
+      // Solo cambiar el estado a ASIGNADA si la técnica está PENDIENTE
+      // Si ya está ASIGNADA o en otro estado, solo actualizar el técnico
+      if (tecnica.id_estado === ESTADO_TECNICA.PENDIENTE) {
+        await this.asignarTecnica(idTecnica);
+      }
 
       return tecnica;
     } catch (error) {

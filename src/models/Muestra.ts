@@ -38,13 +38,16 @@ export class Muestra extends Model<
   declare tipo_array?: CreationOptional<boolean>;
   declare codigo_epi?: CreationOptional<string>;
   declare codigo_externo?: CreationOptional<string>;
+  declare estudio?: CreationOptional<string>;
   declare f_toma?: CreationOptional<Date>;
   declare f_recepcion?: CreationOptional<Date>;
+  declare id_tecnico_recepcion?: CreationOptional<number>;
   declare f_destruccion?: CreationOptional<Date>;
   declare f_devolucion?: CreationOptional<Date>;
   declare agotada?: CreationOptional<boolean>;
   declare estado_muestra?: CreationOptional<string>;
   declare id_estado?: CreationOptional<number>;
+  declare observaciones?: CreationOptional<string>;
 
   declare delete_dt?: CreationOptional<Date>;
   declare update_dt: CreationOptional<Date>;
@@ -120,6 +123,11 @@ export class Muestra extends Model<
           allowNull: true,
           defaultValue: null,
         },
+        estudio: {
+          type: DataTypes.STRING(20),
+          allowNull: true,
+          defaultValue: null,
+        },
         f_toma: {
           type: DataTypes.DATE,
           allowNull: true,
@@ -127,6 +135,11 @@ export class Muestra extends Model<
         },
         f_recepcion: {
           type: DataTypes.DATE,
+          allowNull: true,
+          defaultValue: null,
+        },
+        id_tecnico_recepcion: {
+          type: DataTypes.INTEGER,
           allowNull: true,
           defaultValue: null,
         },
@@ -157,6 +170,11 @@ export class Muestra extends Model<
             model: 'dim_estados',
             key: 'id',
           },
+        },
+        observaciones: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
+          defaultValue: null,
         },
 
         update_dt: {
@@ -212,12 +230,15 @@ export class Muestra extends Model<
         'id_muestra',
         'codigo_epi',
         'codigo_externo',
+        'estudio',
         'f_toma',
         'f_recepcion',
+        'id_tecnico_recepcion',
         'f_destruccion',
         'f_devolucion',
         'estado_muestra',
         'tipo_array',
+        'observaciones',
       ],
       include: [
         {
