@@ -134,7 +134,7 @@ export class WorklistRepository {
         {
           model: Muestra,
           as: 'muestra',
-          attributes: ['codigo_epi', 'codigo_externo'],
+          attributes: ['codigo_epi', 'codigo_externo', 'estudio'],
         },
       ],
       where: literal(`

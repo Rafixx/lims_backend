@@ -25,8 +25,10 @@ interface CrearMuestraData {
   f_toma?: string;
   f_recepcion?: string;
   id_tecnico_recepcion?: number;
+  id_tecnico_verifica?: number;
   f_destruccion?: string;
   f_devolucion?: string;
+  f_agotada?: string;
   estado_muestra?: string;
   observaciones?: string;
   paciente?: {
@@ -201,12 +203,14 @@ export class MuestraRepository {
         f_toma: data.f_toma ? new Date(data.f_toma) : undefined,
         f_recepcion: data.f_recepcion ? new Date(data.f_recepcion) : undefined,
         id_tecnico_recepcion: data.id_tecnico_recepcion,
+        id_tecnico_verifica: data.id_tecnico_verifica,
         f_destruccion: data.f_destruccion
           ? new Date(data.f_destruccion)
           : undefined,
         f_devolucion: data.f_devolucion
           ? new Date(data.f_devolucion)
           : undefined,
+        f_agotada: data.f_agotada ? new Date(data.f_agotada) : undefined,
         estado_muestra: data.estado_muestra,
         observaciones: data.observaciones,
         id_paciente: pacienteId,
