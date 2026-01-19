@@ -315,3 +315,69 @@ export const cambiarEstadoTecnica = async (
     next(error);
   }
 };
+
+/**
+ * Marca técnicas como resultado erróneo
+ * POST /api/tecnicas/resultado-erroneo
+ * Body: { ids_tecnicas: number[], id_worklist: number }
+ */
+export const marcarResultadoErroneo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { ids_tecnicas, id_worklist } = req.body;
+
+    if (!ids_tecnicas || !Array.isArray(ids_tecnicas)) {
+      res.status(400).json({
+        success: false,
+        message:
+          'Se requiere un array de IDs de técnicas en el campo ids_tecnicas',
+      });
+      return;
+    }
+
+    if (ids_tecnicas.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'El array de IDs de técnicas no puede estar vacío',
+      });
+      return;
+    }
+
+    if (!id_worklist || typeof id_worklist !== 'number') {
+      res.status(400).json({
+        success: false,
+        message: 'Se requiere un id_worklist válido',
+      });
+      return;
+    }
+
+    const resultado = await tecnicaService.marcarResultadoErroneo(
+      ids_tecnicas,
+      id_worklist
+    );
+
+    if (resultado.success) {
+      res.status(200).json({
+        success: true,
+        message: `${resultado.updated} técnica(s) marcada(s) como resultado erróneo`,
+        data: {
+          updated: resultado.updated,
+        },
+      });
+    } else {
+      res.status(resultado.updated > 0 ? 207 : 400).json({
+        success: false,
+        message: 'Proceso completado con errores',
+        data: {
+          updated: resultado.updated,
+          errors: resultado.errors,
+        },
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};

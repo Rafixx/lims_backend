@@ -24,6 +24,7 @@ export class Worklist extends Model<
   declare id_worklist: CreationOptional<number>;
   declare nombre?: string;
   declare tecnica_proc?: string;
+  declare id_tecnico_resp?: number;
   declare create_dt?: Date | null;
   declare delete_dt?: Date | null;
   declare update_dt?: Date;
@@ -45,6 +46,10 @@ export class Worklist extends Model<
         },
         tecnica_proc: {
           type: DataTypes.STRING(100),
+          allowNull: true,
+        },
+        id_tecnico_resp: {
+          type: DataTypes.INTEGER,
           allowNull: true,
         },
         create_dt: {

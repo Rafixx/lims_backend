@@ -262,12 +262,34 @@ export class WorklistRepository {
     return worklist.update(data);
   }
 
+  /**
+   * Borrado lógico de worklist
+   * Asigna fecha actual a delete_dt en lugar de eliminar físicamente el registro
+   */
   async delete(worklist: Worklist) {
-    return worklist.destroy();
+    return worklist.destroy(); // Sequelize maneja el borrado lógico con paranoid: true
+  }
+
+  /**
+   * Asigna un técnico responsable directamente al worklist
+   * Actualiza el campo id_tecnico_resp del worklist
+   */
+  async asignarTecnico(idWorklist: number, idTecnico: number) {
+    const worklist = await this.findById(idWorklist);
+    if (!worklist) {
+      throw new Error(`Worklist con ID ${idWorklist} no encontrado`);
+    }
+
+    return worklist.update({ id_tecnico_resp: idTecnico });
   }
 
   async setTecnicoLab(idWorklist: number, idTecnico: number) {
-    // Obtener todas las técnicas del worklist
+    // Obtener el worklist y sus técnicas
+    const worklist = await this.findById(idWorklist);
+    if (!worklist) {
+      throw new Error(`Worklist con ID ${idWorklist} no encontrado`);
+    }
+
     const tecnicas = await this.findTecnicasById(idWorklist);
 
     if (!tecnicas || tecnicas.length === 0) {
@@ -275,6 +297,9 @@ export class WorklistRepository {
         `No se encontraron técnicas para el worklist ${idWorklist}`
       );
     }
+
+    // Asignar el técnico al worklist
+    await worklist.update({ id_tecnico_resp: idTecnico });
 
     // Asignar el técnico a cada técnica del worklist
     for (const tecnica of tecnicas) {

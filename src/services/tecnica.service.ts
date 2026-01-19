@@ -260,4 +260,45 @@ export class TecnicaService {
       return false;
     }
   }
+
+  /**
+   * Marca técnicas como resultado erróneo para permitir volver a seleccionarlas
+   * @param idsTecnicas Array de IDs de técnicas (1..n)
+   * @param idWorklist ID del worklist asociado
+   * @returns Promise<{ success: boolean; updated: number; errors: string[] }>
+   */
+  async marcarResultadoErroneo(
+    idsTecnicas: number[],
+    idWorklist: number
+  ): Promise<{ success: boolean; updated: number; errors: string[] }> {
+    if (!idsTecnicas || idsTecnicas.length === 0) {
+      return {
+        success: false,
+        updated: 0,
+        errors: ['Se requiere al menos un ID de técnica'],
+      };
+    }
+
+    if (!idWorklist || idWorklist <= 0) {
+      return {
+        success: false,
+        updated: 0,
+        errors: ['Se requiere un ID de worklist válido'],
+      };
+    }
+
+    // Validar que todos los IDs sean números válidos
+    const idsInvalidos = idsTecnicas.filter(
+      (id) => !Number.isInteger(id) || id <= 0
+    );
+    if (idsInvalidos.length > 0) {
+      return {
+        success: false,
+        updated: 0,
+        errors: [`IDs de técnica inválidos: ${idsInvalidos.join(', ')}`],
+      };
+    }
+
+    return this.tecnicaRepo.marcarResultadoErroneo(idsTecnicas, idWorklist);
+  }
 }

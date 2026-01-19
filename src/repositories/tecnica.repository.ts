@@ -3,6 +3,7 @@ import { DimTecnicaProc } from '../models/DimTecnicaProc';
 // import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
 import { Usuario } from '../models/Usuario';
+import { Worklist } from '../models/Worklist';
 // import { DimTipoMuestra } from '../models/DimTipoMuestra';
 // import { DimEstado } from '../models/DimEstado';
 import { ESTADO_TECNICA } from '../constants/estados.constants';
@@ -350,5 +351,82 @@ export class TecnicaRepository {
       console.error('Error al calcular estadísticas del worklist:', error);
       throw new Error('Error al calcular estadísticas del worklist');
     }
+  }
+
+  /**
+   * Marca técnicas como resultado erróneo
+   * - Asigna id_estado = 15 (REINTENTANDO/RESULTADO_ERRONEO)
+   * - Elimina id_tecnico_resp (null)
+   * - Actualiza fecha_estado a now()
+   * - Elimina id_worklist (null)
+   * - Elimina id_tecnico_resp del worklist asociado (null)
+   * @param idsTecnicas Array de IDs de técnicas
+   * @param idWorklist ID del worklist asociado
+   * @returns Promise<{ success: boolean; updated: number; errors: string[] }>
+   */
+  async marcarResultadoErroneo(
+    idsTecnicas: number[],
+    idWorklist: number
+  ): Promise<{ success: boolean; updated: number; errors: string[] }> {
+    const errors: string[] = [];
+    let updated = 0;
+    const ID_ESTADO_RESULTADO_ERRONEO = 15;
+
+    // Primero limpiar el técnico responsable del worklist (solo una vez)
+    try {
+      await Worklist.update(
+        {
+          id_tecnico_resp: null as unknown as number,
+        },
+        {
+          where: { id_worklist: idWorklist },
+        }
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Error desconocido';
+      errors.push(`Error al actualizar worklist ${idWorklist}: ${message}`);
+    }
+
+    // Luego procesar cada técnica
+    for (const idTecnica of idsTecnicas) {
+      try {
+        const tecnica = await Tecnica.findByPk(idTecnica);
+        if (!tecnica) {
+          errors.push(`Técnica ${idTecnica} no encontrada`);
+          continue;
+        }
+
+        if (tecnica.delete_dt) {
+          errors.push(`Técnica ${idTecnica} está eliminada`);
+          continue;
+        }
+
+        // Usar update estático para poder asignar null a los campos
+        await Tecnica.update(
+          {
+            id_estado: ID_ESTADO_RESULTADO_ERRONEO,
+            id_tecnico_resp: null as unknown as number,
+            fecha_estado: new Date(),
+            id_worklist: null as unknown as number,
+          },
+          {
+            where: { id_tecnica: idTecnica },
+          }
+        );
+
+        updated++;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Error desconocido';
+        errors.push(`Error al procesar técnica ${idTecnica}: ${message}`);
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      updated,
+      errors,
+    };
   }
 }

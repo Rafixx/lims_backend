@@ -8,6 +8,7 @@ import {
   deleteWorklist,
   updateWorklist,
   getPosiblesTecnicas,
+  asignarTecnico,
   setTecnicoLab,
   importDataResults,
   startTecnicasInWorklist,
@@ -64,6 +65,9 @@ router.post('/', createWorklist);
 
 // PUT /api/worklists/:id - Actualizar worklist
 router.put('/:id', updateWorklist);
+
+// PATCH /api/worklists/:id/asignar-tecnico - Asignar técnico responsable al worklist
+router.patch('/:id/asignar-tecnico', asignarTecnico);
 
 // PUT /api/worklists/:id/setTecnicoLab - Asignar técnico a worklist
 router.put('/:id/setTecnicoLab', setTecnicoLab);

@@ -160,6 +160,38 @@ export const deleteWorklist = async (
   }
 };
 
+/**
+ * Asigna un técnico responsable al worklist
+ * PATCH /api/worklists/:id/asignar-tecnico
+ * Body: { id_tecnico_resp: number }
+ */
+export const asignarTecnico = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const idWorklist = validateId(req.params.id);
+    const { id_tecnico_resp } = req.body;
+
+    if (!id_tecnico_resp) {
+      throw new BadRequestError(
+        'El id_tecnico_resp es requerido en el cuerpo de la petición'
+      );
+    }
+
+    const idTecnico = validateId(String(id_tecnico_resp));
+
+    const resultado = await worklistService.asignarTecnico(
+      idWorklist,
+      idTecnico
+    );
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const setTecnicoLab = async (
   req: Request,
   res: Response,

@@ -200,6 +200,23 @@ export class WorklistService {
     return { message: 'Worklist eliminada correctamente' };
   }
 
+  /**
+   * Asigna un técnico responsable al worklist
+   * Actualiza el campo id_tecnico_resp del worklist
+   */
+  async asignarTecnico(idWorklist: number, idTecnico: number) {
+    const worklistActualizada = await this.workListRepo.asignarTecnico(
+      idWorklist,
+      idTecnico
+    );
+
+    return {
+      success: true,
+      message: 'Técnico asignado al worklist correctamente',
+      data: worklistActualizada,
+    };
+  }
+
   async setTecnicoLab(idWorklist: number, idTecnico: number) {
     // Verificar que la worklist existe
     const worklist = await this.workListRepo.findById(idWorklist);
@@ -295,9 +312,7 @@ export class WorklistService {
   }
 
   private formatWorklistCode(year: number, sequence: number): string {
-    const configuredDigits = Number(
-      process.env.WORKLIST_CODE_DIGITS ?? '5'
-    );
+    const configuredDigits = Number(process.env.WORKLIST_CODE_DIGITS ?? '5');
     const digits =
       Number.isFinite(configuredDigits) && configuredDigits >= 4
         ? Math.min(configuredDigits, 8)

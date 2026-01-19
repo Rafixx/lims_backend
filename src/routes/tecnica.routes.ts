@@ -15,6 +15,7 @@ import {
   getTecnicasConMuestra,
   getEstadisticasWorklist,
   cambiarEstadoTecnica,
+  marcarResultadoErroneo,
 } from '../controllers/tecnica.controller';
 
 const router = Router();
@@ -87,5 +88,14 @@ router.patch('/:idTecnica/completar', completarTecnica);
  * @body {string} observaciones - Observaciones opcionales
  */
 router.post('/:id/cambiar-estado', cambiarEstadoTecnica);
+
+/**
+ * @route POST /api/tecnicas/resultado-erroneo
+ * @desc Marca técnicas como resultado erróneo (estado 15), limpia técnico responsable y worklist
+ * @access Public
+ * @body {number[]} ids_tecnicas - Array de IDs de técnicas a marcar como erróneas (1..n elementos)
+ * @returns {object} - Resultado del proceso con número de técnicas actualizadas y posibles errores
+ */
+router.post('/resultado-erroneo', marcarResultadoErroneo);
 
 export { router as tecnicaRoutes };
