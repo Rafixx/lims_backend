@@ -29,6 +29,17 @@ router.post('/', createTecnica);
 router.put('/:id', updateTecnica);
 router.delete('/:id', deleteTecnica);
 
+/**
+ * @route POST /api/tecnicas/deleteTecnica
+ * @desc Elimina/cancela una técnica (alternativa POST)
+ * @access Public
+ * @body {number} id_tecnica - ID de la técnica a eliminar
+ */
+router.post('/deleteTecnica', async (req, res, next) => {
+  req.params = { id: String(req.body.id_tecnica) };
+  return deleteTecnica(req, res, next);
+});
+
 // Nuevas rutas para funcionalidades del frontend
 
 /**
