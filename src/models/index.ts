@@ -28,6 +28,7 @@ import ResFinalQubit from './ResFinalQubit';
 import { DimPlantillaPasos } from './DimPlantillaPasos';
 import { TecnicaReactivo } from './TecnicaReactivo';
 import { Contador } from './Contador';
+import { Externalizacion } from './Externalizacion';
 
 type ModelWithAssociate = ModelStatic<Model> & {
   associate?(models: Record<string, ModelStatic<Model>>): void;
@@ -63,6 +64,7 @@ export function initModels(sequelize: Sequelize) {
   DimPlantillaPasos.initModel(sequelize);
   TecnicaReactivo.initModel(sequelize);
   Contador.initModel(sequelize);
+  Externalizacion.initModel(sequelize);
 
   // 2) Ahora sí construye el map de clases
   const models = {
@@ -94,6 +96,7 @@ export function initModels(sequelize: Sequelize) {
     DimPlantillaPasos,
     TecnicaReactivo,
     Contador,
+    Externalizacion,
   } as const;
 
   // 3) Asociaciones

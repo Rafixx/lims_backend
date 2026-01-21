@@ -26,6 +26,7 @@ import { tecnicaReactivoRoutes } from './routes/tecnicaReactivo.routes';
 import { worklistRouter } from './routes/worklist.routes';
 import { resultadoRouter } from './routes/resultado.routes';
 import estadoRoutes from './routes/estado.routes';
+import { externalizacionRoutes } from './routes/externalizacion.routes';
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api/tecnicasReactivos', tecnicaReactivoRoutes);
 app.use('/api/worklists', worklistRouter);
 app.use('/api/resultados', resultadoRouter);
 app.use('/api/estados', estadoRoutes);
+app.use('/api/externalizaciones', externalizacionRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);

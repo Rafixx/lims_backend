@@ -182,7 +182,7 @@ export class Tecnica extends Model<
         {
           model: Muestra,
           as: 'muestra',
-          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
+          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo', 'estudio'],
         },
         {
           model: Usuario,
@@ -200,6 +200,35 @@ export class Tecnica extends Model<
             'valor_fecha',
             'unidades',
           ],
+        },
+      ],
+    });
+    this.addScope('externaliza', {
+      attributes: [
+        'id_tecnica',
+        'id_muestra',
+        'fecha_inicio_tec',
+        'id_estado',
+        'fecha_estado',
+        'comentarios',
+      ],
+      include: [
+        {
+          model: DimEstado,
+          as: 'estadoInfo',
+          attributes: ['id', 'estado', 'color', 'descripcion'],
+          where: { entidad: 'TECNICA' },
+          required: false,
+        },
+        {
+          model: DimTecnicaProc,
+          as: 'tecnica_proc',
+          attributes: ['id', 'tecnica_proc'],
+        },
+        {
+          model: Muestra,
+          as: 'muestra',
+          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo', 'estudio'],
         },
       ],
     });
