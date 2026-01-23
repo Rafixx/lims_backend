@@ -56,6 +56,22 @@ export class ExternalizacionRepository {
         `🔵 [INICIO] Creando externalización para técnica ${data.id_tecnica}`
       );
 
+      // Verificar que no exista ya una externalización activa para esta técnica
+      if (data.id_tecnica) {
+        const externalizacionExistente = await Externalizacion.findOne({
+          where: {
+            id_tecnica: data.id_tecnica,
+            delete_dt: { [Op.is]: null },
+          },
+        });
+
+        if (externalizacionExistente) {
+          throw new Error(
+            `Ya existe una externalización activa para la técnica ${data.id_tecnica} (ID: ${externalizacionExistente.id_externalizacion})`
+          );
+        }
+      }
+
       // Verificar estado de la técnica ANTES de crear externalización
       if (data.id_tecnica) {
         const tecnicaAntes = await Tecnica.findByPk(data.id_tecnica, {
@@ -128,6 +144,116 @@ export class ExternalizacionRepository {
     data: Partial<Externalizacion>
   ): Promise<Externalizacion> {
     return externalizacion.update(data);
+  }
+
+  /**
+   * Marca externalizaciones como enviadas y actualiza técnicas a estado ENVIADA_EXT
+   * @param ids Array de IDs de externalizaciones
+   * @param data Datos de envío
+   * @returns Promise<{ updated: number; externalizaciones: Externalizacion[] }>
+   */
+  async marcarComoEnviadas(
+    ids: number[],
+    data: {
+      f_envio: Date;
+      servicio?: string;
+      agencia?: string;
+      id_centro?: number;
+      id_tecnico_resp?: number;
+      observaciones?: string;
+    }
+  ): Promise<{ updated: number; externalizaciones: Externalizacion[] }> {
+    const transaction = await sequelize.transaction();
+
+    try {
+      console.log(
+        `🔵 [ENVÍO] Marcando ${ids.length} externalizaciones como enviadas`
+      );
+
+      // 1. Buscar las externalizaciones y sus técnicas asociadas
+      const externalizaciones = await Externalizacion.findAll({
+        where: {
+          id_externalizacion: { [Op.in]: ids },
+          delete_dt: { [Op.is]: null },
+        },
+        attributes: ['id_externalizacion', 'id_tecnica'],
+        transaction,
+      });
+
+      if (externalizaciones.length === 0) {
+        throw new Error('No se encontraron externalizaciones válidas');
+      }
+
+      console.log(
+        `✅ [PASO 1] Encontradas ${externalizaciones.length} externalizaciones`
+      );
+
+      // 2. Actualizar las externalizaciones
+      const [updatedCount] = await Externalizacion.update(
+        {
+          f_envio: data.f_envio,
+          servicio: data.servicio,
+          agencia: data.agencia,
+          id_centro: data.id_centro,
+          id_tecnico_resp: data.id_tecnico_resp,
+          observaciones: data.observaciones,
+        },
+        {
+          where: {
+            id_externalizacion: { [Op.in]: ids },
+            delete_dt: { [Op.is]: null },
+          },
+          transaction,
+        }
+      );
+
+      console.log(
+        `✅ [PASO 2] Actualizadas ${updatedCount} externalizaciones`
+      );
+
+      // 3. Actualizar el estado de las técnicas a ENVIADA_EXT (id_estado = 17)
+      const tecnicaIds = externalizaciones.map((e) => e.id_tecnica);
+
+      const [tecnicasUpdated] = await Tecnica.update(
+        {
+          id_estado: 17, // ENVIADA_EXT
+          fecha_estado: new Date(),
+        },
+        {
+          where: {
+            id_tecnica: { [Op.in]: tecnicaIds },
+          },
+          transaction,
+        }
+      );
+
+      console.log(
+        `✅ [PASO 3] Actualizadas ${tecnicasUpdated} técnicas a estado ENVIADA_EXT (17)`
+      );
+
+      // 4. Obtener las externalizaciones actualizadas con sus referencias
+      const externalizacionesActualizadas = await Externalizacion.scope(
+        'withRefs'
+      ).findAll({
+        where: {
+          id_externalizacion: { [Op.in]: ids },
+        },
+        transaction,
+      });
+
+      await transaction.commit();
+      console.log(`✅ [COMMIT] Envío registrado exitosamente`);
+
+      return {
+        updated: updatedCount,
+        externalizaciones: externalizacionesActualizadas,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      console.error('❌ [ERROR] Error al marcar como enviadas:', error);
+      console.error('🔄 [ROLLBACK] Transacción revertida');
+      throw error;
+    }
   }
 
   /**

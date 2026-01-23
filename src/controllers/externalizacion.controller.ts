@@ -183,8 +183,25 @@ export const deleteExternalizacion = async (
 };
 
 /**
+ * POST /api/externalizaciones/enviar
+ * Marca externalizaciones como enviadas y actualiza técnicas a estado ENVIADA_EXT
+ */
+export const marcarComoEnviadas = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await externalizacionService.marcarComoEnviadas(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * PATCH /api/externalizaciones/:id/recepcion
- * Registra la recepción de una externalización
+ * Registra la recepción de una externalización y actualiza técnica a estado RECIBIDA_EXT
  */
 export const registrarRecepcion = async (
   req: Request,

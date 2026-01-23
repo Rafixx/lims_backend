@@ -9,6 +9,7 @@ import {
   createExternalizacion,
   updateExternalizacion,
   deleteExternalizacion,
+  marcarComoEnviadas,
   registrarRecepcion,
   registrarRecepcionDatos,
 } from '../controllers/externalizacion.controller';
@@ -52,6 +53,20 @@ router.get('/centro/:idCentro', getExternalizacionesByCentro);
  * @param {number} id - ID de la externalización
  */
 router.get('/:id', getExternalizacionById);
+
+/**
+ * @route POST /api/externalizaciones/enviar
+ * @desc Marca externalizaciones como enviadas y actualiza técnicas a estado ENVIADA_EXT
+ * @access Public
+ * @body {number[]} externalizacion_ids - Array de IDs de externalizaciones
+ * @body {string} f_envio - Fecha de envío
+ * @body {string} servicio - Servicio (opcional)
+ * @body {string} agencia - Agencia (opcional)
+ * @body {number} id_centro - ID del centro (opcional)
+ * @body {number} id_tecnico_resp - ID del técnico responsable (opcional)
+ * @body {string} observaciones - Observaciones (opcional)
+ */
+router.post('/enviar', marcarComoEnviadas);
 
 /**
  * @route POST /api/externalizaciones
