@@ -9,3 +9,4 @@ truncate table tecnicas_reactivos cascade;
 truncate table resultado cascade;
 truncate table res_final_qubit cascade;
 truncate table res_final_nanodrop cascade;
+truncate table externalizacion cascade;

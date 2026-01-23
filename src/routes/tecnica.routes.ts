@@ -5,6 +5,7 @@ import {
   getTecnicaById,
   // getTecnicasBySolicitudId,
   getTecnicasByMuestraId,
+  getTecnicasByMuestraIdAgrupadas,
   createTecnica,
   updateTecnica,
   deleteTecnica,
@@ -20,7 +21,30 @@ import {
 
 const router = Router();
 
-// Rutas existentes
+// Rutas específicas (DEBEN IR ANTES de /:id para evitar colisiones)
+/**
+ * @route GET /api/tecnicas/con-muestra
+ * @desc Obtiene todas las técnicas con información de muestra
+ * @access Public
+ */
+router.get('/con-muestra', getTecnicasConMuestra);
+
+/**
+ * @route GET /api/tecnicas/estadisticas
+ * @desc Obtiene estadísticas del worklist calculadas en backend
+ * @access Public
+ */
+router.get('/estadisticas', getEstadisticasWorklist);
+
+/**
+ * @route GET /api/tecnicas/muestra/:id/agrupadas
+ * @desc Obtiene técnicas de una muestra, agrupadas por proceso si es tipo array
+ * @access Public
+ * @param {number} id - ID de la muestra
+ */
+router.get('/muestra/:id/agrupadas', getTecnicasByMuestraIdAgrupadas);
+
+// Rutas genéricas
 router.get('/', getTecnicas);
 router.get('/:id', getTecnicaById);
 // router.get('/solicitud/:id', getTecnicasBySolicitudId);
@@ -40,21 +64,7 @@ router.post('/deleteTecnica', async (req, res, next) => {
   return deleteTecnica(req, res, next);
 });
 
-// Nuevas rutas para funcionalidades del frontend
-
-/**
- * @route GET /api/tecnicas/con-muestra
- * @desc Obtiene todas las técnicas con información de muestra
- * @access Public
- */
-router.get('/con-muestra', getTecnicasConMuestra);
-
-/**
- * @route GET /api/tecnicas/estadisticas
- * @desc Obtiene estadísticas del worklist calculadas en backend
- * @access Public
- */
-router.get('/estadisticas', getEstadisticasWorklist);
+// Otras rutas específicas
 
 /**
  * @route GET /api/tecnicas/proceso/:idTecnicaProc/tecnicas

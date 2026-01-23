@@ -1,11 +1,11 @@
 import { CreationAttributes, Op, fn, col } from 'sequelize';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
-// import { Muestra } from '../models/Muestra';
+import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
 import { Usuario } from '../models/Usuario';
 import { Worklist } from '../models/Worklist';
+import { DimEstado } from '../models/DimEstado';
 // import { DimTipoMuestra } from '../models/DimTipoMuestra';
-// import { DimEstado } from '../models/DimEstado';
 import { ESTADO_TECNICA } from '../constants/estados.constants';
 
 /**
@@ -25,6 +25,32 @@ export interface TecnicaConMuestra {
   codigo_muestra?: string;
   tipo_muestra?: string;
   tecnico_responsable?: string;
+}
+
+/**
+ * Interfaz para técnica agrupada (para arrays)
+ */
+export interface TecnicaAgrupada {
+  id_tecnica_proc: number;
+  proceso_nombre: string;
+  total_posiciones: number;
+  pendientes: number;
+  asignadas: number;
+  en_proceso: number;
+  completadas: number;
+  resultado_erroneo: number;
+  otros_estados: number;
+  tecnico_resp?: {
+    id_usuario: number;
+    nombre: string;
+  };
+  estado_info?: {
+    id: number;
+    estado: string;
+    color: string;
+  };
+  primera_tecnica_id: number;
+  fecha_estado?: Date;
 }
 
 /**
@@ -51,6 +77,144 @@ export class TecnicaRepository {
     return Tecnica.scope('withRefs').findAll({
       where: { id_muestra },
     });
+  }
+
+  /**
+   * Obtiene técnicas agrupadas por proceso para una muestra
+   * Si la muestra es de tipo array, agrupa las técnicas y devuelve resumen de estados
+   * Si NO es de tipo array, devuelve todas las técnicas normalmente
+   * @param id_muestra ID de la muestra
+   * @returns Promise<Tecnica[] | TecnicaAgrupada[]>
+   */
+  async findByMuestraIdAgrupadas(
+    id_muestra: number
+  ): Promise<Tecnica[] | TecnicaAgrupada[]> {
+    try {
+      // 1. Consultar la muestra para verificar si es tipo array
+      const muestra = await Muestra.findByPk(id_muestra, {
+        attributes: ['id_muestra', 'tipo_array'],
+      });
+
+      if (!muestra) {
+        throw new Error('Muestra no encontrada');
+      }
+
+      // 2. Si NO es array, devolver todas las técnicas normalmente
+      if (!muestra.tipo_array) {
+        return this.findByMuestraId(id_muestra);
+      }
+
+      // 3. Si ES array, agrupar por id_tecnica_proc
+      const tecnicas = await Tecnica.findAll({
+        where: {
+          id_muestra,
+          delete_dt: { [Op.is]: null },
+        },
+        include: [
+          {
+            model: DimTecnicaProc,
+            as: 'tecnica_proc',
+            attributes: ['id', 'tecnica_proc'],
+            required: true,
+          },
+          {
+            model: DimEstado,
+            as: 'estadoInfo',
+            attributes: ['id', 'estado', 'color'],
+            required: false,
+          },
+          {
+            model: Usuario,
+            as: 'tecnico_resp',
+            attributes: ['id_usuario', 'nombre'],
+            required: false,
+          },
+        ],
+        order: [['id_tecnica_proc', 'ASC']],
+      });
+
+      // 4. Agrupar técnicas por id_tecnica_proc
+      const gruposPorProceso = new Map<number, Tecnica[]>();
+
+      for (const tecnica of tecnicas) {
+        const idProc = tecnica.id_tecnica_proc;
+        if (!gruposPorProceso.has(idProc)) {
+          gruposPorProceso.set(idProc, []);
+        }
+        gruposPorProceso.get(idProc)!.push(tecnica);
+      }
+
+      // 5. Construir el resumen de cada grupo
+      const tecnicasAgrupadas: TecnicaAgrupada[] = [];
+
+      for (const [idProc, tecnicasGrupo] of gruposPorProceso.entries()) {
+        // Contar estados
+        let pendientes = 0;
+        let asignadas = 0;
+        let en_proceso = 0;
+        let completadas = 0;
+        let resultado_erroneo = 0;
+        let otros_estados = 0;
+
+        for (const t of tecnicasGrupo) {
+          switch (t.id_estado) {
+            case ESTADO_TECNICA.PENDIENTE:
+              pendientes++;
+              break;
+            case ESTADO_TECNICA.ASIGNADA:
+              asignadas++;
+              break;
+            case ESTADO_TECNICA.EN_PROCESO:
+              en_proceso++;
+              break;
+            case ESTADO_TECNICA.COMPLETADA_TECNICA:
+              completadas++;
+              break;
+            case 15: // RESULTADO_ERRONEO
+              resultado_erroneo++;
+              break;
+            default:
+              otros_estados++;
+          }
+        }
+
+        // Obtener la primera técnica del grupo (para información base)
+        const primeraTecnica = tecnicasGrupo[0];
+        const tecnicaConRefs = primeraTecnica as Tecnica & {
+          tecnica_proc?: { id: number; tecnica_proc: string };
+          estadoInfo?: { id: number; estado: string; color: string };
+          tecnico_resp?: { id_usuario: number; nombre: string };
+        };
+
+        // Verificar si todas las técnicas tienen el mismo técnico responsable
+        const tecnicoComun = tecnicasGrupo.every(
+          (t) => t.id_tecnico_resp === primeraTecnica.id_tecnico_resp
+        )
+          ? tecnicaConRefs.tecnico_resp
+          : undefined;
+
+        tecnicasAgrupadas.push({
+          id_tecnica_proc: idProc,
+          proceso_nombre: tecnicaConRefs.tecnica_proc?.tecnica_proc || '',
+          total_posiciones: tecnicasGrupo.length,
+          pendientes,
+          asignadas,
+          en_proceso,
+          completadas,
+          resultado_erroneo,
+          otros_estados,
+          tecnico_resp: tecnicoComun,
+          estado_info: tecnicaConRefs.estadoInfo,
+          primera_tecnica_id: primeraTecnica.id_tecnica,
+          fecha_estado: primeraTecnica.fecha_estado || undefined,
+        });
+      }
+
+      return tecnicasAgrupadas;
+    } catch (error) {
+      console.error('Error al obtener técnicas agrupadas:', error);
+      throw new Error('Error al obtener técnicas de la muestra');
+    }
   }
 
   async findAll() {

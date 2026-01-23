@@ -48,6 +48,30 @@ export class TecnicaService {
     }));
   }
 
+  /**
+   * Obtiene técnicas agrupadas por proceso para una muestra
+   * Si la muestra es de tipo array, devuelve técnicas agrupadas con resumen de estados
+   * Si NO es de tipo array, devuelve todas las técnicas normalmente
+   * @param id_muestra ID de la muestra
+   * @returns Promise con técnicas agrupadas o normales según el tipo de muestra
+   */
+  async getTecnicasByMuestraIdAgrupadas(id_muestra: number) {
+    if (!id_muestra || id_muestra <= 0) {
+      throw new Error('ID de muestra inválido');
+    }
+
+    try {
+      return await this.tecnicaRepo.findByMuestraIdAgrupadas(id_muestra);
+    } catch (error) {
+      console.error('Error al obtener técnicas agrupadas:', error);
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : 'Error al obtener técnicas de la muestra'
+      );
+    }
+  }
+
   async createTecnica(data: CreateTecnicaDTO) {
     // 1. Crear la técnica
     const nuevaTecnica = await this.tecnicaRepo.create({

@@ -1,11 +1,15 @@
 import { Muestra } from '../models/Muestra';
-import { fn, col, literal } from 'sequelize';
+import { fn, col, literal, Transaction } from 'sequelize';
 import { Tecnica } from '../models/Tecnica';
 import { TecnicaReactivo } from '../models/TecnicaReactivo';
 import { Solicitud } from '../models/Solicitud';
 import { MuestraArray } from '../models/MuestraArray';
 import { sequelize } from '../config/db.config';
 import { DimReactivoService } from '../services/dimReactivo.service';
+import { DimPruebaService } from '../services/dimPrueba.service';
+
+// Constante para el estado inicial de las técnicas
+const ESTADO_TECNICA_INICIAL = 8; // Estado: CREADA
 
 interface MuestraStats {
   total: number;
@@ -98,6 +102,218 @@ interface CrearMuestraData {
 export class MuestraRepository {
   constructor(private dimReactivoService: DimReactivoService) {}
 
+  /**
+   * Helper para parsear y validar el ID del técnico creador
+   */
+  private parseCreatedBy(
+    tecnico_resp?: { id_usuario: string | number }
+  ): number | undefined {
+    if (!tecnico_resp?.id_usuario) return undefined;
+
+    const tecnicoId =
+      typeof tecnico_resp.id_usuario === 'number'
+        ? tecnico_resp.id_usuario
+        : Number(tecnico_resp.id_usuario);
+
+    return isNaN(tecnicoId) ? undefined : tecnicoId;
+  }
+
+  /**
+   * Crea registros de MuestraArray con las posiciones del array
+   */
+  private async createMuestraArray(
+    idMuestra: number,
+    arrayConfig: { code: string; width: number; heightLetter: string },
+    transaction?: Transaction
+  ): Promise<MuestraArray[]> {
+    const { code, width, heightLetter } = arrayConfig;
+    const arrayPositions = [];
+
+    const maxLetterIndex = heightLetter.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+    let positionIndex = 1;
+
+    for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
+      const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
+      for (let col = 1; col <= width; col++) {
+        arrayPositions.push({
+          id_muestra: idMuestra,
+          id_posicion: positionIndex,
+          codigo_placa: code,
+          posicion_placa: `${col}${letter}`,
+          f_creacion: new Date(),
+        });
+        positionIndex++;
+      }
+    }
+
+    const createdArrays = await MuestraArray.bulkCreate(arrayPositions, {
+      transaction,
+      returning: true,
+    });
+
+    console.log(
+      `✅ Creados ${createdArrays.length} registros de MuestraArray`
+    );
+
+    if (createdArrays.length === 0 || !createdArrays[0].id_array) {
+      throw new Error('No se pudieron obtener los IDs de los arrays creados');
+    }
+
+    return createdArrays;
+  }
+
+  /**
+   * Crea técnicas asociadas a posiciones de array
+   * Para cada posición del array, crea una técnica por cada id_tecnica_proc
+   */
+  private async createTecnicasArray(
+    idMuestra: number,
+    arrayRecords: MuestraArray[],
+    idsTecnicaProc: number[],
+    transaction?: Transaction
+  ): Promise<Tecnica[]> {
+    const tecnicasArray: Array<{
+      id_muestra: number;
+      id_array: number;
+      id_tecnica_proc: number;
+      id_estado: number;
+      fecha_estado: Date;
+      f_creacion: Date;
+    }> = [];
+
+    // Para cada posición del array
+    for (const arrayRecord of arrayRecords) {
+      if (!arrayRecord.id_array) {
+        throw new Error(
+          `No se pudo obtener el ID del array para la posición ${arrayRecord.posicion_placa}`
+        );
+      }
+
+      // Para cada técnica de proceso, crear una técnica
+      for (const idTecnicaProc of idsTecnicaProc) {
+        tecnicasArray.push({
+          id_muestra: idMuestra,
+          id_array: arrayRecord.id_array,
+          id_tecnica_proc: idTecnicaProc,
+          id_estado: ESTADO_TECNICA_INICIAL,
+          fecha_estado: new Date(),
+          f_creacion: new Date(),
+        });
+      }
+    }
+
+    const tecnicasCreadas = await Tecnica.bulkCreate(tecnicasArray, {
+      transaction,
+      returning: true,
+    });
+
+    console.log(
+      `✅ Creadas ${tecnicasCreadas.length} técnicas del array (${arrayRecords.length} posiciones × ${idsTecnicaProc.length} técnicas/proc)`
+    );
+
+    return tecnicasCreadas;
+  }
+
+  /**
+   * Crea técnicas normales (sin array)
+   */
+  private async createTecnicasNormales(
+    idMuestra: number,
+    tecnicas: Array<{ id_tecnica_proc: string | number; comentarios?: string }>,
+    transaction?: Transaction
+  ): Promise<Tecnica[]> {
+    const tecnicasData = tecnicas.map((tecnica) => {
+      const idTecnicaProc = Number(tecnica.id_tecnica_proc);
+      if (isNaN(idTecnicaProc)) {
+        throw new Error(
+          `ID de técnica proceso debe ser un número válido: ${tecnica.id_tecnica_proc}`
+        );
+      }
+
+      return {
+        id_muestra: idMuestra,
+        id_tecnica_proc: idTecnicaProc,
+        id_estado: ESTADO_TECNICA_INICIAL,
+        fecha_estado: new Date(),
+        comentarios: tecnica.comentarios || undefined,
+        f_creacion: new Date(),
+      };
+    });
+
+    const tecnicasCreadas = await Tecnica.bulkCreate(tecnicasData, {
+      transaction,
+      returning: true,
+    });
+
+    console.log(`✅ Creadas ${tecnicasCreadas.length} técnicas normales`);
+
+    return tecnicasCreadas;
+  }
+
+  /**
+   * Crea los registros de TecnicasReactivos para las técnicas dadas
+   * Este método elimina la duplicación entre la rama array y no-array
+   */
+  private async createTecnicasReactivos(
+    tecnicasCreadas: Tecnica[],
+    created_by?: number,
+    transaction?: Transaction
+  ): Promise<void> {
+    const tecnicasReactivosData: Array<{
+      id_tecnica: number;
+      id_reactivo: number;
+      created_by?: number;
+    }> = [];
+
+    // Obtener los id_tecnica_proc únicos
+    const uniqueTecnicaProcs = [
+      ...new Set(tecnicasCreadas.map((t) => t.id_tecnica_proc)),
+    ];
+
+    // Para cada id_tecnica_proc, obtener sus reactivos
+    for (const idTecnicaProc of uniqueTecnicaProcs) {
+      const reactivos =
+        await this.dimReactivoService.getDimReactivoByIdTecnicaProc(
+          idTecnicaProc
+        );
+
+      // Para cada técnica que tenga este id_tecnica_proc
+      const tecnicasConEsteProc = tecnicasCreadas.filter(
+        (t) => t.id_tecnica_proc === idTecnicaProc
+      );
+
+      // Para cada técnica, crear un registro por cada reactivo
+      for (const tecnica of tecnicasConEsteProc) {
+        for (const reactivo of reactivos) {
+          const registro: {
+            id_tecnica: number;
+            id_reactivo: number;
+            created_by?: number;
+          } = {
+            id_tecnica: tecnica.id_tecnica,
+            id_reactivo: reactivo.id,
+          };
+
+          if (created_by) {
+            registro.created_by = created_by;
+          }
+
+          tecnicasReactivosData.push(registro);
+        }
+      }
+    }
+
+    // Crear todos los TecnicasReactivos en batch
+    if (tecnicasReactivosData.length > 0) {
+      await TecnicaReactivo.bulkCreate(tecnicasReactivosData, {
+        transaction,
+      });
+      console.log(
+        `✅ Creados ${tecnicasReactivosData.length} registros de TecnicasReactivos`
+      );
+    }
+  }
+
   async findById(id: number) {
     return Muestra.scope('withRefs').findByPk(id);
   }
@@ -124,6 +340,7 @@ export class MuestraRepository {
     const transaction = await sequelize.transaction();
 
     try {
+      // 1. Crear Solicitud
       // Validar y convertir ID de cliente (obligatorio)
       if (!data.solicitud.cliente.id) {
         throw new Error('El ID del cliente es obligatorio');
@@ -132,9 +349,7 @@ export class MuestraRepository {
       if (isNaN(clienteId)) {
         throw new Error('ID de cliente debe ser un número válido');
       }
-      // console.log('Data: ', data);
-      // console.log('Data array_config: ', data.array_config);
-      // Preparar datos de la solicitud
+
       const solicitudData = {
         id_cliente: clienteId,
         f_creacion: data.solicitud.f_creacion
@@ -154,14 +369,14 @@ export class MuestraRepository {
           : undefined,
         condiciones_envio: data.solicitud.condiciones_envio,
         tiempo_hielo: data.solicitud.tiempo_hielo,
-        estado_solicitud: 'REGISTRADA', // Estado por defecto para nueva solicitud
+        estado_solicitud: 'REGISTRADA',
       };
 
-      // Crear la solicitud dentro de la transacción
       const nuevaSolicitud = await Solicitud.create(solicitudData, {
         transaction,
       });
 
+      // 2. Crear Muestra
       // Validar y convertir otros IDs
       const pacienteId = data.paciente?.id
         ? Number(data.paciente.id)
@@ -194,7 +409,6 @@ export class MuestraRepository {
         throw new Error('ID de prueba debe ser un número válido');
       }
 
-      // Preparar datos de la muestra con el ID de solicitud recién creado
       const muestraData = {
         id_solicitud: nuevaSolicitud.id_solicitud,
         codigo_epi: data.codigo_epi,
@@ -220,269 +434,72 @@ export class MuestraRepository {
         id_criterio_val: criterioValidacionId,
         id_ubicacion: ubicacionId,
         id_prueba: pruebaId,
-        tipo_array: data.array_config ? true : false, // Marcar como array si viene configuración
+        tipo_array: data.array_config ? true : false,
       };
 
-      // Crear la muestra dentro de la transacción
       const nuevaMuestra = await Muestra.create(muestraData, { transaction });
 
-      // Si se proporcionó configuración de array, crear posiciones y técnicas
+      // 3. Crear Técnicas (array o normales) y TecnicasReactivos
+      let tecnicasCreadas: Tecnica[] = [];
+
       if (data.array_config && data.array_config.totalPositions > 0) {
-        const { code, width, heightLetter } = data.array_config;
-
-        // Validar que tengamos la técnica para crear
-        if (!data.tecnicas || data.tecnicas.length === 0) {
+        // Rama A: Crear técnicas para array
+        // Verificar que la muestra tenga una prueba asociada
+        if (!pruebaId) {
           throw new Error(
-            'Se requiere al menos una técnica para crear un array'
+            'Se requiere una prueba asociada para crear un array'
           );
         }
 
-        const idTecnicaProc = Number(data.tecnicas[0].id_tecnica_proc);
-        if (isNaN(idTecnicaProc)) {
-          throw new Error('ID de técnica proceso debe ser un número válido');
-        }
-
-        // Generar todas las posiciones del array
-        const arrayPositions = [];
-        const tecnicasArray = [];
-
-        // Convertir heightLetter a número (A=1, B=2, ..., Z=26)
-        const maxLetterIndex =
-          heightLetter.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
-
-        let positionIndex = 1;
-
-        // Generar posiciones: primero por filas (letras), luego por columnas (números)
-        for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
-          const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
-
-          for (let col = 1; col <= width; col++) {
-            const posicion = `${col}${letter}`; // Ejemplo: 1A, 2A, 3A, ... 7A, 1B, 2B, ...
-
-            // Crear el registro de array
-            arrayPositions.push({
-              id_muestra: nuevaMuestra.id_muestra,
-              id_posicion: positionIndex,
-              codigo_placa: code,
-              posicion_placa: posicion,
-              f_creacion: new Date(),
-            });
-
-            positionIndex++;
-          }
-        }
-
-        // Crear todos los registros de MuestraArray en batch
-        const createdArrays = await MuestraArray.bulkCreate(arrayPositions, {
-          transaction,
-          returning: true, // Para obtener los IDs generados
-        });
-
-        console.log(
-          `✅ Creados ${createdArrays.length} registros de MuestraArray`
-        );
-        console.log(
-          'Primeros 3 IDs generados:',
-          createdArrays.slice(0, 3).map((a) => ({
-            id_array: a.id_array,
-            posicion: a.posicion_placa,
-          }))
+        // 3.1. Crear posiciones del array
+        const createdArrays = await this.createMuestraArray(
+          nuevaMuestra.id_muestra,
+          data.array_config,
+          transaction
         );
 
-        // Verificar que se generaron los IDs
-        if (createdArrays.length === 0 || !createdArrays[0].id_array) {
+        // 3.2. Obtener las técnicas de proceso de la prueba
+        const dimPruebaService = new DimPruebaService();
+        const tecnicasProc = await dimPruebaService.getTecnicasByPrueba(
+          pruebaId
+        );
+
+        if (!tecnicasProc || tecnicasProc.length === 0) {
           throw new Error(
-            'No se pudieron obtener los IDs de los arrays creados'
+            `No se encontraron técnicas de proceso para la prueba con ID ${pruebaId}`
           );
         }
 
-        // Crear las técnicas asociadas a cada posición del array
-        for (const arrayRecord of createdArrays) {
-          if (!arrayRecord.id_array) {
-            console.error('⚠️ Array sin ID:', arrayRecord);
-            throw new Error(
-              `No se pudo obtener el ID del array para la posición ${arrayRecord.posicion_placa}`
-            );
-          }
-
-          tecnicasArray.push({
-            id_muestra: nuevaMuestra.id_muestra,
-            id_array: arrayRecord.id_array,
-            id_tecnica_proc: idTecnicaProc,
-            id_estado: 8,
-            fecha_estado: new Date(),
-            comentarios: data.tecnicas[0].comentarios || undefined,
-            f_creacion: new Date(),
-          });
-        }
+        const idsTecnicaProc = tecnicasProc.map((t) => t.id);
 
         console.log(
-          `✅ Preparadas ${tecnicasArray.length} técnicas con id_array`
-        );
-        console.log(
-          'Primeras 3 técnicas:',
-          tecnicasArray.slice(0, 3).map((t) => ({
-            id_array: t.id_array,
-            id_tecnica_proc: t.id_tecnica_proc,
-          }))
+          `📋 Se crearán técnicas para ${idsTecnicaProc.length} procesos: ${tecnicasProc.map((t) => t.tecnica_proc).join(', ')}`
         );
 
-        // Crear todas las técnicas del array en batch
-        const tecnicasCreadas = await Tecnica.bulkCreate(tecnicasArray, {
-          transaction,
-          returning: true,
-        });
-        console.log('✅ Técnicas del array creadas exitosamente');
-
-        // Crear TecnicasReactivos para cada técnica creada
-        const tecnicasReactivosData: Array<{
-          id_tecnica: number;
-          id_reactivo: number;
-          created_by?: number;
-        }> = [];
-
-        // Obtener los id_tecnica_proc únicos
-        const uniqueTecnicaProcs = [
-          ...new Set(tecnicasArray.map((t) => t.id_tecnica_proc)),
-        ];
-
-        // Para cada id_tecnica_proc, obtener sus reactivos
-        for (const idTecnicaProc of uniqueTecnicaProcs) {
-          const reactivos =
-            await this.dimReactivoService.getDimReactivoByIdTecnicaProc(
-              idTecnicaProc
-            );
-
-          // Para cada técnica que tenga este id_tecnica_proc
-          const tecnicasConEsteProc = tecnicasCreadas.filter(
-            (t) => t.id_tecnica_proc === idTecnicaProc
-          );
-
-          // Para cada técnica, crear un registro por cada reactivo
-          for (const tecnica of tecnicasConEsteProc) {
-            for (const reactivo of reactivos) {
-              const registro: {
-                id_tecnica: number;
-                id_reactivo: number;
-                created_by?: number;
-              } = {
-                id_tecnica: tecnica.id_tecnica,
-                id_reactivo: reactivo.id,
-              };
-
-              // Solo añadir created_by si es un número válido
-              const tecnicoId = data.tecnico_resp?.id_usuario;
-              if (tecnicoId && typeof tecnicoId === 'number') {
-                registro.created_by = tecnicoId;
-              } else if (tecnicoId && typeof tecnicoId === 'string') {
-                const parsedId = Number(tecnicoId);
-                if (!isNaN(parsedId)) {
-                  registro.created_by = parsedId;
-                }
-              }
-
-              tecnicasReactivosData.push(registro);
-            }
-          }
-        }
-
-        // Crear todos los TecnicasReactivos en batch
-        if (tecnicasReactivosData.length > 0) {
-          await TecnicaReactivo.bulkCreate(tecnicasReactivosData, {
-            transaction,
-          });
-          console.log(
-            `✅ Creados ${tecnicasReactivosData.length} registros de TecnicasReactivos para array`
-          );
-        }
+        // 3.3. Crear técnicas asociadas a cada posición × cada técnica de proceso
+        tecnicasCreadas = await this.createTecnicasArray(
+          nuevaMuestra.id_muestra,
+          createdArrays,
+          idsTecnicaProc,
+          transaction
+        );
       } else if (data.tecnicas && data.tecnicas.length > 0) {
-        // Si NO es array, crear técnicas normales (lógica original)
-        const tecnicasData = data.tecnicas.map((tecnica) => {
-          // Validar y convertir id_tecnica_proc
-          const idTecnicaProc = Number(tecnica.id_tecnica_proc);
-          if (isNaN(idTecnicaProc)) {
-            throw new Error(
-              `ID de técnica proceso debe ser un número válido: ${tecnica.id_tecnica_proc}`
-            );
-          }
+        // Rama B: Crear técnicas normales
+        tecnicasCreadas = await this.createTecnicasNormales(
+          nuevaMuestra.id_muestra,
+          data.tecnicas,
+          transaction
+        );
+      }
 
-          return {
-            id_muestra: nuevaMuestra.id_muestra,
-            id_tecnica_proc: idTecnicaProc,
-            id_estado: 8,
-            fecha_estado: new Date(),
-            comentarios: tecnica.comentarios || undefined,
-            f_creacion: new Date(),
-          };
-        });
-
-        // Crear todas las técnicas de una vez dentro de la transacción
-        const tecnicasCreadas = await Tecnica.bulkCreate(tecnicasData, {
-          transaction,
-          returning: true,
-        });
-
-        // Crear TecnicasReactivos para cada técnica creada
-        const tecnicasReactivosData: Array<{
-          id_tecnica: number;
-          id_reactivo: number;
-          created_by?: number;
-        }> = [];
-
-        // Obtener los id_tecnica_proc únicos
-        const uniqueTecnicaProcs = [
-          ...new Set(tecnicasData.map((t) => t.id_tecnica_proc)),
-        ];
-
-        // Para cada id_tecnica_proc, obtener sus reactivos
-        for (const idTecnicaProc of uniqueTecnicaProcs) {
-          const reactivos =
-            await this.dimReactivoService.getDimReactivoByIdTecnicaProc(
-              idTecnicaProc
-            );
-
-          // Para cada técnica que tenga este id_tecnica_proc
-          const tecnicasConEsteProc = tecnicasCreadas.filter(
-            (t) => t.id_tecnica_proc === idTecnicaProc
-          );
-
-          // Para cada técnica, crear un registro por cada reactivo
-          for (const tecnica of tecnicasConEsteProc) {
-            for (const reactivo of reactivos) {
-              const registro: {
-                id_tecnica: number;
-                id_reactivo: number;
-                created_by?: number;
-              } = {
-                id_tecnica: tecnica.id_tecnica,
-                id_reactivo: reactivo.id,
-              };
-
-              // Solo añadir created_by si es un número válido
-              const tecnicoId = data.tecnico_resp?.id_usuario;
-              if (tecnicoId && typeof tecnicoId === 'number') {
-                registro.created_by = tecnicoId;
-              } else if (tecnicoId && typeof tecnicoId === 'string') {
-                const parsedId = Number(tecnicoId);
-                if (!isNaN(parsedId)) {
-                  registro.created_by = parsedId;
-                }
-              }
-
-              tecnicasReactivosData.push(registro);
-            }
-          }
-        }
-
-        // Crear todos los TecnicasReactivos en batch
-        if (tecnicasReactivosData.length > 0) {
-          await TecnicaReactivo.bulkCreate(tecnicasReactivosData, {
-            transaction,
-          });
-          console.log(
-            `✅ Creados ${tecnicasReactivosData.length} registros de TecnicasReactivos para técnicas normales`
-          );
-        }
+      // 4. Crear TecnicasReactivos (si hay técnicas creadas)
+      if (tecnicasCreadas.length > 0) {
+        const created_by = this.parseCreatedBy(data.tecnico_resp);
+        await this.createTecnicasReactivos(
+          tecnicasCreadas,
+          created_by,
+          transaction
+        );
       }
 
       // Confirmar la transacción
@@ -501,7 +518,35 @@ export class MuestraRepository {
   }
 
   async delete(muestra: Muestra) {
-    return muestra.destroy();
+    const transaction = await sequelize.transaction();
+
+    try {
+      // Si la muestra es de tipo array, eliminar lógicamente los registros de MuestraArray
+      if (muestra.tipo_array) {
+        await MuestraArray.destroy({
+          where: { id_muestra: muestra.id_muestra },
+          transaction,
+        });
+      }
+
+      // Eliminar lógicamente todas las técnicas asociadas a esta muestra
+      await Tecnica.destroy({
+        where: { id_muestra: muestra.id_muestra },
+        transaction,
+      });
+
+      // Finalmente, eliminar lógicamente la muestra
+      await muestra.destroy({ transaction });
+
+      // Confirmar la transacción
+      await transaction.commit();
+
+      return muestra;
+    } catch (error) {
+      // Revertir la transacción en caso de error
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async getMuestrasStats(): Promise<MuestraStats> {

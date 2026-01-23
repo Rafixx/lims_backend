@@ -1,5 +1,7 @@
 import { CreationAttributes, Op, WhereOptions } from 'sequelize';
 import { Externalizacion } from '../models/Externalizacion';
+import { Tecnica } from '../models/Tecnica';
+import { sequelize } from '../config/db.config';
 
 export class ExternalizacionRepository {
   /**
@@ -40,14 +42,79 @@ export class ExternalizacionRepository {
   }
 
   /**
-   * Crea una nueva externalización
+   * Crea una nueva externalización y actualiza el estado de la técnica a EXTERNALIZADA
    * @param data Datos de la externalización
    * @returns Promise<Externalizacion>
    */
   async create(
     data: CreationAttributes<Externalizacion>
   ): Promise<Externalizacion> {
-    return Externalizacion.create(data);
+    const transaction = await sequelize.transaction();
+
+    try {
+      console.log(
+        `🔵 [INICIO] Creando externalización para técnica ${data.id_tecnica}`
+      );
+
+      // Verificar estado de la técnica ANTES de crear externalización
+      if (data.id_tecnica) {
+        const tecnicaAntes = await Tecnica.findByPk(data.id_tecnica, {
+          attributes: ['id_tecnica', 'id_estado', 'delete_dt'],
+        });
+        console.log(
+          `📊 [ANTES] Técnica ${data.id_tecnica}:`,
+          tecnicaAntes?.toJSON()
+        );
+      }
+
+      // 1. Crear la externalización
+      const externalizacion = await Externalizacion.create(data, {
+        transaction,
+      });
+      console.log(
+        `✅ [PASO 1] Externalización creada: ID ${externalizacion.id_externalizacion}`
+      );
+
+      // 2. Actualizar el estado de la técnica a EXTERNALIZADA (id_estado = 16)
+      if (data.id_tecnica) {
+        const [affectedRows] = await Tecnica.update(
+          {
+            id_estado: 16, // EXTERNALIZADA
+            fecha_estado: new Date(),
+          },
+          {
+            where: { id_tecnica: data.id_tecnica },
+            transaction,
+          }
+        );
+
+        console.log(
+          `✅ [PASO 2] Técnica ${data.id_tecnica} actualizada. Filas afectadas: ${affectedRows}`
+        );
+
+        // Verificar estado DESPUÉS de actualizar
+        const tecnicaDespues = await Tecnica.findByPk(data.id_tecnica, {
+          attributes: ['id_tecnica', 'id_estado', 'delete_dt'],
+          transaction,
+        });
+        console.log(
+          `📊 [DESPUÉS] Técnica ${data.id_tecnica}:`,
+          tecnicaDespues?.toJSON()
+        );
+      }
+
+      // 3. Confirmar la transacción
+      await transaction.commit();
+      console.log(`✅ [COMMIT] Transacción confirmada exitosamente`);
+
+      return externalizacion;
+    } catch (error) {
+      // Revertir en caso de error
+      await transaction.rollback();
+      console.error('❌ [ERROR] Error al crear externalización:', error);
+      console.error('🔄 [ROLLBACK] Transacción revertida');
+      throw error;
+    }
   }
 
   /**
