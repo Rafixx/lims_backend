@@ -398,3 +398,25 @@ export const marcarResultadoErroneo = async (
     next(error);
   }
 };
+
+/**
+ * Obtiene técnicas pendientes de externalización
+ * GET /api/tecnicas/pendientes-externalizacion
+ */
+export const getTecnicasPendientesExternalizacion = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const tecnicas =
+      await tecnicaService.getTecnicasPendientesExternalizacion();
+
+    res.status(200).json({
+      success: true,
+      data: tecnicas,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -12,6 +12,7 @@ import {
   marcarComoEnviadas,
   registrarRecepcion,
   registrarRecepcionDatos,
+  marcarComoRecibida,
 } from '../controllers/externalizacion.controller';
 
 const router = Router();
@@ -47,14 +48,6 @@ router.get('/tecnica/:idTecnica', getExternalizacionesByTecnicaId);
 router.get('/centro/:idCentro', getExternalizacionesByCentro);
 
 /**
- * @route GET /api/externalizaciones/:id
- * @desc Obtiene una externalización por ID
- * @access Public
- * @param {number} id - ID de la externalización
- */
-router.get('/:id', getExternalizacionById);
-
-/**
  * @route POST /api/externalizaciones/enviar
  * @desc Marca externalizaciones como enviadas y actualiza técnicas a estado ENVIADA_EXT
  * @access Public
@@ -77,21 +70,14 @@ router.post('/enviar', marcarComoEnviadas);
 router.post('/', createExternalizacion);
 
 /**
- * @route PUT /api/externalizaciones/:id
- * @desc Actualiza una externalización
+ * @route PATCH /api/externalizaciones/:id/marcar-recibida
+ * @desc Marca una externalización como recibida, actualiza observaciones y cambia técnica a estado RECIBIDA_EXT (18)
  * @access Public
  * @param {number} id - ID de la externalización
- * @body {UpdateExternalizacionDTO} - Datos a actualizar
+ * @body {string} f_recepcion - Fecha de recepción (ISO string, requerido)
+ * @body {string} observaciones - Observaciones adicionales (opcional, se concatenan con las existentes)
  */
-router.put('/:id', updateExternalizacion);
-
-/**
- * @route DELETE /api/externalizaciones/:id
- * @desc Elimina una externalización (soft delete)
- * @access Public
- * @param {number} id - ID de la externalización
- */
-router.delete('/:id', deleteExternalizacion);
+router.patch('/:id/marcar-recibida', marcarComoRecibida);
 
 /**
  * @route PATCH /api/externalizaciones/:id/recepcion
@@ -112,5 +98,30 @@ router.patch('/:id/recepcion', registrarRecepcion);
  * @body {number} updated_by - ID del usuario que registra la recepción de datos
  */
 router.patch('/:id/recepcion-datos', registrarRecepcionDatos);
+
+/**
+ * @route GET /api/externalizaciones/:id
+ * @desc Obtiene una externalización por ID
+ * @access Public
+ * @param {number} id - ID de la externalización
+ */
+router.get('/:id', getExternalizacionById);
+
+/**
+ * @route PUT /api/externalizaciones/:id
+ * @desc Actualiza una externalización
+ * @access Public
+ * @param {number} id - ID de la externalización
+ * @body {UpdateExternalizacionDTO} - Datos a actualizar
+ */
+router.put('/:id', updateExternalizacion);
+
+/**
+ * @route DELETE /api/externalizaciones/:id
+ * @desc Elimina una externalización (soft delete)
+ * @access Public
+ * @param {number} id - ID de la externalización
+ */
+router.delete('/:id', deleteExternalizacion);
 
 export { router as externalizacionRoutes };

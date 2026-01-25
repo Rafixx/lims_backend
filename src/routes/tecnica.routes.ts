@@ -17,11 +17,19 @@ import {
   getEstadisticasWorklist,
   cambiarEstadoTecnica,
   marcarResultadoErroneo,
+  getTecnicasPendientesExternalizacion,
 } from '../controllers/tecnica.controller';
 
 const router = Router();
 
 // Rutas específicas (DEBEN IR ANTES de /:id para evitar colisiones)
+/**
+ * @route GET /api/tecnicas/pendientes-externalizacion
+ * @desc Obtiene técnicas pendientes de externalización (sin worklist y sin estado final)
+ * @access Public
+ */
+router.get('/pendientes-externalizacion', getTecnicasPendientesExternalizacion);
+
 /**
  * @route GET /api/tecnicas/con-muestra
  * @desc Obtiene todas las técnicas con información de muestra

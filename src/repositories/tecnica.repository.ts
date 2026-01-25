@@ -593,4 +593,124 @@ export class TecnicaRepository {
       errors,
     };
   }
+
+  /**
+   * Obtiene técnicas pendientes de externalización
+   * Filtra técnicas que:
+   * - id_worklist es NULL
+   * - Estado es CREADA (id=8)
+   * Incluye información de muestra, técnico, proceso, estado, resultados
+   * Para muestras tipo array, incluye información del array
+   * @returns Promise<Tecnica[]> Lista de técnicas pendientes de externalización
+   */
+  async findPendientesExternalizacion(): Promise<Tecnica[]> {
+    try {
+      const { MuestraArray } = await import('../models/MuestraArray');
+      const { Resultado } = await import('../models/Resultado');
+
+      // Solo técnicas en estado CREADA (id=8)
+      const ESTADO_CREADA = 8;
+
+      const tecnicas = await Tecnica.findAll({
+        where: {
+          id_worklist: null as unknown as number,
+          id_estado: ESTADO_CREADA,
+          delete_dt: null as unknown as Date,
+        },
+        attributes: [
+          'id_tecnica',
+          'id_muestra',
+          'id_array',
+          'fecha_inicio_tec',
+          'fecha_estado',
+          'comentarios',
+          'id_estado',
+          'id_worklist',
+          'id_tecnico_resp',
+        ],
+        include: [
+          {
+            model: DimTecnicaProc,
+            as: 'tecnica_proc',
+            attributes: ['id', 'tecnica_proc', 'orden'],
+            required: true,
+          },
+          {
+            model: DimEstado,
+            as: 'estadoInfo',
+            attributes: ['id', 'estado', 'color', 'entidad'],
+            required: false,
+          },
+          {
+            model: Usuario,
+            as: 'tecnico_resp',
+            attributes: ['id_usuario', 'nombre'],
+            required: false,
+          },
+          {
+            model: Muestra,
+            as: 'muestra',
+            attributes: [
+              'id_muestra',
+              'codigo_epi',
+              'codigo_externo',
+              'estudio',
+              'tipo_array',
+            ],
+            required: true,
+          },
+          {
+            model: MuestraArray,
+            as: 'muestraArray',
+            attributes: [
+              'id_array',
+              'id_muestra',
+              'codigo_placa',
+              'posicion_placa',
+              'num_array',
+              'pos_array',
+            ],
+            required: false,
+          },
+          {
+            model: Resultado,
+            as: 'resultados',
+            attributes: [
+              'id_resultado',
+              'tipo_res',
+              'valor',
+              'valor_texto',
+              'valor_fecha',
+              'unidades',
+            ],
+            required: false,
+          },
+        ],
+        order: [
+          [{ model: Muestra, as: 'muestra' }, 'estudio', 'ASC'],
+          [
+            { model: DimTecnicaProc, as: 'tecnica_proc' },
+            'tecnica_proc',
+            'ASC',
+          ],
+          [
+            { model: MuestraArray, as: 'muestraArray' },
+            'posicion_placa',
+            'ASC',
+          ],
+          ['id_tecnica', 'ASC'],
+        ],
+      });
+
+      return tecnicas;
+    } catch (error) {
+      console.error(
+        'Error al obtener técnicas pendientes de externalización:',
+        error
+      );
+      throw new Error(
+        'Error al obtener técnicas pendientes de externalización'
+      );
+    }
+  }
 }

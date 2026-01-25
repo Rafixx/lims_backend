@@ -325,4 +325,27 @@ export class TecnicaService {
 
     return this.tecnicaRepo.marcarResultadoErroneo(idsTecnicas, idWorklist);
   }
+
+  /**
+   * Obtiene técnicas pendientes de externalización
+   * Filtra técnicas que:
+   * - No están asignadas a un worklist (id_worklist = NULL)
+   * - No están en estado final (COMPLETADA, CANCELADA, etc.)
+   * @returns Promise con lista de técnicas pendientes de externalización
+   */
+  async getTecnicasPendientesExternalizacion() {
+    try {
+      return await this.tecnicaRepo.findPendientesExternalizacion();
+    } catch (error) {
+      console.error(
+        'Error en servicio al obtener técnicas pendientes de externalización:',
+        error
+      );
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : 'Error al obtener técnicas pendientes de externalización'
+      );
+    }
+  }
 }

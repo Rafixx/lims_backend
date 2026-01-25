@@ -48,7 +48,12 @@ const postgresOptions: Options = {
   dialect: 'postgres' as Dialect,
   define: defineOptions,
   logging: false,
-  pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+  pool: {
+    max: 20,        // Aumentado de 5 a 20 para manejar concurrencia
+    min: 2,         // Mantener al menos 2 conexiones activas
+    acquire: 60000, // Aumentado timeout de adquisición a 60s
+    idle: 10000
+  },
   dialectOptions: {
     // ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   },

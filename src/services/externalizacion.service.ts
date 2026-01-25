@@ -360,4 +360,58 @@ export class ExternalizacionService {
       updated_by: updatedBy,
     });
   }
+
+  /**
+   * Marca una externalización como recibida y actualiza técnica a estado RECIBIDA_EXT
+   * @param id ID de la externalización
+   * @param data Datos de recepción
+   * @returns Promise con resultado de la operación
+   */
+  async marcarComoRecibida(data: {
+    id: number;
+    f_recepcion: string;
+    observaciones?: string;
+  }) {
+    if (!data.id || data.id <= 0) {
+      throw new BadRequestError('ID de externalización inválido');
+    }
+
+    if (!data.f_recepcion) {
+      throw new BadRequestError('La fecha de recepción es requerida');
+    }
+
+    // Validar longitud de observaciones
+    if (data.observaciones && data.observaciones.length > 255) {
+      throw new BadRequestError(
+        'Las observaciones no pueden exceder 255 caracteres'
+      );
+    }
+
+    // Verificar que la externalización existe y está pendiente de recepción
+    const externalizacion = await this.externalizacionRepo.findById(data.id);
+    if (!externalizacion) {
+      throw new NotFoundError('Externalización no encontrada');
+    }
+
+    if (!externalizacion.f_envio) {
+      throw new BadRequestError(
+        'No se puede registrar recepción sin fecha de envío'
+      );
+    }
+
+    if (externalizacion.f_recepcion) {
+      throw new BadRequestError('La externalización ya ha sido recibida');
+    }
+
+    const result = await this.externalizacionRepo.marcarComoRecibida(data.id, {
+      f_recepcion: new Date(data.f_recepcion),
+      observaciones: data.observaciones,
+    });
+
+    return {
+      success: true,
+      message: 'Externalización marcada como recibida correctamente',
+      data: result,
+    };
+  }
 }

@@ -15,6 +15,7 @@ import { Usuario } from './Usuario';
 import { DimEstado } from './DimEstado';
 import { Resultado } from './Resultado';
 import { Muestra } from './Muestra';
+import { MuestraArray } from './MuestraArray';
 
 export class Tecnica extends Model<
   InferAttributes<Tecnica>,
@@ -207,6 +208,7 @@ export class Tecnica extends Model<
       attributes: [
         'id_tecnica',
         'id_muestra',
+        'id_array',
         'fecha_inicio_tec',
         'id_estado',
         'fecha_estado',
@@ -228,7 +230,26 @@ export class Tecnica extends Model<
         {
           model: Muestra,
           as: 'muestra',
-          attributes: ['id_muestra', 'codigo_epi', 'codigo_externo', 'estudio'],
+          attributes: [
+            'id_muestra',
+            'codigo_epi',
+            'codigo_externo',
+            'estudio',
+            'tipo_array',
+          ],
+        },
+        {
+          model: MuestraArray,
+          as: 'muestraArray',
+          attributes: [
+            'id_array',
+            'id_muestra',
+            'codigo_placa',
+            'posicion_placa',
+            'num_array',
+            'pos_array',
+          ],
+          required: false,
         },
       ],
     });

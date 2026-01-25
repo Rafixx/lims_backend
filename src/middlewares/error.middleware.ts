@@ -4,6 +4,7 @@ import { JsonWebTokenError } from 'jsonwebtoken';
 import { BadRequestError } from '../errors/BadRequestError';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
 import { NotFoundError } from '../errors/NotFoundError';
+import { ConflictError } from '../errors/ConflictError';
 
 export const errorHandler = (
   err: unknown,
@@ -32,7 +33,8 @@ export const errorHandler = (
   if (
     err instanceof BadRequestError ||
     err instanceof UnauthorizedError ||
-    err instanceof NotFoundError
+    err instanceof NotFoundError ||
+    err instanceof ConflictError
   ) {
     return res.status(err.statusCode).json({
       success: false,

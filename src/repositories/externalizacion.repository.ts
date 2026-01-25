@@ -2,6 +2,7 @@ import { CreationAttributes, Op, WhereOptions } from 'sequelize';
 import { Externalizacion } from '../models/Externalizacion';
 import { Tecnica } from '../models/Tecnica';
 import { sequelize } from '../config/db.config';
+import { ConflictError } from '../errors/ConflictError';
 
 export class ExternalizacionRepository {
   /**
@@ -43,57 +44,42 @@ export class ExternalizacionRepository {
 
   /**
    * Crea una nueva externalización y actualiza el estado de la técnica a EXTERNALIZADA
+   * OPTIMIZACIÓN: Validaciones FUERA de transacción para minimizar tiempo de bloqueo
    * @param data Datos de la externalización
    * @returns Promise<Externalizacion>
    */
   async create(
     data: CreationAttributes<Externalizacion>
   ): Promise<Externalizacion> {
+    // OPTIMIZACIÓN 1: Verificar duplicados FUERA de la transacción
+    if (data.id_tecnica) {
+      const externalizacionExistente = await Externalizacion.findOne({
+        where: {
+          id_tecnica: data.id_tecnica,
+          delete_dt: { [Op.is]: null },
+        },
+        attributes: ['id_externalizacion', 'id_tecnica'],
+      });
+
+      if (externalizacionExistente) {
+        throw new ConflictError(
+          `Ya existe una externalización activa para la técnica ${data.id_tecnica} (ID: ${externalizacionExistente.id_externalizacion})`
+        );
+      }
+    }
+
+    // OPTIMIZACIÓN 2: Transacción corta - solo operaciones de escritura
     const transaction = await sequelize.transaction();
 
     try {
-      console.log(
-        `🔵 [INICIO] Creando externalización para técnica ${data.id_tecnica}`
-      );
-
-      // Verificar que no exista ya una externalización activa para esta técnica
-      if (data.id_tecnica) {
-        const externalizacionExistente = await Externalizacion.findOne({
-          where: {
-            id_tecnica: data.id_tecnica,
-            delete_dt: { [Op.is]: null },
-          },
-        });
-
-        if (externalizacionExistente) {
-          throw new Error(
-            `Ya existe una externalización activa para la técnica ${data.id_tecnica} (ID: ${externalizacionExistente.id_externalizacion})`
-          );
-        }
-      }
-
-      // Verificar estado de la técnica ANTES de crear externalización
-      if (data.id_tecnica) {
-        const tecnicaAntes = await Tecnica.findByPk(data.id_tecnica, {
-          attributes: ['id_tecnica', 'id_estado', 'delete_dt'],
-        });
-        console.log(
-          `📊 [ANTES] Técnica ${data.id_tecnica}:`,
-          tecnicaAntes?.toJSON()
-        );
-      }
-
       // 1. Crear la externalización
       const externalizacion = await Externalizacion.create(data, {
         transaction,
       });
-      console.log(
-        `✅ [PASO 1] Externalización creada: ID ${externalizacion.id_externalizacion}`
-      );
 
       // 2. Actualizar el estado de la técnica a EXTERNALIZADA (id_estado = 16)
       if (data.id_tecnica) {
-        const [affectedRows] = await Tecnica.update(
+        await Tecnica.update(
           {
             id_estado: 16, // EXTERNALIZADA
             fecha_estado: new Date(),
@@ -103,32 +89,16 @@ export class ExternalizacionRepository {
             transaction,
           }
         );
-
-        console.log(
-          `✅ [PASO 2] Técnica ${data.id_tecnica} actualizada. Filas afectadas: ${affectedRows}`
-        );
-
-        // Verificar estado DESPUÉS de actualizar
-        const tecnicaDespues = await Tecnica.findByPk(data.id_tecnica, {
-          attributes: ['id_tecnica', 'id_estado', 'delete_dt'],
-          transaction,
-        });
-        console.log(
-          `📊 [DESPUÉS] Técnica ${data.id_tecnica}:`,
-          tecnicaDespues?.toJSON()
-        );
       }
 
       // 3. Confirmar la transacción
       await transaction.commit();
-      console.log(`✅ [COMMIT] Transacción confirmada exitosamente`);
 
       return externalizacion;
     } catch (error) {
       // Revertir en caso de error
       await transaction.rollback();
       console.error('❌ [ERROR] Error al crear externalización:', error);
-      console.error('🔄 [ROLLBACK] Transacción revertida');
       throw error;
     }
   }
@@ -293,5 +263,96 @@ export class ExternalizacionRepository {
       } as WhereOptions<Externalizacion>,
       order: [['f_envio', 'ASC']],
     });
+  }
+
+  /**
+   * Marca una externalización como recibida, actualiza observaciones y cambia técnica a RECIBIDA_EXT
+   * @param id ID de la externalización
+   * @param data Datos de recepción
+   * @returns Promise<Externalizacion>
+   */
+  async marcarComoRecibida(
+    id: number,
+    data: {
+      f_recepcion: Date;
+      observaciones?: string;
+    }
+  ): Promise<Externalizacion> {
+    const transaction = await sequelize.transaction();
+
+    try {
+      console.log(
+        `🔵 [RECEPCIÓN] Marcando externalización ${id} como recibida`
+      );
+
+      // 1. Buscar la externalización
+      const externalizacion = await Externalizacion.findByPk(id, {
+        attributes: ['id_externalizacion', 'id_tecnica', 'observaciones'],
+        transaction,
+      });
+
+      if (!externalizacion) {
+        throw new Error('Externalización no encontrada');
+      }
+
+      console.log(
+        `✅ [PASO 1] Externalización encontrada (técnica: ${externalizacion.id_tecnica})`
+      );
+
+      // 2. Preparar observaciones (concatenar si ya existen)
+      let observacionesFinales = data.observaciones || '';
+      if (externalizacion.observaciones && data.observaciones) {
+        observacionesFinales = `${externalizacion.observaciones} | ${data.observaciones}`;
+      } else if (externalizacion.observaciones) {
+        observacionesFinales = externalizacion.observaciones;
+      }
+
+      // 3. Actualizar la externalización
+      await Externalizacion.update(
+        {
+          f_recepcion: data.f_recepcion,
+          observaciones: observacionesFinales,
+        },
+        {
+          where: { id_externalizacion: id },
+          transaction,
+        }
+      );
+
+      console.log(`✅ [PASO 2] Externalización actualizada con f_recepcion`);
+
+      // 4. Actualizar el estado de la técnica a RECIBIDA_EXT (id_estado = 18)
+      await Tecnica.update(
+        {
+          id_estado: 18, // RECIBIDA_EXT
+          fecha_estado: new Date(),
+        },
+        {
+          where: { id_tecnica: externalizacion.id_tecnica },
+          transaction,
+        }
+      );
+
+      console.log(
+        `✅ [PASO 3] Técnica ${externalizacion.id_tecnica} actualizada a estado RECIBIDA_EXT (18)`
+      );
+
+      // 5. Obtener la externalización actualizada con sus referencias
+      const externalizacionActualizada = await Externalizacion.scope(
+        'withRefs'
+      ).findByPk(id, {
+        transaction,
+      });
+
+      await transaction.commit();
+      console.log(`✅ [COMMIT] Recepción registrada exitosamente`);
+
+      return externalizacionActualizada!;
+    } catch (error) {
+      await transaction.rollback();
+      console.error('❌ [ERROR] Error al marcar como recibida:', error);
+      console.error('🔄 [ROLLBACK] Transacción revertida');
+      throw error;
+    }
   }
 }

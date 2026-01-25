@@ -257,3 +257,35 @@ export const registrarRecepcionDatos = async (
     next(error);
   }
 };
+
+/**
+ * PATCH /api/externalizaciones/:id/marcar-recibida
+ * Marca una externalización como recibida, actualiza observaciones y cambia técnica a estado RECIBIDA_EXT
+ */
+export const marcarComoRecibida = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!id || id <= 0) {
+      res.status(400).json({
+        success: false,
+        message: 'ID de externalización inválido',
+      });
+      return;
+    }
+
+    const result = await externalizacionService.marcarComoRecibida({
+      id,
+      f_recepcion: req.body.f_recepcion,
+      observaciones: req.body.observaciones,
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
