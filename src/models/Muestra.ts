@@ -43,6 +43,9 @@ export class Muestra extends Model<
   declare f_recepcion?: CreationOptional<Date>;
   declare id_tecnico_recepcion?: CreationOptional<number>;
   declare id_tecnico_verifica?: CreationOptional<number>;
+  declare id_tecnico_agotada?: CreationOptional<number>;
+  declare id_tecnico_destruccion?: CreationOptional<number>;
+  declare id_tecnico_devolucion?: CreationOptional<number>;
   declare f_destruccion?: CreationOptional<Date>;
   declare f_devolucion?: CreationOptional<Date>;
   declare f_agotada?: CreationOptional<Date>;
@@ -150,6 +153,21 @@ export class Muestra extends Model<
           allowNull: true,
           defaultValue: null,
         },
+        id_tecnico_agotada: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          defaultValue: null,
+        },
+        id_tecnico_destruccion: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          defaultValue: null,
+        },
+        id_tecnico_devolucion: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          defaultValue: null,
+        },
         f_destruccion: {
           type: DataTypes.DATE,
           allowNull: true,
@@ -247,6 +265,9 @@ export class Muestra extends Model<
         'f_recepcion',
         'id_tecnico_recepcion',
         'id_tecnico_verifica',
+        'id_tecnico_agotada',
+        'id_tecnico_destruccion',
+        'id_tecnico_devolucion',
         'f_destruccion',
         'f_devolucion',
         'f_agotada',
