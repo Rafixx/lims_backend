@@ -667,6 +667,8 @@ export class TecnicaRepository {
               'id_muestra',
               'codigo_placa',
               'posicion_placa',
+              'codigo_epi',
+              'codigo_externo',
               'num_array',
               'pos_array',
             ],
@@ -711,6 +713,88 @@ export class TecnicaRepository {
       throw new Error(
         'Error al obtener técnicas pendientes de externalización'
       );
+    }
+  }
+
+  /**
+   * Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
+   * @param primeraTecnicaId ID de la primera técnica del grupo
+   * @returns Promise con array de técnicas del grupo con información de muestraArray
+   */
+  async findTecnicasFromGroup(primeraTecnicaId: number): Promise<Tecnica[]> {
+    console.log('[findTecnicasFromGroup] Iniciando búsqueda con ID:', primeraTecnicaId);
+
+    try {
+      const { MuestraArray } = await import('../models/MuestraArray');
+      console.log('[findTecnicasFromGroup] MuestraArray importado');
+
+      // 1. Obtener la primera técnica para saber el id_muestra y id_tecnica_proc
+      const primeraTecnica = await Tecnica.findByPk(primeraTecnicaId, {
+        attributes: ['id_muestra', 'id_tecnica_proc'],
+      });
+
+      console.log('[findTecnicasFromGroup] Primera técnica:', primeraTecnica?.toJSON());
+
+      if (!primeraTecnica) {
+        throw new Error('Técnica no encontrada');
+      }
+
+      // 2. Obtener todas las técnicas del mismo grupo (mismo id_muestra y id_tecnica_proc)
+      const tecnicas = await Tecnica.findAll({
+        where: {
+          id_muestra: primeraTecnica.id_muestra,
+          id_tecnica_proc: primeraTecnica.id_tecnica_proc,
+          delete_dt: { [Op.is]: null },
+        },
+        include: [
+          {
+            model: DimTecnicaProc,
+            as: 'tecnica_proc',
+            attributes: ['id', 'tecnica_proc'],
+            required: false,
+          },
+          {
+            model: DimEstado,
+            as: 'estadoInfo',
+            attributes: ['id', 'estado', 'color'],
+            required: false,
+          },
+          {
+            model: Usuario,
+            as: 'tecnico_resp',
+            attributes: ['id_usuario', 'nombre'],
+            required: false,
+          },
+          {
+            model: Muestra,
+            as: 'muestra',
+            attributes: ['id_muestra', 'codigo_epi', 'codigo_externo', 'estudio', 'tipo_array'],
+            required: false,
+          },
+          {
+            model: MuestraArray,
+            as: 'muestraArray',
+            attributes: [
+              'id_array',
+              'id_muestra',
+              'posicion_placa',
+              'codigo_epi',
+              'codigo_externo',
+            ],
+            required: false,
+          },
+        ],
+        order: [
+          [{ model: MuestraArray, as: 'muestraArray' }, 'posicion_placa', 'ASC'],
+          ['id_tecnica', 'ASC'],
+        ],
+      });
+
+      console.log('[findTecnicasFromGroup] Técnicas encontradas:', tecnicas.length);
+      return tecnicas;
+    } catch (error) {
+      console.error('[findTecnicasFromGroup] Error:', error);
+      throw error;
     }
   }
 }

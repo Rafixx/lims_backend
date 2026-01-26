@@ -8,6 +8,8 @@ export interface CreateMuestraArrayDTO {
   id_posicion?: number;
   codigo_placa?: string;
   posicion_placa?: string;
+  codigo_epi?: string;
+  codigo_externo?: string;
   f_envio_escanear?: Date;
   num_array?: number;
   num_serie?: string;
@@ -19,6 +21,8 @@ export interface UpdateMuestraArrayDTO {
   id_posicion?: number;
   codigo_placa?: string;
   posicion_placa?: string;
+  codigo_epi?: string;
+  codigo_externo?: string;
   f_envio_escanear?: Date;
   num_array?: number;
   num_serie?: string;

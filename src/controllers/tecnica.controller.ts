@@ -420,3 +420,20 @@ export const getTecnicasPendientesExternalizacion = async (
     next(error);
   }
 };
+
+/**
+ * Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
+ */
+export const getTecnicasFromGroup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const primeraTecnicaId = Number(req.params.id);
+  try {
+    const tecnicas = await tecnicaService.getTecnicasFromGroup(primeraTecnicaId);
+    res.status(200).json(tecnicas);
+  } catch (error) {
+    next(error);
+  }
+};

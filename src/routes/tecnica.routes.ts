@@ -18,6 +18,7 @@ import {
   cambiarEstadoTecnica,
   marcarResultadoErroneo,
   getTecnicasPendientesExternalizacion,
+  getTecnicasFromGroup,
 } from '../controllers/tecnica.controller';
 
 const router = Router();
@@ -51,6 +52,14 @@ router.get('/estadisticas', getEstadisticasWorklist);
  * @param {number} id - ID de la muestra
  */
 router.get('/muestra/:id/agrupadas', getTecnicasByMuestraIdAgrupadas);
+
+/**
+ * @route GET /api/tecnicas/grupo/:id
+ * @desc Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
+ * @access Public
+ * @param {number} id - ID de la primera técnica del grupo
+ */
+router.get('/grupo/:id', getTecnicasFromGroup);
 
 // Rutas genéricas
 router.get('/', getTecnicas);

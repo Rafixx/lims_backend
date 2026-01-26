@@ -101,6 +101,8 @@ export class WorklistRepository {
    * (no completadas, no canceladas, sin worklist asignado)
    */
   async getPosiblesTecnicas(tecnicaProc: string) {
+    const { MuestraArray } = await import('../models/MuestraArray');
+
     // Obtener IDs de estados finales para TECNICA
     const estadosFinales = await DimEstado.findAll({
       where: {
@@ -115,7 +117,7 @@ export class WorklistRepository {
     const idsEstadosFinales = estadosFinales.map((e) => e.id);
 
     return Tecnica.findAll({
-      attributes: ['id_tecnica', 'id_estado'],
+      attributes: ['id_tecnica', 'id_estado', 'id_array'],
       include: [
         {
           model: DimEstado,
@@ -136,12 +138,29 @@ export class WorklistRepository {
           as: 'muestra',
           attributes: ['codigo_epi', 'codigo_externo', 'estudio'],
         },
+        {
+          model: MuestraArray,
+          as: 'muestraArray',
+          attributes: [
+            'id_array',
+            'id_muestra',
+            'codigo_placa',
+            'posicion_placa',
+            'codigo_epi',
+            'codigo_externo',
+          ],
+          required: false,
+        },
       ],
       where: literal(`
         "Tecnica"."delete_dt" IS NULL
         AND "Tecnica"."id_worklist" IS NULL
         ${idsEstadosFinales.length > 0 ? `AND ("Tecnica"."id_estado" IS NULL OR "Tecnica"."id_estado" NOT IN (${idsEstadosFinales.join(',')}))` : ''}
       `),
+      order: [
+        [{ model: Muestra, as: 'muestra' }, 'codigo_externo', 'ASC'],
+        [{ model: MuestraArray, as: 'muestraArray' }, 'posicion_placa', 'ASC'],
+      ],
     });
   }
 

@@ -348,4 +348,21 @@ export class TecnicaService {
       );
     }
   }
+
+  /**
+   * Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
+   * @param primeraTecnicaId ID de la primera técnica del grupo
+   * @returns Promise con array de técnicas del grupo
+   */
+  async getTecnicasFromGroup(primeraTecnicaId: number) {
+    try {
+      console.log('[getTecnicasFromGroup] Obteniendo técnicas del grupo:', primeraTecnicaId);
+      const tecnicas = await this.tecnicaRepo.findTecnicasFromGroup(primeraTecnicaId);
+      console.log('[getTecnicasFromGroup] Técnicas encontradas:', tecnicas.length);
+      return tecnicas;
+    } catch (error) {
+      console.error('Error en servicio al obtener técnicas del grupo:', error);
+      throw error;
+    }
+  }
 }

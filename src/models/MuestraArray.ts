@@ -18,6 +18,8 @@ export class MuestraArray extends Model<
   declare id_posicion: CreationOptional<number>;
   declare codigo_placa: CreationOptional<string>;
   declare posicion_placa: CreationOptional<string>;
+  declare codigo_epi: CreationOptional<string>;
+  declare codigo_externo: CreationOptional<string>;
   declare f_creacion: CreationOptional<Date>;
   declare f_envio_escanear: CreationOptional<Date>;
   declare num_array: CreationOptional<number>;
@@ -54,6 +56,14 @@ export class MuestraArray extends Model<
         },
         posicion_placa: {
           type: DataTypes.STRING(10),
+          allowNull: true,
+        },
+        codigo_epi: {
+          type: DataTypes.STRING(50),
+          allowNull: true,
+        },
+        codigo_externo: {
+          type: DataTypes.STRING(50),
           allowNull: true,
         },
         f_creacion: {

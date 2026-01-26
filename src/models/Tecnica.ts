@@ -246,6 +246,8 @@ export class Tecnica extends Model<
             'id_muestra',
             'codigo_placa',
             'posicion_placa',
+            'codigo_epi',
+            'codigo_externo',
             'num_array',
             'pos_array',
           ],

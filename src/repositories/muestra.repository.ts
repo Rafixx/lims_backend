@@ -124,6 +124,7 @@ export class MuestraRepository {
   private async createMuestraArray(
     idMuestra: number,
     arrayConfig: { code: string; width: number; heightLetter: string },
+    getCodigoEpiFn: () => Promise<{ codigo_epi: string; secuencia: number; year: number }>,
     transaction?: Transaction
   ): Promise<MuestraArray[]> {
     const { code, width, heightLetter } = arrayConfig;
@@ -135,11 +136,17 @@ export class MuestraRepository {
     for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
       const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
       for (let col = 1; col <= width; col++) {
+        const colPadded = col < 10 ? `0${col}` : `${col}`;
+
+        // Obtener un código EPI único para esta posición
+        const { codigo_epi } = await getCodigoEpiFn();
+
         arrayPositions.push({
           id_muestra: idMuestra,
           id_posicion: positionIndex,
           codigo_placa: code,
-          posicion_placa: `${col}${letter}`,
+          posicion_placa: `${colPadded}${letter}`,
+          codigo_epi,
           f_creacion: new Date(),
         });
         positionIndex++;
@@ -152,7 +159,7 @@ export class MuestraRepository {
     });
 
     console.log(
-      `✅ Creados ${createdArrays.length} registros de MuestraArray`
+      `✅ Creados ${createdArrays.length} registros de MuestraArray con códigos EPI únicos`
     );
 
     if (createdArrays.length === 0 || !createdArrays[0].id_array) {
@@ -336,7 +343,10 @@ export class MuestraRepository {
     });
   }
 
-  async create(data: CrearMuestraData) {
+  async create(
+    data: CrearMuestraData,
+    getCodigoEpiFn?: () => Promise<{ codigo_epi: string; secuencia: number; year: number }>
+  ) {
     const transaction = await sequelize.transaction();
 
     try {
@@ -451,10 +461,18 @@ export class MuestraRepository {
           );
         }
 
+        // Verificar que se haya proporcionado la función para generar códigos EPI
+        if (!getCodigoEpiFn) {
+          throw new Error(
+            'Se requiere la función getCodigoEpi para crear arrays con códigos EPI únicos'
+          );
+        }
+
         // 3.1. Crear posiciones del array
         const createdArrays = await this.createMuestraArray(
           nuevaMuestra.id_muestra,
           data.array_config,
+          getCodigoEpiFn,
           transaction
         );
 

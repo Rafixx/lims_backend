@@ -69,6 +69,13 @@ interface CreateMuestraDTO {
     id_tecnica_proc: string | number;
     comentarios?: string;
   }>;
+  array_config?: {
+    code: string;
+    width: number;
+    heightLetter: string;
+    height: number;
+    totalPositions: number;
+  } | null;
 }
 
 interface UpdateMuestraDTO {
@@ -114,7 +121,11 @@ export class MuestraService {
       data.f_recepcion = new Date().toISOString();
     }
 
-    const resultado = await this.muestraRepo.create(data);
+    // Pasar la función getCodigoEpi al repositorio usando bind para mantener el contexto
+    const resultado = await this.muestraRepo.create(
+      data,
+      this.getCodigoEpi.bind(this)
+    );
 
     return {
       ...resultado.toJSON(),

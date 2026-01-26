@@ -110,6 +110,8 @@ export class Worklist extends Model<
                 'id_muestra',
                 'codigo_placa',
                 'posicion_placa',
+                'codigo_epi',
+                'codigo_externo',
               ],
             },
             {
