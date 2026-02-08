@@ -15,6 +15,7 @@ import {
   getTecnicasReactivosById,
   getTecnicasReactivosOptimizado,
   getWorkListCode,
+  updateTemplateValues,
 } from '../controllers/worklist.controller';
 // import { uploadCSV } from '../middlewares/upload.middleware';
 
@@ -74,6 +75,9 @@ router.put('/:id/setTecnicoLab', setTecnicoLab);
 
 // PUT /api/worklists/:id/startTecnicas - Iniciar técnicas de un worklist
 router.put('/:id/startTecnicas', startTecnicasInWorklist);
+
+// PUT /api/worklists/:id/template-values - Actualizar valores del template
+router.put('/:id/template-values', updateTemplateValues);
 
 // POST /api/worklists/:id/importDataResults - Procesar datos RAW con mapeo
 router.post('/:id/importDataResults', importDataResults);

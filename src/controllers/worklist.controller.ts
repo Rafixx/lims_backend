@@ -301,3 +301,33 @@ export const getWorkListCode = async (
     next(error);
   }
 };
+
+/**
+ * Actualiza los valores del template (template_values) en el json_data del worklist
+ * PUT /api/worklists/:id/template-values
+ * Body: { template_values: { num_tubos: 8, error_factor: 1.1, ... } }
+ */
+export const updateTemplateValues = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = validateId(req.params.id);
+    const { template_values } = req.body;
+
+    if (!template_values || typeof template_values !== 'object') {
+      throw new BadRequestError(
+        'El campo "template_values" es requerido y debe ser un objeto'
+      );
+    }
+
+    const worklistActualizada = await worklistService.updateTemplateValues(
+      id,
+      template_values
+    );
+    res.status(200).json(worklistActualizada);
+  } catch (error) {
+    next(error);
+  }
+};

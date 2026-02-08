@@ -6,11 +6,13 @@ import {
   createTecnicaProc,
   updateTecnicaProc,
   deleteTecnicaProc,
+  batchUpdateOrden,
 } from '../controllers/dimTecnicaProc.controller';
 
 const router = Router();
 
 router.get('/', getTecnicasProc);
+router.patch('/orden', batchUpdateOrden);
 router.get('/:id', getTecnicaProcById);
 router.post('/', createTecnicaProc);
 router.put('/:id', updateTecnicaProc);

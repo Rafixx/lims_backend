@@ -29,6 +29,7 @@ export class DimTecnicaProc extends Model<
   declare update_dt?: Date;
   declare id_prueba?: number;
   declare id_plantilla_tecnica?: number;
+  declare json_data?: Record<string, unknown>;
 
   // Mixins para acceder a las relaciones
   declare getDimPrueba: BelongsToGetAssociationMixin<DimPrueba>;
@@ -82,6 +83,11 @@ export class DimTecnicaProc extends Model<
         },
         id_plantilla_tecnica: {
           type: DataTypes.INTEGER,
+          allowNull: true,
+          defaultValue: null,
+        },
+        json_data: {
+          type: DataTypes.JSONB,
           allowNull: true,
           defaultValue: null,
         },

@@ -60,6 +60,23 @@ export const updateTecnicaProc = async (
   }
 };
 
+export const batchUpdateOrden = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const items: { id: number; orden: number }[] = req.body;
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ message: 'Se espera un array de { id, orden }' });
+    }
+    const result = await dimTecnicaProcService.batchUpdateOrden(items);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteTecnicaProc = async (
   req: Request,
   res: Response,

@@ -22,21 +22,23 @@ export class DimPruebaService {
   }
 
   //obtener dim_tecnica_proc por prueba
-  async getTecnicasByPrueba(id: number) {
+  async getTecnicasByPrueba(id: number, activa = true) {
     const prueba = await DimPrueba.findByPk(id, {
       include: [
         {
-          model: DimTecnicaProc.scope('withPlantilla'),
+          model: DimTecnicaProc,
           as: 'tecnicas',
-          attributes: ['id', 'tecnica_proc', 'orden'],
-          order: [['orden', 'ASC']],
+          attributes: ['id', 'tecnica_proc', 'orden', 'activa'],
+          where: { activa },
+          required: false,
         },
       ],
+      order: [[{ model: DimTecnicaProc, as: 'tecnicas' }, 'orden', 'ASC']],
     });
     if (!prueba) {
       throw new Error('Prueba no encontrada');
     }
-    return prueba.tecnicas;
+    return prueba.tecnicas ?? [];
   }
 
   async getAllPruebas() {

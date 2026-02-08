@@ -322,4 +322,35 @@ export class WorklistService {
 
     return `L${yearPrefix}.${paddedSequence}`;
   }
+
+  /**
+   * Actualiza los valores del template en el campo json_data del worklist
+   * @param id ID del worklist
+   * @param templateValues Objeto con los valores del template
+   * @returns Worklist actualizado
+   */
+  async updateTemplateValues(
+    id: number,
+    templateValues: Record<string, unknown>
+  ) {
+    const worklist = await this.workListRepo.findById(id);
+    if (!worklist) {
+      throw new Error('Worklist no encontrada');
+    }
+
+    // Obtener json_data actual o inicializar como objeto vacío
+    const currentJsonData = worklist.json_data || {};
+
+    // Actualizar el campo template_values dentro de json_data
+    const updatedJsonData = {
+      ...currentJsonData,
+      template_values: templateValues,
+    };
+
+    // Actualizar el worklist con el nuevo json_data
+    await worklist.update({ json_data: updatedJsonData });
+
+    // Retornar el worklist actualizado
+    return this.workListRepo.findById(id);
+  }
 }

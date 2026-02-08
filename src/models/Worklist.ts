@@ -30,6 +30,7 @@ export class Worklist extends Model<
   declare update_dt?: Date;
   declare created_by?: number;
   declare updated_by?: number;
+  declare json_data?: Record<string, unknown>;
 
   // ============== inicialización ============
   static initModel(sequelize: Sequelize) {
@@ -72,6 +73,11 @@ export class Worklist extends Model<
         updated_by: {
           type: DataTypes.INTEGER,
           allowNull: true,
+        },
+        json_data: {
+          type: DataTypes.JSONB,
+          allowNull: true,
+          defaultValue: null,
         },
       },
       {

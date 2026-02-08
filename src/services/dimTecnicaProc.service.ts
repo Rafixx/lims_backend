@@ -5,6 +5,7 @@ interface CreateDimTecnicaProcDTO {
   orden: number;
   obligatoria?: boolean;
   activa?: boolean;
+  created_by?: number;
   id_prueba: number;
   id_plantilla_tecnica: number;
 }
@@ -35,6 +36,13 @@ export class DimTecnicaProcService {
     }
     await tecnicaProc.update(data);
     return tecnicaProc;
+  }
+
+  async batchUpdateOrden(items: { id: number; orden: number }[]) {
+    await Promise.all(
+      items.map(({ id, orden }) => DimTecnicaProc.update({ orden }, { where: { id } }))
+    );
+    return { updated: items.length };
   }
 
   async deleteTecnicaProc(id: number) {

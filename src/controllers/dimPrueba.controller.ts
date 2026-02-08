@@ -36,8 +36,9 @@ export const getTecnicasByPrueba = async (
   next: NextFunction
 ) => {
   const id = Number(req.params.id);
+  const activa = req.query.activa === 'false' ? false : true;
   try {
-    const tecnicas = await dimPruebaService.getTecnicasByPrueba(id);
+    const tecnicas = await dimPruebaService.getTecnicasByPrueba(id, activa);
     res.status(200).json(tecnicas);
   } catch (error) {
     next(error);
