@@ -145,16 +145,29 @@ export const assignCodigosExternos = async (
   next: NextFunction
 ) => {
   const estudio = decodeURIComponent(req.params.estudio);
-  const { codigos } = req.body;
+  const { pares } = req.body;
 
-  if (!Array.isArray(codigos) || codigos.length === 0) {
+  if (!Array.isArray(pares) || pares.length === 0) {
     return res.status(400).json({
-      error: 'El campo "codigos" es requerido y debe ser un array no vacío',
+      error: 'El campo "pares" es requerido y debe ser un array no vacío',
+    });
+  }
+
+  const parInvalido = pares.find(
+    (p: unknown) =>
+      typeof p !== 'object' ||
+      p === null ||
+      typeof (p as Record<string, unknown>).codigo_epi !== 'string' ||
+      typeof (p as Record<string, unknown>).cod_externo !== 'string'
+  );
+  if (parInvalido) {
+    return res.status(400).json({
+      error: 'Cada elemento de "pares" debe tener { codigo_epi: string, cod_externo: string }',
     });
   }
 
   try {
-    const resultado = await muestraService.assignCodigosExternos(estudio, codigos);
+    const resultado = await muestraService.assignCodigosExternos(estudio, pares);
     res.status(200).json(resultado);
   } catch (error) {
     next(error);

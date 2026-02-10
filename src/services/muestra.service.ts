@@ -202,10 +202,15 @@ export class MuestraService {
     return { message: 'Muestra eliminada correctamente' };
   }
 
-  async assignCodigosExternos(estudio: string, codigos: string[]) {
-    const updated = await this.muestraRepo.assignCodigosExternos(estudio, codigos);
+  async assignCodigosExternos(
+    estudio: string,
+    pares: { codigo_epi: string; cod_externo: string }[]
+  ) {
+    const updated = await this.muestraRepo.assignCodigosExternos(estudio, pares);
     if (updated === 0) {
-      throw new NotFoundError('No se encontraron muestras para ese estudio');
+      throw new NotFoundError(
+        'No se encontraron muestras para ese estudio con los códigos EPI indicados'
+      );
     }
     return { updated, mensaje: `${updated} muestras actualizadas correctamente` };
   }

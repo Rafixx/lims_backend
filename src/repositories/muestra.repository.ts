@@ -570,22 +570,26 @@ export class MuestraRepository {
   async findByEstudio(estudio: string): Promise<Muestra[]> {
     return Muestra.findAll({
       where: { estudio },
-      attributes: ['id_muestra', 'codigo_externo'],
+      attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
       order: [['id_muestra', 'ASC']],
     });
   }
 
-  async assignCodigosExternos(estudio: string, codigos: string[]): Promise<number> {
+  async assignCodigosExternos(
+    estudio: string,
+    pares: { codigo_epi: string; cod_externo: string }[]
+  ): Promise<number> {
     const muestras = await this.findByEstudio(estudio);
     if (muestras.length === 0) return 0;
 
-    const count = Math.min(muestras.length, codigos.length);
-    await Promise.all(
-      muestras.slice(0, count).map((muestra, i) =>
-        muestra.update({ codigo_externo: codigos[i] })
-      )
-    );
-    return count;
+    const indexPorEpi = new Map(pares.map(p => [p.codigo_epi, p.cod_externo]));
+
+    const actualizaciones = muestras
+      .filter(m => m.codigo_epi && indexPorEpi.has(m.codigo_epi))
+      .map(m => m.update({ codigo_externo: indexPorEpi.get(m.codigo_epi!) }));
+
+    await Promise.all(actualizaciones);
+    return actualizaciones.length;
   }
 
   async getMuestrasStats(): Promise<MuestraStats> {
