@@ -4,6 +4,8 @@ import {
   ContadorRepository,
   NextCounterValue,
 } from '../repositories/contador.repository';
+import { BadRequestError } from '../errors/BadRequestError';
+import { NotFoundError } from '../errors/NotFoundError';
 
 interface CreateMuestraDTO {
   id_muestra?: number;
@@ -14,6 +16,8 @@ interface CreateMuestraDTO {
   f_destruccion?: string;
   f_devolucion?: string;
   estado_muestra?: string;
+  /** Número de tubos a crear. Ignorado si tipo_array === true (placas). Rango: 1-50. */
+  cantidad?: number;
   paciente?: {
     id: string | number;
     nombre?: string;
@@ -116,21 +120,48 @@ export class MuestraService {
       throw new Error('El cliente es obligatorio para crear una muestra');
     }
 
+    // Validar y normalizar cantidad
+    const rawCantidad = data.cantidad !== undefined ? data.cantidad : 1;
+    const cantidad = Number(rawCantidad);
+    if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 50) {
+      throw new BadRequestError('La cantidad debe ser un número entero entre 1 y 50');
+    }
+
+    // Las placas (tipo_array) tienen su propio mecanismo de posiciones; no admiten cantidad > 1
+    if (data.array_config && cantidad > 1) {
+      throw new BadRequestError('Las muestras de tipo placa solo se pueden crear de una en una');
+    }
+
     // Establecer fecha de recepción por defecto si no se proporciona
     if (!data.f_recepcion) {
       data.f_recepcion = new Date().toISOString();
     }
 
-    // Pasar la función getCodigoEpi al repositorio usando bind para mantener el contexto
-    const resultado = await this.muestraRepo.create(
-      data,
-      this.getCodigoEpi.bind(this)
-    );
+    // Crear N muestras secuencialmente (cada una con su propia transacción interna)
+    const items: object[] = [];
+    for (let i = 0; i < cantidad; i++) {
+      const { codigo_epi } = await this.getCodigoEpi();
+      // En creación grupal (cantidad > 1) el código externo se omite intencionadamente
+      // para ser asignado individualmente con posterioridad a cada muestra
+      const muestraData = cantidad > 1
+        ? { ...data, codigo_epi, codigo_externo: undefined }
+        : { ...data, codigo_epi };
+      const resultado = await this.muestraRepo.create(
+        muestraData,
+        this.getCodigoEpi.bind(this)
+      );
+      items.push({
+        ...resultado.toJSON(),
+        tecnicasCreadas: data.tecnicas ? data.tecnicas.length : 0,
+      });
+    }
 
     return {
-      ...resultado.toJSON(),
-      mensaje: 'Muestra, solicitud y técnicas creadas correctamente',
-      tecnicasCreadas: data.tecnicas ? data.tecnicas.length : 0,
+      items,
+      createdCount: cantidad,
+      mensaje: cantidad > 1
+        ? `${cantidad} muestras creadas correctamente`
+        : 'Muestra, solicitud y técnicas creadas correctamente',
     };
   }
 
@@ -169,6 +200,14 @@ export class MuestraService {
     }
     await this.muestraRepo.delete(muestra);
     return { message: 'Muestra eliminada correctamente' };
+  }
+
+  async assignCodigosExternos(estudio: string, codigos: string[]) {
+    const updated = await this.muestraRepo.assignCodigosExternos(estudio, codigos);
+    if (updated === 0) {
+      throw new NotFoundError('No se encontraron muestras para ese estudio');
+    }
+    return { updated, mensaje: `${updated} muestras actualizadas correctamente` };
   }
 
   async getMuestrasStats() {

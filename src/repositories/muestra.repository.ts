@@ -567,6 +567,27 @@ export class MuestraRepository {
     }
   }
 
+  async findByEstudio(estudio: string): Promise<Muestra[]> {
+    return Muestra.findAll({
+      where: { estudio },
+      attributes: ['id_muestra', 'codigo_externo'],
+      order: [['id_muestra', 'ASC']],
+    });
+  }
+
+  async assignCodigosExternos(estudio: string, codigos: string[]): Promise<number> {
+    const muestras = await this.findByEstudio(estudio);
+    if (muestras.length === 0) return 0;
+
+    const count = Math.min(muestras.length, codigos.length);
+    await Promise.all(
+      muestras.slice(0, count).map((muestra, i) =>
+        muestra.update({ codigo_externo: codigos[i] })
+      )
+    );
+    return count;
+  }
+
   async getMuestrasStats(): Promise<MuestraStats> {
     const rows = await Muestra.findAll({
       attributes: [

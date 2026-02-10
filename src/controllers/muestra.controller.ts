@@ -63,8 +63,8 @@ export const createMuestra = async (
         .json({ error: 'Los datos de la solicitud son requeridos' });
     }
 
-    const nuevaMuestra = await muestraService.createMuestra(req.body);
-    res.status(201).json(nuevaMuestra);
+    const resultado = await muestraService.createMuestra(req.body);
+    res.status(201).json(resultado);
   } catch (error) {
     next(error);
   }
@@ -134,6 +134,28 @@ export const cambiarEstadoMuestra = async (
       message: 'Estado de muestra actualizado correctamente',
       data: resultado,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const assignCodigosExternos = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const estudio = decodeURIComponent(req.params.estudio);
+  const { codigos } = req.body;
+
+  if (!Array.isArray(codigos) || codigos.length === 0) {
+    return res.status(400).json({
+      error: 'El campo "codigos" es requerido y debe ser un array no vacío',
+    });
+  }
+
+  try {
+    const resultado = await muestraService.assignCodigosExternos(estudio, codigos);
+    res.status(200).json(resultado);
   } catch (error) {
     next(error);
   }

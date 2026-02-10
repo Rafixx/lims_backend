@@ -10,6 +10,7 @@ import {
   getMuestrasStats,
   cambiarEstadoMuestra,
   getCodigoEpi,
+  assignCodigosExternos,
 } from '../controllers/muestra.controller';
 
 const router = Router();
@@ -17,6 +18,7 @@ const router = Router();
 router.get('/', getMuestras);
 router.get('/estadisticas', getMuestrasStats);
 router.get('/codigo-epi', getCodigoEpi);
+router.post('/estudio/:estudio/cod-externo', assignCodigosExternos);
 router.get('/:id', getMuestraById);
 router.get('/:id/tecnicas', getTecnicasById);
 router.post('/', createMuestra);
