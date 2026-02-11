@@ -1,4 +1,5 @@
 import { MuestraRepository } from '../repositories/muestra.repository';
+import { MuestraArrayRepository } from '../repositories/muestraArray.repository';
 import { DimReactivoService } from './dimReactivo.service';
 import {
   ContadorRepository,
@@ -103,6 +104,7 @@ export class MuestraService {
   private dimReactivoService: DimReactivoService;
   private readonly muestraRepo: MuestraRepository;
   private readonly contadorRepo: ContadorRepository;
+  private readonly muestraArrayRepo: MuestraArrayRepository;
 
   constructor(
     muestraRepo?: MuestraRepository,
@@ -112,6 +114,7 @@ export class MuestraService {
     this.muestraRepo =
       muestraRepo || new MuestraRepository(this.dimReactivoService);
     this.contadorRepo = contadorRepo || new ContadorRepository();
+    this.muestraArrayRepo = new MuestraArrayRepository();
   }
 
   async createMuestra(data: CreateMuestraDTO) {
@@ -213,6 +216,40 @@ export class MuestraService {
       );
     }
     return { updated, mensaje: `${updated} muestras actualizadas correctamente` };
+  }
+
+  async getArrayByMuestra(id_muestra: number) {
+    const muestra = await this.muestraRepo.findById(id_muestra);
+    if (!muestra) {
+      throw new NotFoundError(`Muestra con ID ${id_muestra} no encontrada`);
+    }
+    if (!muestra.tipo_array) {
+      throw new BadRequestError(`La muestra ${id_muestra} no es de tipo placa`);
+    }
+    return this.muestraArrayRepo.findByMuestraId(id_muestra);
+  }
+
+  async assignArrayCodigosExternos(
+    id_muestra: number,
+    pares: { posicion_placa: string; cod_externo: string }[]
+  ) {
+    const muestra = await this.muestraRepo.findById(id_muestra);
+    if (!muestra) {
+      throw new NotFoundError(`Muestra con ID ${id_muestra} no encontrada`);
+    }
+    if (!muestra.tipo_array) {
+      throw new BadRequestError(`La muestra ${id_muestra} no es de tipo placa`);
+    }
+    const updated = await this.muestraArrayRepo.assignCodigosExternosByPosicion(
+      id_muestra,
+      pares
+    );
+    if (updated === 0) {
+      throw new NotFoundError(
+        'No se encontraron posiciones de placa con las posiciones indicadas'
+      );
+    }
+    return { updated, mensaje: `${updated} posiciones actualizadas correctamente` };
   }
 
   async getMuestrasStats() {

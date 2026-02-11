@@ -186,3 +186,60 @@ export const getCodigoEpi = async (
     next(error);
   }
 };
+
+export const getArrayByMuestra = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID de muestra inválido' });
+    }
+    const array = await muestraService.getArrayByMuestra(id);
+    res.status(200).json(array);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const assignArrayCodigosExternos = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID de muestra inválido' });
+  }
+
+  const { pares } = req.body;
+
+  if (!Array.isArray(pares) || pares.length === 0) {
+    return res.status(400).json({
+      error: 'El campo "pares" es requerido y debe ser un array no vacío',
+    });
+  }
+
+  const parInvalido = pares.find(
+    (p: unknown) =>
+      typeof p !== 'object' ||
+      p === null ||
+      typeof (p as Record<string, unknown>).posicion_placa !== 'string' ||
+      typeof (p as Record<string, unknown>).cod_externo !== 'string'
+  );
+  if (parInvalido) {
+    return res.status(400).json({
+      error:
+        'Cada elemento de "pares" debe tener { posicion_placa: string, cod_externo: string }',
+    });
+  }
+
+  try {
+    const resultado = await muestraService.assignArrayCodigosExternos(id, pares);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};

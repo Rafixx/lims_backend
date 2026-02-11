@@ -11,6 +11,8 @@ import {
   cambiarEstadoMuestra,
   getCodigoEpi,
   assignCodigosExternos,
+  getArrayByMuestra,
+  assignArrayCodigosExternos,
 } from '../controllers/muestra.controller';
 
 const router = Router();
@@ -21,6 +23,8 @@ router.get('/codigo-epi', getCodigoEpi);
 router.post('/estudio/:estudio/cod-externo', assignCodigosExternos);
 router.get('/:id', getMuestraById);
 router.get('/:id/tecnicas', getTecnicasById);
+router.get('/:id/array', getArrayByMuestra);
+router.post('/:id/array/cod-externo', assignArrayCodigosExternos);
 router.post('/', createMuestra);
 router.put('/:id', updateMuestra);
 router.delete('/:id', deleteMuestra);

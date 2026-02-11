@@ -308,6 +308,38 @@ export class MuestraArrayRepository {
   }
 
   /**
+   * Asignar códigos externos a posiciones de placa por posicion_placa (batch).
+   * Sólo actualiza las posiciones que pertenecen a id_muestra.
+   * Devuelve el número de registros actualizados.
+   */
+  async assignCodigosExternosByPosicion(
+    id_muestra: number,
+    pares: { posicion_placa: string; cod_externo: string }[]
+  ): Promise<number> {
+    const transaction = await sequelize.transaction();
+    let updated = 0;
+
+    try {
+      for (const par of pares) {
+        const [count] = await MuestraArray.update(
+          { codigo_externo: par.cod_externo, update_dt: new Date() },
+          {
+            where: { id_muestra, posicion_placa: par.posicion_placa },
+            transaction,
+          }
+        );
+        updated += count;
+      }
+
+      await transaction.commit();
+      return updated;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
    * Actualizar fecha de envío a escanear en batch
    */
   async updateFechaEnvioEscanear(
