@@ -86,18 +86,22 @@ interface CreateMuestraDTO {
 interface UpdateMuestraDTO {
   codigo_epi?: string;
   codigo_externo?: string;
+  estudio?: string;
+  observaciones?: string;
   f_toma?: Date;
   f_recepcion?: Date;
   f_destruccion?: Date;
   f_devolucion?: Date;
+  f_agotada?: Date;
   estado_muestra?: string;
   id_paciente?: number;
   id_tecnico_resp?: number;
+  id_tecnico_recepcion?: number;
+  id_tecnico_verifica?: number;
   id_tipo_muestra?: number;
   id_centro_externo?: number;
   id_criterio_val?: number;
   id_ubicacion?: number;
-  id_prueba?: number;
 }
 
 export class MuestraService {
@@ -188,12 +192,71 @@ export class MuestraService {
     return this.muestraRepo.findAll();
   }
 
-  async updateMuestra(id: number, data: UpdateMuestraDTO) {
+  async updateMuestra(id: number, data: Record<string, unknown>) {
     const muestra = await this.muestraRepo.findById(id);
     if (!muestra) {
       throw new Error('Muestra no encontrada');
     }
-    return this.muestraRepo.update(muestra, data);
+
+    // El frontend envía objetos anidados (tipo_muestra: { id }, criterio_validacion: { id }…).
+    // Los mapeamos a los IDs planos que espera el modelo Sequelize.
+    const nested = data as {
+      paciente?: { id?: number | string };
+      tecnico_resp?: { id_usuario?: number | string };
+      tipo_muestra?: { id?: number | string };
+      centro?: { id?: number | string };
+      criterio_validacion?: { id?: number | string };
+      ubicacion?: { id?: number | string };
+      solicitud?: {
+        condiciones_envio?: string;
+        tiempo_hielo?: string;
+        f_entrada?: string;
+        f_compromiso?: string;
+        f_entrega?: string;
+        f_resultado?: string;
+      };
+    };
+
+    const toNum = (v: number | string | undefined): number | undefined =>
+      v !== undefined && v !== null && v !== '' ? Number(v) : undefined;
+
+    const updateData: UpdateMuestraDTO = {
+      codigo_epi: data.codigo_epi as string | undefined,
+      codigo_externo: data.codigo_externo as string | undefined,
+      estudio: data.estudio as string | undefined,
+      observaciones: data.observaciones as string | undefined,
+      f_toma: data.f_toma ? new Date(data.f_toma as string) : undefined,
+      f_recepcion: data.f_recepcion ? new Date(data.f_recepcion as string) : undefined,
+      f_destruccion: data.f_destruccion ? new Date(data.f_destruccion as string) : undefined,
+      f_devolucion: data.f_devolucion ? new Date(data.f_devolucion as string) : undefined,
+      f_agotada: data.f_agotada ? new Date(data.f_agotada as string) : undefined,
+      id_paciente: toNum(nested.paciente?.id) ?? toNum(data.id_paciente as number | undefined),
+      id_tecnico_resp: toNum(nested.tecnico_resp?.id_usuario) ?? toNum(data.id_tecnico_resp as number | undefined),
+      id_tipo_muestra: toNum(nested.tipo_muestra?.id) ?? toNum(data.id_tipo_muestra as number | undefined),
+      id_centro_externo: toNum(nested.centro?.id) ?? toNum(data.id_centro_externo as number | undefined),
+      id_criterio_val: toNum(nested.criterio_validacion?.id) ?? toNum(data.id_criterio_val as number | undefined),
+      id_ubicacion: toNum(nested.ubicacion?.id) ?? toNum(data.id_ubicacion as number | undefined),
+      id_tecnico_recepcion: toNum(data.id_tecnico_recepcion as number | undefined),
+      id_tecnico_verifica: toNum(data.id_tecnico_verifica as number | undefined),
+    };
+
+    // Actualizar campos de la solicitud si se proporcionan
+    if (nested.solicitud && muestra.id_solicitud) {
+      const { Solicitud } = await import('../models/Solicitud');
+      const solicitud = await Solicitud.findByPk(muestra.id_solicitud);
+      if (solicitud) {
+        await solicitud.update({
+          condiciones_envio: nested.solicitud.condiciones_envio,
+          tiempo_hielo: nested.solicitud.tiempo_hielo,
+          f_entrada: nested.solicitud.f_entrada ? new Date(nested.solicitud.f_entrada) : undefined,
+          f_compromiso: nested.solicitud.f_compromiso ? new Date(nested.solicitud.f_compromiso) : undefined,
+          f_entrega: nested.solicitud.f_entrega ? new Date(nested.solicitud.f_entrega) : undefined,
+          f_resultado: nested.solicitud.f_resultado ? new Date(nested.solicitud.f_resultado) : undefined,
+        });
+      }
+    }
+
+    return this.muestraRepo.update(muestra, updateData);
   }
 
   async deleteMuestra(id: number) {
