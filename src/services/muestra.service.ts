@@ -17,7 +17,7 @@ interface CreateMuestraDTO {
   f_destruccion?: string;
   f_devolucion?: string;
   estado_muestra?: string;
-  /** Número de tubos a crear. Ignorado si tipo_array === true (placas). Rango: 1-50. */
+  /** Número de tubos a crear. Ignorado si tipo_array === true (placas). Rango: 1-9999. */
   cantidad?: number;
   paciente?: {
     id: string | number;
@@ -130,8 +130,8 @@ export class MuestraService {
     // Validar y normalizar cantidad
     const rawCantidad = data.cantidad !== undefined ? data.cantidad : 1;
     const cantidad = Number(rawCantidad);
-    if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 50) {
-      throw new BadRequestError('La cantidad debe ser un número entero entre 1 y 50');
+    if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 9999) {
+      throw new BadRequestError('La cantidad debe ser un número entero entre 1 y 9999');
     }
 
     // Las placas (tipo_array) tienen su propio mecanismo de posiciones; no admiten cantidad > 1
