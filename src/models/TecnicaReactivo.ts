@@ -69,7 +69,7 @@ export class TecnicaReactivo extends Model<
       {
         sequelize,
         tableName: 'tecnicas_reactivos',
-        schema: 'lims_pre',
+        schema: process.env.DB_SCHEMA,
         timestamps: true,
         createdAt: false,
         updatedAt: 'update_dt',

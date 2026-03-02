@@ -9,7 +9,7 @@ import { TecnicaReactivoService } from './tecnicaReactivo.service';
 interface CreateTecnicaDTO {
   id_muestra: number;
   id_tecnica_proc: number;
-  id_tecnico_resp: number;
+  id_tecnico_resp?: number;
   fecha_inicio_tec?: Date;
   estado?: string;
   comentarios?: string;
@@ -73,12 +73,15 @@ export class TecnicaService {
   }
 
   async createTecnica(data: CreateTecnicaDTO) {
-    // 1. Crear la técnica
+    // 1. Crear la técnica (beforeCreate hook asegura id_estado = 8 CREADA)
     const nuevaTecnica = await this.tecnicaRepo.create({
       ...data,
       fecha_inicio_tec: data.fecha_inicio_tec ?? new Date(),
       estado: data.estado ?? 'CREADA',
     });
+
+    // 2. Regla 3.1: al añadir técnica a una muestra existente, forzar muestra → REGISTRADA (1)
+    await this.tecnicaRepo.resetMuestraARegistrada(data.id_muestra);
 
     // 2. Obtener los reactivos asociados a la técnica de proceso
     try {
@@ -274,7 +277,8 @@ export class TecnicaService {
       }
 
       // Verificar que no esté en estado final
-      if (tecnica.estado === 'COMPLETADA' || tecnica.estado === 'CANCELADA') {
+      const estadosFinales = [12, 13, 14]; // COMPLETADA_TECNICA, CANCELADA_TECNICA, ERROR_TECNICA
+      if (tecnica.id_estado !== undefined && estadosFinales.includes(tecnica.id_estado)) {
         return false;
       }
 

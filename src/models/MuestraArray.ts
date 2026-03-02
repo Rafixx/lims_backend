@@ -115,7 +115,7 @@ export class MuestraArray extends Model<
       {
         sequelize,
         tableName: 'muestra_array',
-        schema: 'lims_pre',
+        schema: process.env.DB_SCHEMA,
         timestamps: true,
         paranoid: true,
         createdAt: 'f_creacion',

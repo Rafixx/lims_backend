@@ -128,7 +128,7 @@ export class ResRawQubit extends Model<
       {
         sequelize,
         tableName: 'res_raw_qubit',
-        schema: 'lims_pre',
+        schema: process.env.DB_SCHEMA,
         timestamps: true,
         createdAt: 'createdAt',
         updatedAt: false,

@@ -4,14 +4,18 @@ import {
   CreateResultadoDTO,
   UpdateResultadoDTO,
 } from '../repositories/resultado.repository';
+import { TecnicaRepository } from '../repositories/tecnica.repository';
+import { sequelize } from '../config/db.config';
 import { BadRequestError } from '../errors/BadRequestError';
 import { NotFoundError } from '../errors/NotFoundError';
 
 export class ResultadoService {
   private resultadoRepository: ResultadoRepository;
+  private tecnicaRepository: TecnicaRepository;
 
   constructor() {
     this.resultadoRepository = new ResultadoRepository();
+    this.tecnicaRepository = new TecnicaRepository();
   }
 
   /**
@@ -57,7 +61,12 @@ export class ResultadoService {
   }
 
   /**
-   * Crear un nuevo resultado
+   * Crear un nuevo resultado.
+   *
+   * Regla: al registrar un resultado, la técnica asociada transiciona a
+   * COMPLETADA_TECNICA (12) si aún no está en estado final. El estado de la
+   * muestra se recalcula en consecuencia. Todo ocurre dentro de una única
+   * transacción para garantizar consistencia.
    */
   async createResultado(data: CreateResultadoDTO): Promise<Resultado> {
     // Validaciones
@@ -76,7 +85,26 @@ export class ResultadoService {
       );
     }
 
-    return this.resultadoRepository.create(data);
+    const t = await sequelize.transaction();
+    try {
+      // 1. Crear el resultado dentro de la transacción
+      const nuevoResultado = await Resultado.create(
+        { ...data, f_resultado: data.f_resultado || new Date() },
+        { transaction: t }
+      );
+
+      // 2. Transicionar técnica → COMPLETADA_TECNICA (12) si procede
+      //    y recalcular estado de muestra
+      await this.tecnicaRepository.completarParaResultado(data.id_tecnica, t);
+
+      await t.commit();
+
+      // 3. Recargar con relaciones después del commit
+      return (await this.resultadoRepository.findById(nuevoResultado.id_resultado))!;
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
   }
 
   /**

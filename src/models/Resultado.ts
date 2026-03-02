@@ -115,7 +115,7 @@ export class Resultado extends Model<
           type: DataTypes.INTEGER,
           allowNull: true,
           references: {
-            model: 'usuario',
+            model: 'usuarios',
             key: 'id_usuario',
           },
         },
@@ -123,7 +123,7 @@ export class Resultado extends Model<
           type: DataTypes.INTEGER,
           allowNull: true,
           references: {
-            model: 'usuario',
+            model: 'usuarios',
             key: 'id_usuario',
           },
         },

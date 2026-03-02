@@ -1,6 +1,6 @@
 /**
  * Constantes de IDs de estados de la tabla dim_estados
- * Estos IDs corresponden a los estados definidos en la base de datos
+ * Estos IDs corresponden a los registros reales de dim_estados en producción.
  */
 
 // ============ ESTADOS DE SOLICITUD ============
@@ -14,28 +14,27 @@ export const ESTADO_SOLICITUD = {
   CANCELADA_SOLICITUD: 7,
 } as const;
 
-// ============ ESTADOS DE TECNICA ============
+// ============ ESTADOS DE TÉCNICA ============
 export const ESTADO_TECNICA = {
-  PENDIENTE: 8,
+  CREADA: 8,             // estado inicial
   ASIGNADA: 9,
   EN_PROCESO: 10,
-  EN_REVISION: 11,
-  COMPLETADA_TECNICA: 12,
-  CANCELADA_TECNICA: 13,
-  PAUSADA: 14,
-  REINTENTANDO: 15,
+  EN_REVISION: 11,       // no-final; tratar igual que no-final
+  COMPLETADA_TECNICA: 12, // final OK
+  CANCELADA_TECNICA: 13, // final cancel
+  ERROR_TECNICA: 14,     // final error
+  REINTENTANDO: 15,      // no-final
+  EXTERNALIZADA: 16,     // no-final
+  ENVIADA_EXT: 17,       // no-final
+  RECIBIDA_EXT: 18,      // no-final
 } as const;
 
 // ============ ESTADOS DE MUESTRA ============
 export const ESTADO_MUESTRA = {
-  REGISTRADA_MUESTRA: 16,
-  EN_ESPERA: 17,
-  EN_ANALISIS: 18,
-  ANALISIS_COMPLETADO: 19,
-  VALIDADA: 20,
-  RECHAZADA_MUESTRA: 21,
-  ARCHIVADA: 22,
-  DESTRUIDA: 23,
+  REGISTRADA: 1,
+  EN_PROCESO: 3,
+  COMPLETADA: 4,
+  COMPLETADA_ERROR: 7,
 } as const;
 
 // Tipos para TypeScript

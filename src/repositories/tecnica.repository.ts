@@ -1,12 +1,13 @@
-import { CreationAttributes, Op, fn, col } from 'sequelize';
+import { CreationAttributes, Op, fn, col, Transaction } from 'sequelize';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
 import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
 import { Usuario } from '../models/Usuario';
 import { Worklist } from '../models/Worklist';
 import { DimEstado } from '../models/DimEstado';
-// import { DimTipoMuestra } from '../models/DimTipoMuestra';
-import { ESTADO_TECNICA } from '../constants/estados.constants';
+import { sequelize } from '../config/db.config';
+import { ESTADO_TECNICA, ESTADO_MUESTRA } from '../constants/estados.constants';
+import { calcularEstadoMuestra } from '../utils/estadoSync';
 
 /**
  * Interfaz para técnica con información completa de muestra
@@ -158,7 +159,7 @@ export class TecnicaRepository {
 
         for (const t of tecnicasGrupo) {
           switch (t.id_estado) {
-            case ESTADO_TECNICA.PENDIENTE:
+            case ESTADO_TECNICA.CREADA:
               pendientes++;
               break;
             case ESTADO_TECNICA.ASIGNADA:
@@ -170,7 +171,7 @@ export class TecnicaRepository {
             case ESTADO_TECNICA.COMPLETADA_TECNICA:
               completadas++;
               break;
-            case 15: // RESULTADO_ERRONEO
+            case ESTADO_TECNICA.REINTENTANDO:
               resultado_erroneo++;
               break;
             default:
@@ -231,10 +232,25 @@ export class TecnicaRepository {
   }
 
   /**
+   * Fuerza el estado de la muestra a REGISTRADA (1).
+   * Se llama al crear una técnica nueva sobre una muestra existente (regla 3.1).
+   */
+  async resetMuestraARegistrada(idMuestra: number): Promise<void> {
+    await Muestra.update(
+      { id_estado: ESTADO_MUESTRA.REGISTRADA },
+      { where: { id_muestra: idMuestra } }
+    );
+  }
+
+  /**
    * Asigna un técnico responsable a una técnica
    * @param idTecnica ID de la técnica
    * @param idTecnicoResp ID del técnico responsable
    * @returns Promise<Tecnica> Técnica actualizada
+   *
+   * NOTA: la actualización de id_tecnico_resp ocurre fuera de la transacción
+   * que cambia el estado. Si la transición de estado falla, el técnico
+   * ya quedó asignado. Pendiente de refactorizar en una única transacción.
    */
   async asignarTecnico(
     idTecnica: number,
@@ -256,11 +272,9 @@ export class TecnicaRepository {
         id_tecnico_resp: idTecnicoResp,
         fecha_estado: new Date(),
       });
-      // console.log('tecnica', tecnica);
 
-      // Solo cambiar el estado a ASIGNADA si la técnica está PENDIENTE
-      // Si ya está ASIGNADA o en otro estado, solo actualizar el técnico
-      if (tecnica.id_estado === ESTADO_TECNICA.PENDIENTE) {
+      // Solo cambiar el estado a ASIGNADA si la técnica está CREADA
+      if (tecnica.id_estado === ESTADO_TECNICA.CREADA) {
         await this.asignarTecnica(idTecnica);
       }
 
@@ -272,22 +286,20 @@ export class TecnicaRepository {
   }
 
   /**
-   * Inicia una técnica (cambia estado a ASIGNADA)
-   * @param idTecnica ID de la técnica
-   * @returns Promise<Tecnica> Técnica actualizada
+   * Transición CREADA (8) → ASIGNADA (9).
+   * Sincroniza muestra → EN_PROCESO (3).
    */
   async asignarTecnica(idTecnica: number): Promise<Tecnica> {
     return await this.cambiarEstadoTecnica(
       idTecnica,
-      ESTADO_TECNICA.PENDIENTE,
+      ESTADO_TECNICA.CREADA,
       ESTADO_TECNICA.ASIGNADA
     );
   }
 
   /**
-   * Inicia una técnica (cambia estado a EN_PROCESO)
-   * @param idTecnica ID de la técnica
-   * @returns Promise<Tecnica> Técnica actualizada
+   * Transición ASIGNADA (9) → EN_PROCESO (10).
+   * No modifica el estado de la muestra.
    */
   async iniciarTecnica(idTecnica: number): Promise<Tecnica> {
     return await this.cambiarEstadoTecnica(
@@ -298,10 +310,50 @@ export class TecnicaRepository {
   }
 
   /**
-   * Completa una técnica (cambia estado a COMPLETADA_TECNICA)
-   * @param idTecnica ID de la técnica
-   * @param comentarios Comentarios opcionales
-   * @returns Promise<Tecnica> Técnica actualizada
+   * Transiciona la técnica a COMPLETADA_TECNICA (12) si su estado es activo
+   * ({8,9,10} o cualquier no-final). Si ya está en estado final ({12,13,14}),
+   * devuelve sin cambios para permitir múltiples resultados sobre la misma técnica.
+   *
+   * Debe llamarse SIEMPRE dentro de una transacción externa.
+   */
+  async completarParaResultado(
+    idTecnica: number,
+    transaction: Transaction
+  ): Promise<{ tecnica: Tecnica; estadoPrevio: number; estadoCambio: boolean }> {
+    const tecnica = await Tecnica.findByPk(idTecnica, { transaction });
+    if (!tecnica) {
+      throw new Error('Técnica no encontrada');
+    }
+
+    const estadoPrevio = tecnica.id_estado as number;
+    const ESTADOS_FINALES: number[] = [
+      ESTADO_TECNICA.COMPLETADA_TECNICA,
+      ESTADO_TECNICA.CANCELADA_TECNICA,
+      ESTADO_TECNICA.ERROR_TECNICA,
+    ];
+
+    if (ESTADOS_FINALES.includes(estadoPrevio)) {
+      // Técnica ya en estado final → permitir resultado sin modificar estado
+      return { tecnica, estadoPrevio, estadoCambio: false };
+    }
+
+    await tecnica.update(
+      { id_estado: ESTADO_TECNICA.COMPLETADA_TECNICA, fecha_estado: new Date() },
+      { transaction }
+    );
+
+    await this.sincronizarEstadoMuestra(
+      tecnica.id_muestra,
+      ESTADO_TECNICA.COMPLETADA_TECNICA,
+      transaction
+    );
+
+    return { tecnica, estadoPrevio, estadoCambio: true };
+  }
+
+  /**
+   * Transición EN_PROCESO (10) → COMPLETADA_TECNICA (12).
+   * Recalcula el estado de la muestra a partir de todas sus técnicas.
    */
   async completarTecnica(
     idTecnica: number,
@@ -315,21 +367,31 @@ export class TecnicaRepository {
     );
   }
 
+  /**
+   * Cambia el estado de una técnica y sincroniza el estado de la muestra,
+   * todo dentro de una única transacción.
+   *
+   * Sincronización:
+   *   → ASIGNADA (9)          : muestra → EN_PROCESO (3)
+   *   → EN_PROCESO (10)       : sin cambio en muestra
+   *   → COMPLETADA_TECNICA (12): recalcula muestra a partir de todas sus técnicas
+   */
   async cambiarEstadoTecnica(
     idTecnica: number,
     estadoOrigen: number,
     estadoDestino: number,
-    observaciones?: string
+    observaciones?: string,
+    externalTransaction?: Transaction
   ): Promise<Tecnica> {
-    try {
-      const tecnica = await Tecnica.findByPk(idTecnica);
+    const ejecutar = async (t: Transaction): Promise<Tecnica> => {
+      const tecnica = await Tecnica.findByPk(idTecnica, { transaction: t });
       if (!tecnica) {
         throw new Error('Técnica no encontrada');
       }
 
       if (tecnica.id_estado !== estadoOrigen) {
         throw new Error(
-          `No se puede cambiar el estado a ${estadoDestino} de una técnica en estado ${tecnica.id_estado}`
+          `No se puede cambiar el estado a ${estadoDestino}: la técnica está en estado ${tecnica.id_estado}, se esperaba ${estadoOrigen}`
         );
       }
 
@@ -342,12 +404,55 @@ export class TecnicaRepository {
         updateData.comentarios = observaciones;
       }
 
-      await tecnica.update(updateData);
+      await tecnica.update(updateData, { transaction: t });
+
+      // Sincronizar estado de muestra
+      await this.sincronizarEstadoMuestra(tecnica.id_muestra, estadoDestino, t);
+
       return tecnica;
-    } catch (error) {
-      console.error('Error al cambiar estado de técnica:', error);
-      throw new Error('Error al cambiar estado de la técnica');
+    };
+
+    if (externalTransaction) {
+      return ejecutar(externalTransaction);
     }
+    return sequelize.transaction(ejecutar);
+  }
+
+  /**
+   * Sincroniza el estado de la muestra en función del nuevo estado de la técnica.
+   * Debe llamarse dentro de la misma transacción que actualiza la técnica.
+   */
+  private async sincronizarEstadoMuestra(
+    idMuestra: number,
+    nuevoEstadoTecnica: number,
+    transaction: Transaction
+  ): Promise<void> {
+    if (nuevoEstadoTecnica === ESTADO_TECNICA.ASIGNADA) {
+      // Regla 3.2: técnica ASIGNADA → muestra EN_PROCESO
+      await Muestra.update(
+        { id_estado: ESTADO_MUESTRA.EN_PROCESO },
+        { where: { id_muestra: idMuestra }, transaction }
+      );
+    } else if (nuevoEstadoTecnica === ESTADO_TECNICA.COMPLETADA_TECNICA) {
+      // Regla 3.4: técnica COMPLETADA → recalcular desde todas las técnicas
+      const todasTecnicas = await Tecnica.findAll({
+        where: { id_muestra: idMuestra },
+        attributes: ['id_estado'],
+        transaction,
+      });
+
+      const estados = todasTecnicas
+        .map((tec) => tec.id_estado)
+        .filter((id): id is number => id !== undefined && id !== null);
+
+      const nuevoEstadoMuestra = calcularEstadoMuestra(estados);
+
+      await Muestra.update(
+        { id_estado: nuevoEstadoMuestra },
+        { where: { id_muestra: idMuestra }, transaction }
+      );
+    }
+    // Regla 3.3: EN_PROCESO (10) → sin cambio en muestra
   }
 
   /**
@@ -365,7 +470,7 @@ export class TecnicaRepository {
 
       if (idTecnicaProc) {
         whereCondition.id_tecnica_proc = idTecnicaProc;
-        whereCondition.id_estado = ESTADO_TECNICA.PENDIENTE;
+        whereCondition.id_estado = ESTADO_TECNICA.CREADA;
       }
 
       const resultado = await Tecnica.scope('withRefs').findAll({
@@ -427,10 +532,10 @@ export class TecnicaRepository {
         tecnicasPorProceso,
         procesosPendientes,
       ] = await Promise.all([
-        // Total pendientes
+        // Total creadas (pendientes de asignar)
         Tecnica.count({
           where: {
-            id_estado: ESTADO_TECNICA.PENDIENTE,
+            id_estado: ESTADO_TECNICA.CREADA,
             delete_dt: { [Op.is]: null },
           },
         }),
@@ -471,7 +576,7 @@ export class TecnicaRepository {
             },
           ],
           where: {
-            id_estado: ESTADO_TECNICA.PENDIENTE,
+            id_estado: ESTADO_TECNICA.CREADA,
             delete_dt: { [Op.is]: null },
           },
           group: ['Tecnica.id_tecnica_proc', 'tecnica_proc.tecnica_proc'],
@@ -485,7 +590,7 @@ export class TecnicaRepository {
             [fn('DISTINCT', col('id_tecnica_proc')), 'id_tecnica_proc'],
           ],
           where: {
-            id_estado: ESTADO_TECNICA.PENDIENTE,
+            id_estado: ESTADO_TECNICA.CREADA,
             delete_dt: { [Op.is]: null },
           },
           raw: true,
@@ -497,7 +602,7 @@ export class TecnicaRepository {
         procesosPendientes: procesosPendientes.length,
         total_tecnicas_en_progreso: totalEnProgreso,
         total_tecnicas_completadas_hoy: totalCompletadasHoy,
-        promedio_tiempo_procesamiento: null, // Se puede calcular por separado si es necesario
+        promedio_tiempo_procesamiento: null,
         tecnicasPorProceso: tecnicasPorProceso.map((item: unknown) => {
           const tecnicaItem = item as {
             id_tecnica_proc: number;
@@ -518,15 +623,10 @@ export class TecnicaRepository {
   }
 
   /**
-   * Marca técnicas como resultado erróneo
-   * - Asigna id_estado = 15 (REINTENTANDO/RESULTADO_ERRONEO)
-   * - Elimina id_tecnico_resp (null)
+   * Marca técnicas como resultado erróneo (REINTENTANDO, id=15).
+   * - Limpia id_tecnico_resp y id_worklist
    * - Actualiza fecha_estado a now()
-   * - Elimina id_worklist (null)
-   * - Elimina id_tecnico_resp del worklist asociado (null)
-   * @param idsTecnicas Array de IDs de técnicas
-   * @param idWorklist ID del worklist asociado
-   * @returns Promise<{ success: boolean; updated: number; errors: string[] }>
+   * - Limpia el técnico responsable del worklist asociado
    */
   async marcarResultadoErroneo(
     idsTecnicas: number[],
@@ -534,9 +634,8 @@ export class TecnicaRepository {
   ): Promise<{ success: boolean; updated: number; errors: string[] }> {
     const errors: string[] = [];
     let updated = 0;
-    const ID_ESTADO_RESULTADO_ERRONEO = 15;
 
-    // Primero limpiar el técnico responsable del worklist (solo una vez)
+    // Limpiar el técnico responsable del worklist (una sola vez)
     try {
       await Worklist.update(
         {
@@ -552,7 +651,7 @@ export class TecnicaRepository {
       errors.push(`Error al actualizar worklist ${idWorklist}: ${message}`);
     }
 
-    // Luego procesar cada técnica
+    // Procesar cada técnica
     for (const idTecnica of idsTecnicas) {
       try {
         const tecnica = await Tecnica.findByPk(idTecnica);
@@ -566,10 +665,9 @@ export class TecnicaRepository {
           continue;
         }
 
-        // Usar update estático para poder asignar null a los campos
         await Tecnica.update(
           {
-            id_estado: ID_ESTADO_RESULTADO_ERRONEO,
+            id_estado: ESTADO_TECNICA.REINTENTANDO,
             id_tecnico_resp: null as unknown as number,
             fecha_estado: new Date(),
             id_worklist: null as unknown as number,
@@ -595,26 +693,17 @@ export class TecnicaRepository {
   }
 
   /**
-   * Obtiene técnicas pendientes de externalización
-   * Filtra técnicas que:
-   * - id_worklist es NULL
-   * - Estado es CREADA (id=8)
-   * Incluye información de muestra, técnico, proceso, estado, resultados
-   * Para muestras tipo array, incluye información del array
-   * @returns Promise<Tecnica[]> Lista de técnicas pendientes de externalización
+   * Obtiene técnicas pendientes de externalización (estado CREADA, sin worklist).
    */
   async findPendientesExternalizacion(): Promise<Tecnica[]> {
     try {
       const { MuestraArray } = await import('../models/MuestraArray');
       const { Resultado } = await import('../models/Resultado');
 
-      // Solo técnicas en estado CREADA (id=8)
-      const ESTADO_CREADA = 8;
-
       const tecnicas = await Tecnica.findAll({
         where: {
           id_worklist: null as unknown as number,
-          id_estado: ESTADO_CREADA,
+          id_estado: ESTADO_TECNICA.CREADA,
           delete_dt: null as unknown as Date,
         },
         attributes: [
