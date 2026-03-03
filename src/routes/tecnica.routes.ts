@@ -19,6 +19,7 @@ import {
   marcarResultadoErroneo,
   getTecnicasPendientesExternalizacion,
   getTecnicasFromGroup,
+  cancelarGrupoTecnicas,
 } from '../controllers/tecnica.controller';
 
 const router = Router();
@@ -52,6 +53,14 @@ router.get('/estadisticas', getEstadisticasWorklist);
  * @param {number} id - ID de la muestra
  */
 router.get('/muestra/:id/agrupadas', getTecnicasByMuestraIdAgrupadas);
+
+/**
+ * @route POST /api/tecnicas/grupo/:primeraTecnicaId/cancelar
+ * @desc Cancela atómicamente todas las técnicas de un grupo (misma muestra + proceso)
+ * @access Public
+ * @param {number} primeraTecnicaId - ID de cualquier técnica del grupo (pivot)
+ */
+router.post('/grupo/:primeraTecnicaId/cancelar', cancelarGrupoTecnicas);
 
 /**
  * @route GET /api/tecnicas/grupo/:id

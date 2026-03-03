@@ -433,8 +433,11 @@ export class TecnicaRepository {
         { id_estado: ESTADO_MUESTRA.EN_PROCESO },
         { where: { id_muestra: idMuestra }, transaction }
       );
-    } else if (nuevoEstadoTecnica === ESTADO_TECNICA.COMPLETADA_TECNICA) {
-      // Regla 3.4: técnica COMPLETADA → recalcular desde todas las técnicas
+    } else if (
+      nuevoEstadoTecnica === ESTADO_TECNICA.COMPLETADA_TECNICA ||
+      nuevoEstadoTecnica === ESTADO_TECNICA.CANCELADA_TECNICA
+    ) {
+      // Regla 3.4: técnica COMPLETADA o CANCELADA → recalcular desde todas las técnicas
       const todasTecnicas = await Tecnica.findAll({
         where: { id_muestra: idMuestra },
         attributes: ['id_estado'],
@@ -453,6 +456,80 @@ export class TecnicaRepository {
       );
     }
     // Regla 3.3: EN_PROCESO (10) → sin cambio en muestra
+  }
+
+  /**
+   * Cancela atómicamente todas las técnicas de un grupo (mismo id_muestra + id_tecnica_proc).
+   * Ninguna técnica puede estar en estado final, externalizada o asignada a worklist.
+   * Sincroniza el estado de la muestra en la misma transacción.
+   */
+  async cancelarGrupoTecnicas(
+    primeraTecnicaId: number
+  ): Promise<{ canceladas: number; tecnica_ids: number[] }> {
+    const pivot = await Tecnica.findByPk(primeraTecnicaId, {
+      attributes: ['id_tecnica', 'id_muestra', 'id_tecnica_proc'],
+    });
+    if (!pivot) throw new Error(`Técnica ${primeraTecnicaId} no encontrada`);
+
+    const tecnicasGrupo = await Tecnica.findAll({
+      where: {
+        id_muestra: pivot.id_muestra,
+        id_tecnica_proc: pivot.id_tecnica_proc,
+        delete_dt: { [Op.is]: null },
+      },
+      attributes: ['id_tecnica', 'id_estado', 'id_worklist'],
+    });
+
+    const ESTADOS_FINALES: number[] = [
+      ESTADO_TECNICA.COMPLETADA_TECNICA,
+      ESTADO_TECNICA.CANCELADA_TECNICA,
+      ESTADO_TECNICA.ERROR_TECNICA,
+    ];
+    const ESTADOS_EXTERNALIZACION: number[] = [
+      ESTADO_TECNICA.EXTERNALIZADA,
+      ESTADO_TECNICA.ENVIADA_EXT,
+      ESTADO_TECNICA.RECIBIDA_EXT,
+    ];
+
+    const noElegibles = tecnicasGrupo.filter(
+      (t) =>
+        ESTADOS_FINALES.includes(t.id_estado as number) ||
+        ESTADOS_EXTERNALIZACION.includes(t.id_estado as number) ||
+        t.id_worklist !== null
+    );
+
+    if (noElegibles.length > 0) {
+      throw new Error(
+        `No se puede cancelar el grupo: ${noElegibles.length} técnica(s) están en estado final, ` +
+        `externalizadas o asignadas a un worklist. IDs: ${noElegibles.map((t) => t.id_tecnica).join(', ')}`
+      );
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+      const ahora = new Date();
+      const ids: number[] = [];
+
+      for (const tecnica of tecnicasGrupo) {
+        await tecnica.update(
+          { id_estado: ESTADO_TECNICA.CANCELADA_TECNICA, fecha_estado: ahora },
+          { transaction }
+        );
+        ids.push(tecnica.id_tecnica);
+      }
+
+      await this.sincronizarEstadoMuestra(
+        pivot.id_muestra,
+        ESTADO_TECNICA.CANCELADA_TECNICA,
+        transaction
+      );
+
+      await transaction.commit();
+      return { canceladas: ids.length, tecnica_ids: ids };
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
   }
 
   /**

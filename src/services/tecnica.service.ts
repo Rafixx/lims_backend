@@ -354,6 +354,16 @@ export class TecnicaService {
   }
 
   /**
+   * Cancela atómicamente todas las técnicas de un grupo
+   * @param primeraTecnicaId ID de cualquier técnica del grupo (pivot)
+   */
+  async cancelarGrupoTecnicas(
+    primeraTecnicaId: number
+  ): Promise<{ canceladas: number; tecnica_ids: number[] }> {
+    return this.tecnicaRepo.cancelarGrupoTecnicas(primeraTecnicaId);
+  }
+
+  /**
    * Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
    * @param primeraTecnicaId ID de la primera técnica del grupo
    * @returns Promise con array de técnicas del grupo

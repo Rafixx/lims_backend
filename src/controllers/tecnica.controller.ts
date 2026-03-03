@@ -422,6 +422,30 @@ export const getTecnicasPendientesExternalizacion = async (
 };
 
 /**
+ * Cancela atómicamente todas las técnicas de un grupo
+ * POST /api/tecnicas/grupo/:primeraTecnicaId/cancelar
+ */
+export const cancelarGrupoTecnicas = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const primeraTecnicaId = parseInt(req.params.primeraTecnicaId, 10);
+    if (isNaN(primeraTecnicaId) || primeraTecnicaId <= 0) {
+      res.status(400).json({ error: 'primeraTecnicaId debe ser un entero positivo' });
+      return;
+    }
+
+    const resultado = await tecnicaService.cancelarGrupoTecnicas(primeraTecnicaId);
+    res.json(resultado);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error cancelando grupo de técnicas';
+    const status = message.includes('No se puede cancelar') ? 400 : 500;
+    res.status(status).json({ error: message });
+  }
+};
+
+/**
  * Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
  */
 export const getTecnicasFromGroup = async (
