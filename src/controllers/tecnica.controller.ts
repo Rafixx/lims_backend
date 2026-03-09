@@ -446,6 +446,36 @@ export const cancelarGrupoTecnicas = async (
 };
 
 /**
+ * Guarda valores de plantilla dinámica para una técnica
+ * PUT /api/tecnicas/:id/template-values
+ */
+export const saveTecnicaTemplateValues = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID de técnica inválido' });
+  }
+
+  const { datos_plantilla } = req.body;
+
+  if (!datos_plantilla || typeof datos_plantilla !== 'object' || Array.isArray(datos_plantilla)) {
+    return res.status(400).json({
+      error: 'El campo "datos_plantilla" es requerido y debe ser un objeto',
+    });
+  }
+
+  try {
+    const resultado = await tecnicaService.saveTemplateValues(id, datos_plantilla);
+    res.status(200).json(resultado);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Obtiene todas las técnicas individuales de un grupo (técnica agrupada)
  */
 export const getTecnicasFromGroup = async (

@@ -379,4 +379,12 @@ export class TecnicaService {
       throw error;
     }
   }
+
+  async saveTemplateValues(
+    id_tecnica: number,
+    datos_plantilla: Record<string, unknown>
+  ): Promise<{ mensaje: string }> {
+    await this.tecnicaRepo.saveTemplateValues(id_tecnica, datos_plantilla);
+    return { mensaje: 'Datos de plantilla guardados correctamente' };
+  }
 }

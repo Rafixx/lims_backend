@@ -145,7 +145,7 @@ export class MuestraRepository {
           id_muestra: idMuestra,
           id_posicion: positionIndex,
           codigo_placa: code,
-          posicion_placa: `${colPadded}${letter}`,
+          posicion_placa: `${letter}${colPadded}`,
           codigo_epi,
           f_creacion: new Date(),
         });
@@ -570,23 +570,38 @@ export class MuestraRepository {
   async findByEstudio(estudio: string): Promise<Muestra[]> {
     return Muestra.findAll({
       where: { estudio },
-      attributes: ['id_muestra', 'codigo_epi', 'codigo_externo'],
+      attributes: ['id_muestra', 'codigo_epi', 'codigo_externo', 'observaciones'],
       order: [['id_muestra', 'ASC']],
     });
   }
 
   async assignCodigosExternos(
     estudio: string,
-    pares: { codigo_epi: string; cod_externo: string }[]
+    pares: { codigo_epi: string; cod_externo: string; observaciones?: string }[]
   ): Promise<number> {
     const muestras = await this.findByEstudio(estudio);
     if (muestras.length === 0) return 0;
 
-    const indexPorEpi = new Map(pares.map(p => [p.codigo_epi, p.cod_externo]));
+    const indexPorEpi = new Map(
+      pares.map(p => [p.codigo_epi, { cod_externo: p.cod_externo, observaciones: p.observaciones }])
+    );
 
     const actualizaciones = muestras
       .filter(m => m.codigo_epi && indexPorEpi.has(m.codigo_epi))
-      .map(m => m.update({ codigo_externo: indexPorEpi.get(m.codigo_epi!) }));
+      .map(m => {
+        const par = indexPorEpi.get(m.codigo_epi!)!;
+        const updateData: { codigo_externo: string; observaciones?: string } = {
+          codigo_externo: par.cod_externo,
+        };
+        const obsRecibida = par.observaciones?.trim();
+        if (obsRecibida) {
+          const obsActual = m.observaciones?.trim();
+          updateData.observaciones = obsActual
+            ? `${obsActual}\n${obsRecibida}`
+            : obsRecibida;
+        }
+        return m.update(updateData);
+      });
 
     await Promise.all(actualizaciones);
     return actualizaciones.length;

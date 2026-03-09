@@ -270,7 +270,7 @@ export class MuestraService {
 
   async assignCodigosExternos(
     estudio: string,
-    pares: { codigo_epi: string; cod_externo: string }[]
+    pares: { codigo_epi: string; cod_externo: string; observaciones?: string }[]
   ) {
     const updated = await this.muestraRepo.assignCodigosExternos(estudio, pares);
     if (updated === 0) {
@@ -294,7 +294,7 @@ export class MuestraService {
 
   async assignArrayCodigosExternos(
     id_muestra: number,
-    pares: { posicion_placa: string; cod_externo: string }[]
+    pares: { posicion_placa: string; cod_externo: string; observaciones?: string }[]
   ) {
     const muestra = await this.muestraRepo.findById(id_muestra);
     if (!muestra) {

@@ -29,6 +29,7 @@ export class MuestraArray extends Model<
   declare update_dt: CreationOptional<Date>;
   declare created_by: CreationOptional<number>;
   declare updated_by: CreationOptional<number>;
+  declare observaciones: CreationOptional<string>;
 
   static initModel(sequelize: Sequelize) {
     this.init(
@@ -110,6 +111,11 @@ export class MuestraArray extends Model<
           },
           type: DataTypes.INTEGER,
           allowNull: true,
+        },
+        observaciones: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
+          defaultValue: null,
         },
       },
       {

@@ -1,4 +1,5 @@
 import { CreationAttributes, Op, fn, col, Transaction } from 'sequelize';
+import { NotFoundError } from '../errors/NotFoundError';
 import { DimTecnicaProc } from '../models/DimTecnicaProc';
 import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
@@ -962,5 +963,14 @@ export class TecnicaRepository {
       console.error('[findTecnicasFromGroup] Error:', error);
       throw error;
     }
+  }
+
+  async saveTemplateValues(
+    id_tecnica: number,
+    datos_plantilla: Record<string, unknown>
+  ): Promise<void> {
+    const tecnica = await Tecnica.findByPk(id_tecnica);
+    if (!tecnica) throw new NotFoundError(`Técnica con ID ${id_tecnica} no encontrada`);
+    await tecnica.update({ datos_plantilla });
   }
 }

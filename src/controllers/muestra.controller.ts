@@ -153,16 +153,17 @@ export const assignCodigosExternos = async (
     });
   }
 
-  const parInvalido = pares.find(
-    (p: unknown) =>
-      typeof p !== 'object' ||
-      p === null ||
-      typeof (p as Record<string, unknown>).codigo_epi !== 'string' ||
-      typeof (p as Record<string, unknown>).cod_externo !== 'string'
-  );
+  const parInvalido = pares.find((p: unknown) => {
+    if (typeof p !== 'object' || p === null) return true;
+    const obj = p as Record<string, unknown>;
+    if (typeof obj.codigo_epi !== 'string') return true;
+    if (typeof obj.cod_externo !== 'string') return true;
+    if (obj.observaciones !== undefined && typeof obj.observaciones !== 'string') return true;
+    return false;
+  });
   if (parInvalido) {
     return res.status(400).json({
-      error: 'Cada elemento de "pares" debe tener { codigo_epi: string, cod_externo: string }',
+      error: 'Cada elemento de "pares" debe tener { codigo_epi: string, cod_externo: string, observaciones?: string }',
     });
   }
 
@@ -222,17 +223,17 @@ export const assignArrayCodigosExternos = async (
     });
   }
 
-  const parInvalido = pares.find(
-    (p: unknown) =>
-      typeof p !== 'object' ||
-      p === null ||
-      typeof (p as Record<string, unknown>).posicion_placa !== 'string' ||
-      typeof (p as Record<string, unknown>).cod_externo !== 'string'
-  );
+  const parInvalido = pares.find((p: unknown) => {
+    if (typeof p !== 'object' || p === null) return true;
+    const obj = p as Record<string, unknown>;
+    if (typeof obj.posicion_placa !== 'string') return true;
+    if (typeof obj.cod_externo !== 'string') return true;
+    if (obj.observaciones !== undefined && typeof obj.observaciones !== 'string') return true;
+    return false;
+  });
   if (parInvalido) {
     return res.status(400).json({
-      error:
-        'Cada elemento de "pares" debe tener { posicion_placa: string, cod_externo: string }',
+      error: 'Cada elemento de "pares" debe tener { posicion_placa: string, cod_externo: string, observaciones?: string }',
     });
   }
 

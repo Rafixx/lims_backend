@@ -20,6 +20,7 @@ import {
   getTecnicasPendientesExternalizacion,
   getTecnicasFromGroup,
   cancelarGrupoTecnicas,
+  saveTecnicaTemplateValues,
 } from '../controllers/tecnica.controller';
 
 const router = Router();
@@ -77,6 +78,7 @@ router.get('/:id', getTecnicaById);
 router.get('/muestra/:id', getTecnicasByMuestraId);
 router.post('/', createTecnica);
 router.put('/:id', updateTecnica);
+router.put('/:id/template-values', saveTecnicaTemplateValues);
 router.delete('/:id', deleteTecnica);
 
 /**

@@ -38,6 +38,7 @@ export class Tecnica extends Model<
   declare update_dt?: Date;
   declare created_by?: number;
   declare updated_by?: number;
+  declare datos_plantilla?: CreationOptional<Record<string, unknown>>;
 
   declare tecnica_proc?: DimTecnicaProc;
 
@@ -123,6 +124,11 @@ export class Tecnica extends Model<
         updated_by: {
           type: DataTypes.INTEGER,
           allowNull: true,
+        },
+        datos_plantilla: {
+          type: DataTypes.JSONB,
+          allowNull: true,
+          defaultValue: null,
         },
       },
       {

@@ -310,25 +310,40 @@ export class MuestraArrayRepository {
   /**
    * Asignar códigos externos a posiciones de placa por posicion_placa (batch).
    * Sólo actualiza las posiciones que pertenecen a id_muestra.
+   * Si el par incluye observaciones, las concatena al valor existente con '\n'.
    * Devuelve el número de registros actualizados.
    */
   async assignCodigosExternosByPosicion(
     id_muestra: number,
-    pares: { posicion_placa: string; cod_externo: string }[]
+    pares: { posicion_placa: string; cod_externo: string; observaciones?: string }[]
   ): Promise<number> {
     const transaction = await sequelize.transaction();
     let updated = 0;
 
     try {
       for (const par of pares) {
-        const [count] = await MuestraArray.update(
-          { codigo_externo: par.cod_externo, update_dt: new Date() },
-          {
-            where: { id_muestra, posicion_placa: par.posicion_placa },
-            transaction,
-          }
-        );
-        updated += count;
+        const registro = await MuestraArray.findOne({
+          where: { id_muestra, posicion_placa: par.posicion_placa },
+          transaction,
+        });
+
+        if (!registro) continue;
+
+        const updateData: { codigo_externo: string; update_dt: Date; observaciones?: string } = {
+          codigo_externo: par.cod_externo,
+          update_dt: new Date(),
+        };
+
+        const obsRecibida = par.observaciones?.trim();
+        if (obsRecibida) {
+          const obsActual = registro.observaciones?.trim();
+          updateData.observaciones = obsActual
+            ? `${obsActual}\n${obsRecibida}`
+            : obsRecibida;
+        }
+
+        await registro.update(updateData, { transaction });
+        updated++;
       }
 
       await transaction.commit();
