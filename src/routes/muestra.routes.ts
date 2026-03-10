@@ -14,12 +14,14 @@ import {
   getArrayByMuestra,
   assignArrayCodigosExternos,
 } from '../controllers/muestra.controller';
+import { crearRegistroMasivo } from '../controllers/registroMasivo.controller';
 
 const router = Router();
 
 router.get('/', getMuestras);
 router.get('/estadisticas', getMuestrasStats);
 router.get('/codigo-epi', getCodigoEpi);
+router.post('/registro-masivo', crearRegistroMasivo);
 router.post('/estudio/:estudio/cod-externo', assignCodigosExternos);
 router.get('/:id', getMuestraById);
 router.get('/:id/tecnicas', getTecnicasById);
