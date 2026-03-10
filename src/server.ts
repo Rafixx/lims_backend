@@ -4,6 +4,11 @@ import { initModels } from './models';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
+if (!process.env.JWT_SECRET) {
+  console.error('ERROR: JWT_SECRET no está configurado. Detener el servidor.');
+  process.exit(1);
+}
+
 const startServer = async () => {
   try {
     // Inicializar los modelos

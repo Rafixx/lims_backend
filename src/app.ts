@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { errorHandler } from './middlewares/error.middleware';
+import { authenticateToken } from './middlewares/auth.middleware';
 // Importar tus rutas aquí
 import { solicitudRoutes } from './routes/solicitud.routes';
 import { muestraRoutes } from './routes/muestra.routes';
@@ -30,13 +32,21 @@ import { externalizacionRoutes } from './routes/externalizacion.routes';
 
 const app = express();
 
-app.use(cors());
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || false,
+  credentials: true,
+}));
 app.use(express.json());
 
-// test endpoint
+// Rutas públicas (sin autenticación)
 app.get('/api/health', (_req, res) =>
   res.json({ ok: true, service: 'lims_backend' })
 );
+app.use('/api/login', authRoutes);
+
+// A partir de aquí todas las rutas requieren token válido
+app.use(authenticateToken);
 
 // Registrar las rutas
 app.use('/api/solicitudes', solicitudRoutes);
@@ -49,7 +59,6 @@ app.use('/api/pruebas', dimPruebaRoutes);
 app.use('/api/tecnicasProc', dimTecnicaProcRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/roles', rolRoutes);
-app.use('/api/login', authRoutes);
 app.use('/api/tiposMuestra', dimTipoMuestraRoutes);
 app.use('/api/ubicaciones', dimUbicacionRoutes);
 app.use('/api/pacientes', dimPacienteRoutes);

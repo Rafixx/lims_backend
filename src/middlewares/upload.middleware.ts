@@ -1,13 +1,14 @@
 // src/middlewares/upload.middleware.ts
 import multer from 'multer';
 import path from 'path';
+import { Request } from 'express';
 
 // Configuración de almacenamiento en memoria
 const storage = multer.memoryStorage();
 
 // Filtro para aceptar solo archivos CSV
 const fileFilter = (
-  req: Express.Request,
+  req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {

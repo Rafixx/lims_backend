@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt';
 import { UsuarioRepository } from '../repositories/usuario.repository';
+import { Usuario } from '../models/Usuario';
 import { BadRequestError } from '../errors/BadRequestError';
+import { UnauthorizedError } from '../errors/UnauthorizedError';
 
 interface CreateUsuarioDTO {
   nombre: string;
@@ -10,10 +12,22 @@ interface CreateUsuarioDTO {
   id_rol: number;
 }
 
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+function validatePasswordComplexity(password: string) {
+  if (!PASSWORD_REGEX.test(password)) {
+    throw new BadRequestError(
+      'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número'
+    );
+  }
+}
+
 export class UsuarioService {
   constructor(private readonly usuarioRepo = new UsuarioRepository()) {}
 
   async createUsuario(data: CreateUsuarioDTO) {
+    validatePasswordComplexity(data.password);
+
     const existing = await this.usuarioRepo.findByEmail(data.email);
     if (existing) {
       throw new BadRequestError('El email ya está en uso');
@@ -65,5 +79,27 @@ export class UsuarioService {
     }
     await this.usuarioRepo.delete(usuario);
     return { message: 'Usuario eliminado correctamente' };
+  }
+
+  async changePassword(id: number, currentPassword: string, newPassword: string) {
+    const usuario = await Usuario.scope('authScope').findByPk(id);
+    if (!usuario) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (!usuario.passwordhash) {
+      throw new UnauthorizedError('Credenciales incorrectas');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, usuario.passwordhash);
+    if (!valid) {
+      throw new UnauthorizedError('Credenciales incorrectas');
+    }
+
+    validatePasswordComplexity(newPassword);
+
+    const passwordhash = await bcrypt.hash(newPassword, 10);
+    await usuario.update({ passwordhash });
+    return { message: 'Contraseña actualizada correctamente' };
   }
 }

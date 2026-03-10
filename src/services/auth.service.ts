@@ -33,18 +33,18 @@ export class AuthService {
       ],
     });
 
+    const GENERIC_AUTH_ERROR = 'Credenciales incorrectas';
+
     if (!usuario) {
-      throw new UnauthorizedError('Usuario no encontrado');
+      throw new UnauthorizedError(GENERIC_AUTH_ERROR);
     }
 
-    // Protección extra: que exista hash
     if (!usuario.passwordhash || typeof usuario.passwordhash !== 'string') {
-      throw new UnauthorizedError('El usuario no tiene credenciales válidas');
+      throw new UnauthorizedError(GENERIC_AUTH_ERROR);
     }
 
-    // Protección extra: que haya password en input
     if (!data.password || typeof data.password !== 'string') {
-      throw new UnauthorizedError('Contraseña no proporcionada');
+      throw new UnauthorizedError(GENERIC_AUTH_ERROR);
     }
 
     const passwordValid = await bcrypt.compare(
@@ -53,7 +53,12 @@ export class AuthService {
     );
 
     if (!passwordValid) {
-      throw new UnauthorizedError('Contraseña incorrecta');
+      throw new UnauthorizedError(GENERIC_AUTH_ERROR);
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET no está configurado');
     }
 
     const rolName = usuario.rol?.name || 'desconocido';
@@ -62,10 +67,11 @@ export class AuthService {
       {
         id: usuario.id_usuario,
         username: usuario.username,
+        id_rol: usuario.id_rol ?? null,
         rol_name: rolName,
       },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: '1h' }
+      jwtSecret,
+      { expiresIn: '1h', algorithm: 'HS256' }
     );
 
     return {

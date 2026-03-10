@@ -75,3 +75,27 @@ export const deleteUsuario = async (
     next(error);
   }
 };
+
+export const changePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'ID inválido' });
+
+  const { currentPassword, newPassword } = req.body;
+  if (
+    !currentPassword || typeof currentPassword !== 'string' ||
+    !newPassword || typeof newPassword !== 'string'
+  ) {
+    return res.status(400).json({ message: 'Se requieren currentPassword y newPassword' });
+  }
+
+  try {
+    const result = await usuarioService.changePassword(id, currentPassword, newPassword);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -2,16 +2,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { TecnicaReactivoService } from '../services/tecnicaReactivo.service';
 
-// Extend Request type
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: {
-      id: number;
-      username: string;
-      id_rol: number;
-    };
-  }
-}
 
 const service = new TecnicaReactivoService();
 
