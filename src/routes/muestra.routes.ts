@@ -13,6 +13,7 @@ import {
   assignCodigosExternos,
   getArrayByMuestra,
   assignArrayCodigosExternos,
+  bulkUpdateByEstudio,
 } from '../controllers/muestra.controller';
 import { crearRegistroMasivo } from '../controllers/registroMasivo.controller';
 
@@ -23,6 +24,7 @@ router.get('/estadisticas', getMuestrasStats);
 router.get('/codigo-epi', getCodigoEpi);
 router.post('/registro-masivo', crearRegistroMasivo);
 router.post('/estudio/:estudio/cod-externo', assignCodigosExternos);
+router.put('/estudio/:estudio/bulk', bulkUpdateByEstudio);
 router.get('/:id', getMuestraById);
 router.get('/:id/tecnicas', getTecnicasById);
 router.get('/:id/array', getArrayByMuestra);

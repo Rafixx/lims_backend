@@ -281,6 +281,79 @@ export class MuestraService {
     return { updated, mensaje: `${updated} muestras actualizadas correctamente` };
   }
 
+  async bulkUpdateByEstudio(estudio: string, data: Record<string, unknown>) {
+    const muestras = await this.muestraRepo.findAllByEstudio(estudio);
+    if (!muestras.length) {
+      throw new NotFoundError(`No se encontraron muestras con estudio "${estudio}"`);
+    }
+
+    const nested = data as {
+      paciente?: { id?: number | string };
+      tecnico_resp?: { id_usuario?: number | string };
+      tipo_muestra?: { id?: number | string };
+      centro?: { id?: number | string };
+      criterio_validacion?: { id?: number | string };
+      ubicacion?: { id?: number | string };
+      solicitud?: {
+        condiciones_envio?: string;
+        tiempo_hielo?: string;
+        f_entrada?: string;
+        f_compromiso?: string;
+        f_entrega?: string;
+        f_resultado?: string;
+      };
+    };
+
+    const toNum = (v: number | string | undefined): number | undefined =>
+      v !== undefined && v !== null && v !== '' ? Number(v) : undefined;
+
+    const updateData: UpdateMuestraDTO = {
+      observaciones: data.observaciones as string | undefined,
+      estudio: data.estudio as string | undefined,
+      f_toma: data.f_toma ? new Date(data.f_toma as string) : undefined,
+      f_recepcion: data.f_recepcion ? new Date(data.f_recepcion as string) : undefined,
+      id_paciente: toNum(nested.paciente?.id) ?? toNum(data.id_paciente as number | undefined),
+      id_tecnico_resp: toNum(nested.tecnico_resp?.id_usuario) ?? toNum(data.id_tecnico_resp as number | undefined),
+      id_tipo_muestra: toNum(nested.tipo_muestra?.id) ?? toNum(data.id_tipo_muestra as number | undefined),
+      id_centro_externo: toNum(nested.centro?.id) ?? toNum(data.id_centro_externo as number | undefined),
+      id_criterio_val: toNum(nested.criterio_validacion?.id) ?? toNum(data.id_criterio_val as number | undefined),
+      id_ubicacion: toNum(nested.ubicacion?.id) ?? toNum(data.id_ubicacion as number | undefined),
+      id_tecnico_recepcion: toNum(data.id_tecnico_recepcion as number | undefined),
+    };
+
+    const solicitudData = nested.solicitud
+      ? {
+          condiciones_envio: nested.solicitud.condiciones_envio,
+          tiempo_hielo: nested.solicitud.tiempo_hielo,
+          f_entrada: nested.solicitud.f_entrada ? new Date(nested.solicitud.f_entrada) : undefined,
+          f_compromiso: nested.solicitud.f_compromiso ? new Date(nested.solicitud.f_compromiso) : undefined,
+          f_entrega: nested.solicitud.f_entrega ? new Date(nested.solicitud.f_entrega) : undefined,
+          f_resultado: nested.solicitud.f_resultado ? new Date(nested.solicitud.f_resultado) : undefined,
+        }
+      : null;
+
+    const { sequelize: db } = await import('../config/db.config');
+    const { Solicitud } = await import('../models/Solicitud');
+    const transaction = await db.transaction();
+
+    try {
+      for (const muestra of muestras) {
+        await muestra.update(updateData, { transaction });
+        if (solicitudData && muestra.id_solicitud) {
+          const solicitud = await Solicitud.findByPk(muestra.id_solicitud);
+          if (solicitud) {
+            await solicitud.update(solicitudData, { transaction });
+          }
+        }
+      }
+      await transaction.commit();
+      return { updated: muestras.length, mensaje: `${muestras.length} placas actualizadas` };
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
+  }
+
   async getArrayByMuestra(id_muestra: number) {
     const muestra = await this.muestraRepo.findById(id_muestra);
     if (!muestra) {

@@ -244,3 +244,17 @@ export const assignArrayCodigosExternos = async (
     next(error);
   }
 };
+
+export const bulkUpdateByEstudio = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const estudio = decodeURIComponent(req.params.estudio);
+  try {
+    const result = await muestraService.bulkUpdateByEstudio(estudio, req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

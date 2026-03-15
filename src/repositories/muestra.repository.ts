@@ -575,6 +575,13 @@ export class MuestraRepository {
     });
   }
 
+  async findAllByEstudio(estudio: string): Promise<Muestra[]> {
+    return Muestra.scope('withRefs').findAll({
+      where: { estudio },
+      order: [['id_muestra', 'ASC']],
+    });
+  }
+
   async assignCodigosExternos(
     estudio: string,
     pares: { codigo_epi: string; cod_externo: string; observaciones?: string }[]
