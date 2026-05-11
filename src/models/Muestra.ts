@@ -258,6 +258,14 @@ export class Muestra extends Model<
     this.addScope('withRefs', {
       attributes: [
         'id_muestra',
+        'id_solicitud',
+        'id_estado',
+        'id_tipo_muestra',
+        'id_prueba',
+        'id_centro_externo',
+        'id_criterio_val',
+        'id_ubicacion',
+        'id_tecnico_resp',
         'codigo_epi',
         'codigo_externo',
         'estudio',

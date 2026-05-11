@@ -6,6 +6,7 @@ import {
   getTecnicasById,
   createMuestra,
   updateMuestra,
+  updateEstadoMuestra,
   deleteMuestra,
   getMuestrasStats,
   cambiarEstadoMuestra,
@@ -30,6 +31,7 @@ router.get('/:id/tecnicas', getTecnicasById);
 router.get('/:id/array', getArrayByMuestra);
 router.post('/:id/array/cod-externo', assignArrayCodigosExternos);
 router.post('/', createMuestra);
+router.put('/:id/estado', updateEstadoMuestra);
 router.put('/:id', updateMuestra);
 router.delete('/:id', deleteMuestra);
 router.post('/:id/cambiar-estado', cambiarEstadoMuestra);

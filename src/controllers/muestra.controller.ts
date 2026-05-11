@@ -111,6 +111,43 @@ export const getMuestrasStats = async (
   }
 };
 
+export const updateEstadoMuestra = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id_muestra = Number(req.params.id);
+  if (isNaN(id_muestra) || id_muestra < 1) {
+    return res.status(400).json({ error: 'ID de muestra inválido' });
+  }
+
+  const { id_estado, comentario } = req.body;
+  if (id_estado === undefined || id_estado === null) {
+    return res.status(400).json({ error: 'id_estado es obligatorio' });
+  }
+  const nuevoEstadoId = Number(id_estado);
+  if (!Number.isInteger(nuevoEstadoId) || nuevoEstadoId < 1) {
+    return res.status(400).json({ error: 'id_estado debe ser un número entero positivo' });
+  }
+
+  try {
+    const { EstadoService } = await import('../services/estado.service');
+    const estadoService = new EstadoService();
+    const resultado = await estadoService.cambiarEstadoMuestra(
+      id_muestra,
+      nuevoEstadoId,
+      comentario
+    );
+    res.status(200).json({
+      success: true,
+      message: 'Estado de muestra actualizado correctamente',
+      data: resultado,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const cambiarEstadoMuestra = async (
   req: Request,
   res: Response,
