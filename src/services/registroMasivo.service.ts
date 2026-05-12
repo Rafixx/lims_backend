@@ -16,6 +16,8 @@ export interface RegistroMasivoRequest {
   id_cliente: number
   total_muestras: number
   plate_config: PlateConfig
+  f_recepcion: string
+  codigo_externo_placa?: string
   id_paciente?: number
   id_centro?: number
   id_tecnico_resp?: number
@@ -31,6 +33,7 @@ export interface RegistroMasivoResult {
   total_muestras: number
   posiciones_vacias: number
   codigos_placa: string[]
+  codigo_epi_placa: string
   codigos_epi_rango: { primero: string; ultimo: string }
   mensaje: string
 }
@@ -77,6 +80,15 @@ export class RegistroMasivoService {
     return { codigo_epi, secuencia: value, year }
   }
 
+  private async getCodigoPlaca(): Promise<string> {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const { year, value } = await this.contadorRepo.getNextValue('placa', currentYear)
+    const yearPrefix = year.toString().slice(-2)
+    const paddedSequence = value.toString().padStart(5, '0')
+    return `PLC${yearPrefix}.${paddedSequence}`
+  }
+
   async crearRegistroMasivo(req: RegistroMasivoRequest): Promise<RegistroMasivoResult> {
     const {
       estudio,
@@ -85,6 +97,8 @@ export class RegistroMasivoService {
       id_cliente,
       total_muestras,
       plate_config,
+      f_recepcion,
+      codigo_externo_placa,
       id_paciente,
       id_centro,
       id_tecnico_resp,
@@ -108,6 +122,7 @@ export class RegistroMasivoService {
     const codigosPlaca: string[] = []
     let primerCodigoEpi: string | null = null
     let ultimoCodigoEpi: string | null = null
+    let codigoEpiPlacaFinal: string = ''
     let totalPosicionesCreadas = 0
     let muestrasRestantes = total_muestras
 
@@ -116,28 +131,27 @@ export class RegistroMasivoService {
       codigosPlaca.push(plateCode)
 
       // For the last plate, only fill up to the remaining samples count.
-      // Since createMuestraArray iterates A..heightLetter × width, we need to
-      // adjust heightLetter for the last plate when it is not full.
       const posForThisPlate = Math.min(posicionesPorPlaca, muestrasRestantes)
       muestrasRestantes -= posForThisPlate
 
       // Calculate the effective heightLetter for this plate
-      // posForThisPlate = effectiveHeight * width (ceiling to full rows)
       const effectiveHeightNum = Math.ceil(posForThisPlate / width)
       const effectiveHeightLetter = String.fromCharCode(
         'A'.charCodeAt(0) + effectiveHeightNum - 1
       )
       const effectiveTotalPositions = effectiveHeightNum * width
 
-      // Get a codigo_epi for the plate muestra itself
-      const { codigo_epi: codigoEpiPlaca } = await this.getCodigoEpi()
-      if (primerCodigoEpi === null) {
-        primerCodigoEpi = codigoEpiPlaca
+      // Get an independent PLC code for the plate parent (does NOT consume from the muestra sequence)
+      const codigoPlaca = await this.getCodigoPlaca()
+      if (codigoEpiPlacaFinal === '') {
+        codigoEpiPlacaFinal = codigoPlaca
       }
 
       const muestraData = {
         estudio,
-        codigo_epi: codigoEpiPlaca,
+        codigo_epi: codigoPlaca,
+        codigo_externo: codigo_externo_placa || undefined,
+        f_recepcion,
         observaciones,
         solicitud: {
           condiciones_envio,
@@ -165,18 +179,18 @@ export class RegistroMasivoService {
         },
       }
 
-      // Track the last codigo_epi assigned to a position.
-      // We capture it via a wrapper around getCodigoEpi that records the last value.
-      let lastEpiInPlate = codigoEpiPlaca
+      // Track first/last EPI code assigned to well positions (not the plate itself)
+      let lastEpiInPlate: string | null = null
       const trackingGetCodigoEpi = async () => {
         const result = await this.getCodigoEpi()
+        if (primerCodigoEpi === null) primerCodigoEpi = result.codigo_epi
         lastEpiInPlate = result.codigo_epi
         return result
       }
 
       await this.muestraRepo.create(muestraData, trackingGetCodigoEpi)
 
-      ultimoCodigoEpi = lastEpiInPlate
+      if (lastEpiInPlate !== null) ultimoCodigoEpi = lastEpiInPlate
       totalPosicionesCreadas += effectiveTotalPositions
     }
 
@@ -188,6 +202,7 @@ export class RegistroMasivoService {
       total_muestras,
       posiciones_vacias: posicionesVacias,
       codigos_placa: codigosPlaca,
+      codigo_epi_placa: codigoEpiPlacaFinal,
       codigos_epi_rango: {
         primero: primerCodigoEpi ?? '',
         ultimo: ultimoCodigoEpi ?? '',

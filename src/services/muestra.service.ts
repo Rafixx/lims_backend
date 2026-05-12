@@ -99,6 +99,7 @@ interface UpdateMuestraDTO {
   id_tecnico_recepcion?: number;
   id_tecnico_verifica?: number;
   id_tipo_muestra?: number;
+  id_prueba?: number;
   id_centro_externo?: number;
   id_criterio_val?: number;
   id_ubicacion?: number;
@@ -127,6 +128,10 @@ export class MuestraService {
       throw new Error('El cliente es obligatorio para crear una muestra');
     }
 
+    if (!data.f_recepcion || String(data.f_recepcion).trim() === '') {
+      throw new BadRequestError('f_recepcion es obligatorio');
+    }
+
     // Validar y normalizar cantidad
     const rawCantidad = data.cantidad !== undefined ? data.cantidad : 1;
     const cantidad = Number(rawCantidad);
@@ -137,11 +142,6 @@ export class MuestraService {
     // Las placas (tipo_array) tienen su propio mecanismo de posiciones; no admiten cantidad > 1
     if (data.array_config && cantidad > 1) {
       throw new BadRequestError('Las muestras de tipo placa solo se pueden crear de una en una');
-    }
-
-    // Establecer fecha de recepción por defecto si no se proporciona
-    if (!data.f_recepcion) {
-      data.f_recepcion = new Date().toISOString();
     }
 
     // Crear N muestras secuencialmente (cada una con su propia transacción interna)
@@ -233,26 +233,31 @@ export class MuestraService {
       id_paciente: toNum(nested.paciente?.id) ?? toNum(data.id_paciente as number | undefined),
       id_tecnico_resp: toNum(nested.tecnico_resp?.id_usuario) ?? toNum(data.id_tecnico_resp as number | undefined),
       id_tipo_muestra: toNum(nested.tipo_muestra?.id) ?? toNum(data.id_tipo_muestra as number | undefined),
-      id_centro_externo: toNum(nested.centro?.id) ?? toNum(data.id_centro_externo as number | undefined),
-      id_criterio_val: toNum(nested.criterio_validacion?.id) ?? toNum(data.id_criterio_val as number | undefined),
+      id_prueba: toNum(data.id_prueba as number | undefined),
+      // id_centro: nombre plano del frontend; id_centro_externo: nombre de columna en el modelo
+      id_centro_externo: toNum(nested.centro?.id) ?? toNum(data.id_centro_externo as number | undefined) ?? toNum(data.id_centro as number | undefined),
+      // id_criterio_validacion: nombre plano del frontend; id_criterio_val: nombre de columna en el modelo
+      id_criterio_val: toNum(nested.criterio_validacion?.id) ?? toNum(data.id_criterio_val as number | undefined) ?? toNum(data.id_criterio_validacion as number | undefined),
       id_ubicacion: toNum(nested.ubicacion?.id) ?? toNum(data.id_ubicacion as number | undefined),
       id_tecnico_recepcion: toNum(data.id_tecnico_recepcion as number | undefined),
       id_tecnico_verifica: toNum(data.id_tecnico_verifica as number | undefined),
     };
 
     // Actualizar campos de la solicitud si se proporcionan
-    if (nested.solicitud && muestra.id_solicitud) {
+    const idSolicitudCliente = toNum(data.id_solicitud_cliente as number | undefined);
+    if ((nested.solicitud || idSolicitudCliente !== undefined) && muestra.id_solicitud) {
       const { Solicitud } = await import('../models/Solicitud');
       const solicitud = await Solicitud.findByPk(muestra.id_solicitud);
       if (solicitud) {
-        await solicitud.update({
-          condiciones_envio: nested.solicitud.condiciones_envio,
-          tiempo_hielo: nested.solicitud.tiempo_hielo,
-          f_entrada: nested.solicitud.f_entrada ? new Date(nested.solicitud.f_entrada) : undefined,
-          f_compromiso: nested.solicitud.f_compromiso ? new Date(nested.solicitud.f_compromiso) : undefined,
-          f_entrega: nested.solicitud.f_entrega ? new Date(nested.solicitud.f_entrega) : undefined,
-          f_resultado: nested.solicitud.f_resultado ? new Date(nested.solicitud.f_resultado) : undefined,
-        });
+        const solicitudUpdate: Record<string, unknown> = {};
+        if (nested.solicitud?.condiciones_envio !== undefined) solicitudUpdate.condiciones_envio = nested.solicitud.condiciones_envio;
+        if (nested.solicitud?.tiempo_hielo !== undefined) solicitudUpdate.tiempo_hielo = nested.solicitud.tiempo_hielo;
+        if (nested.solicitud?.f_entrada) solicitudUpdate.f_entrada = new Date(nested.solicitud.f_entrada);
+        if (nested.solicitud?.f_compromiso) solicitudUpdate.f_compromiso = new Date(nested.solicitud.f_compromiso);
+        if (nested.solicitud?.f_entrega) solicitudUpdate.f_entrega = new Date(nested.solicitud.f_entrega);
+        if (nested.solicitud?.f_resultado) solicitudUpdate.f_resultado = new Date(nested.solicitud.f_resultado);
+        if (idSolicitudCliente !== undefined) solicitudUpdate.id_cliente = idSolicitudCliente;
+        if (Object.keys(solicitudUpdate).length > 0) await solicitud.update(solicitudUpdate);
       }
     }
 

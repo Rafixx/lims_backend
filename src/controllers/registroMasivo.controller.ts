@@ -21,6 +21,7 @@ export const crearRegistroMasivo = async (
     if (body.id_cliente === undefined) missingFields.push('id_cliente')
     if (body.total_muestras === undefined) missingFields.push('total_muestras')
     if (body.plate_config === undefined) missingFields.push('plate_config')
+    if (!body.f_recepcion || String(body.f_recepcion).trim() === '') missingFields.push('f_recepcion')
 
     if (missingFields.length > 0) {
       res.status(400).json({
@@ -63,6 +64,11 @@ export const crearRegistroMasivo = async (
         heightLetter: String(plate_config.heightLetter),
         code_prefix: String(plate_config.code_prefix),
       },
+      f_recepcion: String(body.f_recepcion),
+      codigo_externo_placa:
+        body.codigo_externo_placa && String(body.codigo_externo_placa).trim() !== ''
+          ? String(body.codigo_externo_placa)
+          : undefined,
       id_paciente: body.id_paciente !== undefined ? Number(body.id_paciente) : undefined,
       id_centro: body.id_centro !== undefined ? Number(body.id_centro) : undefined,
       id_tecnico_resp:
