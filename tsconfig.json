@@ -12,9 +12,12 @@
       "./src/types"
     ]
   },
+  "ts-node": {
+    "files": true
+  },
   "include": [
     "src/**/*",
-    "src/types/**/*.d.ts" // Include the types directory for type definitions
+    "src/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules"
