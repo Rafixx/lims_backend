@@ -23,23 +23,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build TypeScript
-        run: npm run build
+        run: pnpm run build
 
       - name: Create deployment package
         run: |
           mkdir -p deploy_package
           cp -r dist deploy_package/
-          cp package*.json deploy_package/
+          cp package.json pnpm-lock.yaml deploy_package/
           cp ecosystem.config.js deploy_package/
           tar -czf deploy.tar.gz -C deploy_package .
 
@@ -99,7 +104,7 @@ jobs:
 
             if ! command -v pm2 &> /dev/null; then
               echo "⚠️  PM2 not found, installing..."
-              npm install -g pm2
+              pnpm add -g pm2
             fi
             echo "✅ PM2 version: $(pm2 --version)"
             echo ""
@@ -150,7 +155,7 @@ jobs:
 
             # Instalar dependencias de producción
             echo "📥 Installing production dependencies..."
-            npm ci --only=production
+            pnpm install --frozen-lockfile --prod
             echo "✅ Dependencies installed"
             echo ""
 

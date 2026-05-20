@@ -69,7 +69,7 @@ module.exports = {
       repo: 'https://github.com/Rafixx/lims_backend.git',
       path: '/home/rafa/dev/epidisease/lims/lims_backend',
       'pre-deploy-local': '',
-      'post-deploy': 'npm ci && npm run build && pm2 reload ecosystem.config.js --env production',
+      'post-deploy': 'pnpm install --frozen-lockfile && pnpm run build && pm2 reload ecosystem.config.js --env production',
       'pre-setup': 'mkdir -p /home/rafa/dev/epidisease/lims/logs',
       'ssh_options': 'StrictHostKeyChecking=no'
     }

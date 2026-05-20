@@ -2,6 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["bcrypt", "sqlite3"]
+  },
   "scripts": {
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
