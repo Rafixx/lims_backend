@@ -100,6 +100,12 @@ jobs:
             fi
             echo "✅ Node.js version: $(node --version)"
 
+            if ! command -v pnpm &> /dev/null; then
+              echo "⚠️  pnpm not found, installing..."
+              npm install -g pnpm
+            fi
+            echo "✅ pnpm version: $(pnpm --version)"
+
             if ! command -v pm2 &> /dev/null; then
               echo "⚠️  PM2 not found, installing..."
               pnpm add -g pm2
