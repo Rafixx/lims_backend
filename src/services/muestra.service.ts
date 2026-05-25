@@ -381,16 +381,31 @@ export class MuestraService {
     if (!muestra.tipo_array) {
       throw new BadRequestError(`La muestra ${id_muestra} no es de tipo placa`);
     }
-    const updated = await this.muestraArrayRepo.assignCodigosExternosByPosicion(
-      id_muestra,
-      pares
-    );
-    if (updated === 0) {
+
+    const parPlaca = pares.find(p => p.posicion_placa === 'PLACA');
+    const paresPositions = pares.filter(p => p.posicion_placa !== 'PLACA');
+
+    let updatedPlaca = 0;
+    if (parPlaca) {
+      await this.muestraRepo.update(muestra, { codigo_externo: parPlaca.cod_externo });
+      updatedPlaca = 1;
+    }
+
+    let updatedPositions = 0;
+    if (paresPositions.length > 0) {
+      updatedPositions = await this.muestraArrayRepo.assignCodigosExternosByPosicion(
+        id_muestra,
+        paresPositions
+      );
+    }
+
+    const total = updatedPlaca + updatedPositions;
+    if (total === 0) {
       throw new NotFoundError(
         'No se encontraron posiciones de placa con las posiciones indicadas'
       );
     }
-    return { updated, mensaje: `${updated} posiciones actualizadas correctamente` };
+    return { updated: total, mensaje: `${total} código(s) externo(s) actualizado(s) correctamente` };
   }
 
   async getMuestrasStats() {

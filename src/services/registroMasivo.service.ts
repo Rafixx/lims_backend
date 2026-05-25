@@ -80,15 +80,6 @@ export class RegistroMasivoService {
     return { codigo_epi, secuencia: value, year }
   }
 
-  private async getCodigoPlaca(): Promise<string> {
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const { year, value } = await this.contadorRepo.getNextValue('placa', currentYear)
-    const yearPrefix = year.toString().slice(-2)
-    const paddedSequence = value.toString().padStart(5, '0')
-    return `PLC${yearPrefix}.${paddedSequence}`
-  }
-
   async crearRegistroMasivo(req: RegistroMasivoRequest): Promise<RegistroMasivoResult> {
     const {
       estudio,
@@ -122,7 +113,6 @@ export class RegistroMasivoService {
     const codigosPlaca: string[] = []
     let primerCodigoEpi: string | null = null
     let ultimoCodigoEpi: string | null = null
-    let codigoEpiPlacaFinal: string = ''
     let totalPosicionesCreadas = 0
     let muestrasRestantes = total_muestras
 
@@ -141,15 +131,9 @@ export class RegistroMasivoService {
       )
       const effectiveTotalPositions = effectiveHeightNum * width
 
-      // Get an independent PLC code for the plate parent (does NOT consume from the muestra sequence)
-      const codigoPlaca = await this.getCodigoPlaca()
-      if (codigoEpiPlacaFinal === '') {
-        codigoEpiPlacaFinal = codigoPlaca
-      }
-
       const muestraData = {
         estudio,
-        codigo_epi: codigoPlaca,
+        codigo_epi: plateCode,
         codigo_externo: codigo_externo_placa || undefined,
         f_recepcion,
         observaciones,
@@ -202,7 +186,7 @@ export class RegistroMasivoService {
       total_muestras,
       posiciones_vacias: posicionesVacias,
       codigos_placa: codigosPlaca,
-      codigo_epi_placa: codigoEpiPlacaFinal,
+      codigo_epi_placa: codigosPlaca[0] ?? '',
       codigos_epi_rango: {
         primero: primerCodigoEpi ?? '',
         ultimo: ultimoCodigoEpi ?? '',

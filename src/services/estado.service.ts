@@ -1,6 +1,8 @@
 import { DimEstado } from '../models/DimEstado';
 import { Muestra } from '../models/Muestra';
 import { Tecnica } from '../models/Tecnica';
+import { BadRequestError } from '../errors/BadRequestError';
+import { NotFoundError } from '../errors/NotFoundError';
 
 // ============ ESTADOS DE TECNICA ============
 export const ESTADO_TECNICA = {
@@ -78,18 +80,13 @@ export class EstadoService {
     estadoOrigenId: number,
     estadoDestinoId: number
   ): Promise<boolean> {
-    const [estadoOrigen, estadoDestino] = await Promise.all([
-      DimEstado.findOne({ where: { id: estadoOrigenId, entidad } }),
-      DimEstado.findOne({ where: { id: estadoDestinoId, entidad } }),
-    ]);
+    if (estadoOrigenId === estadoDestinoId) return true;
 
-    if (!estadoOrigen || !estadoDestino) return false;
+    const estadoOrigen = await DimEstado.findOne({ where: { id: estadoOrigenId, entidad } });
+    if (!estadoOrigen) return false;
 
-    // Lógica de transición: solo se puede avanzar o retroceder un nivel
-    const ordenOrigen = estadoOrigen.orden || 0;
-    const ordenDestino = estadoDestino.orden || 0;
-
-    return Math.abs(ordenDestino - ordenOrigen) <= 1;
+    // No se puede salir de un estado final
+    return !estadoOrigen.es_final;
   }
 
   // Cambiar estado de una entidad
@@ -102,7 +99,7 @@ export class EstadoService {
   ): Promise<T> {
     const registro = await modelo.findByPk(id);
     if (!registro) {
-      throw new Error(`${entidad} no encontrada`);
+      throw new NotFoundError(`${entidad} con ID ${id} no encontrada`);
     }
 
     // Validar que el nuevo estado existe y está activo
@@ -115,7 +112,7 @@ export class EstadoService {
     });
 
     if (!nuevoEstado) {
-      throw new Error(
+      throw new BadRequestError(
         `Estado con ID ${nuevoEstadoId} no válido para ${entidad}`
       );
     }
@@ -128,8 +125,8 @@ export class EstadoService {
         nuevoEstadoId
       );
       if (!puedeTransicionar) {
-        throw new Error(
-          `Transición no permitida desde estado actual a ${nuevoEstado.estado || 'estado desconocido'}`
+        throw new BadRequestError(
+          `Transición no permitida: estado actual es final y no puede cambiarse`
         );
       }
     }
