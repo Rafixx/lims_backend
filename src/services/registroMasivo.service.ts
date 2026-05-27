@@ -137,6 +137,8 @@ export class RegistroMasivoService {
         codigo_externo: codigo_externo_placa || undefined,
         f_recepcion,
         observaciones,
+        plate_width: width,
+        plate_height: heightNum,
         solicitud: {
           condiciones_envio,
           tiempo_hielo,
@@ -159,7 +161,8 @@ export class RegistroMasivoService {
           width,
           heightLetter: effectiveHeightLetter,
           height: effectiveHeightNum,
-          totalPositions: effectiveTotalPositions,
+          totalPositions: posForThisPlate,
+          maxPositions: posForThisPlate,
         },
       }
 
@@ -175,7 +178,7 @@ export class RegistroMasivoService {
       await this.muestraRepo.create(muestraData, trackingGetCodigoEpi)
 
       if (lastEpiInPlate !== null) ultimoCodigoEpi = lastEpiInPlate
-      totalPosicionesCreadas += effectiveTotalPositions
+      totalPosicionesCreadas += posForThisPlate
     }
 
     const posicionesVacias = totalPosicionesCreadas - total_muestras

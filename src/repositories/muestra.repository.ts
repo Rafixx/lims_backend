@@ -123,19 +123,21 @@ export class MuestraRepository {
    */
   private async createMuestraArray(
     idMuestra: number,
-    arrayConfig: { code: string; width: number; heightLetter: string },
+    arrayConfig: { code: string; width: number; heightLetter: string; maxPositions?: number },
     getCodigoEpiFn: () => Promise<{ codigo_epi: string; secuencia: number; year: number }>,
     transaction?: Transaction
   ): Promise<MuestraArray[]> {
-    const { code, width, heightLetter } = arrayConfig;
+    const { code, width, heightLetter, maxPositions } = arrayConfig;
     const arrayPositions = [];
 
     const maxLetterIndex = heightLetter.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
     let positionIndex = 1;
+    let created = 0;
 
-    for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
+    outer: for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
       const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
       for (let col = 1; col <= width; col++) {
+        if (maxPositions !== undefined && created >= maxPositions) break outer;
         const colPadded = col < 10 ? `0${col}` : `${col}`;
 
         // Obtener un código EPI único para esta posición
@@ -150,6 +152,7 @@ export class MuestraRepository {
           f_creacion: new Date(),
         });
         positionIndex++;
+        created++;
       }
     }
 

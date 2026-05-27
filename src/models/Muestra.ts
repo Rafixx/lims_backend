@@ -53,6 +53,8 @@ export class Muestra extends Model<
   declare estado_muestra?: CreationOptional<string>;
   declare id_estado?: CreationOptional<number>;
   declare observaciones?: CreationOptional<string>;
+  declare plate_width?: CreationOptional<number>;
+  declare plate_height?: CreationOptional<number>;
 
   declare delete_dt?: CreationOptional<Date>;
   declare update_dt: CreationOptional<Date>;
@@ -203,6 +205,16 @@ export class Muestra extends Model<
         },
         observaciones: {
           type: DataTypes.STRING(255),
+          allowNull: true,
+          defaultValue: null,
+        },
+        plate_width: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          defaultValue: null,
+        },
+        plate_height: {
+          type: DataTypes.INTEGER,
           allowNull: true,
           defaultValue: null,
         },
