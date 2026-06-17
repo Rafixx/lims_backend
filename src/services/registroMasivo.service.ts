@@ -7,6 +7,7 @@ interface PlateConfig {
   width: number
   heightLetter: string
   code_prefix: string
+  fill_direction?: 'row' | 'column'
 }
 
 export interface RegistroMasivoRequest {
@@ -99,7 +100,7 @@ export class RegistroMasivoService {
       observaciones,
     } = req
 
-    const { width, heightLetter, code_prefix } = plate_config
+    const { width, heightLetter, code_prefix, fill_direction = 'row' } = plate_config
 
     // Validate plate config
     const heightNum = letterToNumber(heightLetter)
@@ -163,6 +164,7 @@ export class RegistroMasivoService {
           height: effectiveHeightNum,
           totalPositions: posForThisPlate,
           maxPositions: posForThisPlate,
+          fill_direction,
         },
       }
 

@@ -952,7 +952,7 @@ export class TecnicaRepository {
           },
         ],
         order: [
-          [{ model: MuestraArray, as: 'muestraArray' }, 'posicion_placa', 'ASC'],
+          [{ model: MuestraArray, as: 'muestraArray' }, 'codigo_epi', 'ASC'],
           ['id_tecnica', 'ASC'],
         ],
       });

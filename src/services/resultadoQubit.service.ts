@@ -2,6 +2,7 @@
 import { Transaction } from 'sequelize';
 import ResRawQubit from '../models/ResRawQubit';
 import { Muestra } from '../models/Muestra';
+import { MuestraArray } from '../models/MuestraArray';
 import { Tecnica } from '../models/Tecnica';
 import { ResFinalQubitRepository } from '../repositories/resFinalQubit.repository';
 import { ResultadoRepository } from '../repositories/resultado.repository';
@@ -22,6 +23,7 @@ interface ProcessQubitResult {
 // Tipo para Tecnica con Muestra incluida
 interface TecnicaConMuestra extends Tecnica {
   muestra?: Muestra | null;
+  muestraArray?: MuestraArray | null;
 }
 
 /**
@@ -337,7 +339,7 @@ export class ResultadoQubitService {
         `📊 [PROCESO CON MAPEO QUBIT] Procesando ${rawRecords.length} registros raw con worklist ${idWorklist}...`
       );
 
-      // 2. Obtener técnicas del worklist
+      // 2. Obtener técnicas del worklist (incluye muestra directa y muestraArray para placas)
       const tecnicas = (await Tecnica.findAll({
         where: { id_worklist: idWorklist },
         include: [
@@ -345,6 +347,13 @@ export class ResultadoQubitService {
             model: Muestra,
             as: 'muestra',
             attributes: ['id_muestra', 'codigo_epi'],
+            required: false,
+          },
+          {
+            model: MuestraArray,
+            as: 'muestraArray',
+            attributes: ['id_muestra', 'codigo_epi'],
+            required: false,
           },
         ],
         transaction,
@@ -425,14 +434,17 @@ export class ResultadoQubitService {
             (t) => t.id_tecnica === idTecnicaMapeado
           );
 
+          // Muestra o muestraArray (para técnicas sobre placas)
+          const muestraInfo = tecnicaMatch?.muestra || tecnicaMatch?.muestraArray;
+
           console.log(
             `🔍 Técnica encontrada:`,
             tecnicaMatch
-              ? `id=${tecnicaMatch.id_tecnica}, muestra=${tecnicaMatch.muestra?.codigo_epi}`
+              ? `id=${tecnicaMatch.id_tecnica}, muestra=${muestraInfo?.codigo_epi}`
               : 'NO ENCONTRADA'
           );
 
-          if (!tecnicaMatch || !tecnicaMatch.muestra) {
+          if (!tecnicaMatch || !muestraInfo) {
             console.log(
               `❌ Registro ${index}: Técnica o muestra no encontrada`
             );
@@ -494,7 +506,7 @@ export class ResultadoQubitService {
 
             await this.resultadoRepository.create(
               {
-                id_muestra: tecnicaMatch.muestra.id_muestra,
+                id_muestra: muestraInfo.id_muestra,
                 id_tecnica: tecnicaMatch.id_tecnica,
                 tipo_res: keyField.valor,
                 valor: valorCampo?.toString() || undefined,

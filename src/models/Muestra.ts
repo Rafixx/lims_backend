@@ -294,6 +294,8 @@ export class Muestra extends Model<
         'estado_muestra',
         'tipo_array',
         'observaciones',
+        'plate_width',
+        'plate_height',
       ],
       include: [
         {

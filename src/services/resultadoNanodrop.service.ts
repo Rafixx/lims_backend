@@ -2,6 +2,7 @@
 import { Transaction } from 'sequelize';
 import { ResRawNanodrop } from '../models/ResRawNanodrop';
 import { Muestra } from '../models/Muestra';
+import { MuestraArray } from '../models/MuestraArray';
 import { Tecnica } from '../models/Tecnica';
 import { ResFinalNanodropRepository } from '../repositories/resFinalNanodrop.repository';
 import { ResultadoRepository } from '../repositories/resultado.repository';
@@ -18,9 +19,10 @@ interface ProcessNanodropResult {
   errors: string[];
 }
 
-// Tipo para Tecnica con Muestra incluida
+// Tipo para Tecnica con Muestra incluida (muestra directa o muestraArray para placas)
 interface TecnicaConMuestra extends Tecnica {
   muestra?: Muestra | null;
+  muestraArray?: MuestraArray | null;
 }
 
 /**
@@ -342,7 +344,7 @@ export class ResultadoNanodropService {
         `📊 [PROCESO CON MAPEO] Procesando ${rawRecords.length} registros raw con worklist ${idWorklist}...`
       );
 
-      // 2. Obtener técnicas del worklist
+      // 2. Obtener técnicas del worklist (incluye muestra directa y muestraArray para placas)
       const tecnicas = (await Tecnica.findAll({
         where: { id_worklist: idWorklist },
         include: [
@@ -350,6 +352,13 @@ export class ResultadoNanodropService {
             model: Muestra,
             as: 'muestra',
             attributes: ['id_muestra', 'codigo_epi'],
+            required: false,
+          },
+          {
+            model: MuestraArray,
+            as: 'muestraArray',
+            attributes: ['id_muestra', 'codigo_epi'],
+            required: false,
           },
         ],
         transaction,
@@ -421,7 +430,10 @@ export class ResultadoNanodropService {
             (t) => t.id_tecnica === idTecnicaMapeado
           );
 
-          if (!tecnicaMatch || !tecnicaMatch.muestra) {
+          // Muestra directa o muestraArray (técnicas sobre placas)
+          const muestraInfo = tecnicaMatch?.muestra || tecnicaMatch?.muestraArray;
+
+          if (!tecnicaMatch || !muestraInfo) {
             errors.push(
               `Registro raw índice ${index}: No se encontró técnica con id_tecnica=${idTecnicaMapeado}`
             );
@@ -468,7 +480,7 @@ export class ResultadoNanodropService {
 
             await this.resultadoRepository.create(
               {
-                id_muestra: tecnicaMatch.muestra.id_muestra,
+                id_muestra: muestraInfo.id_muestra,
                 id_tecnica: tecnicaMatch.id_tecnica,
                 tipo_res: keyField.valor,
                 valor: valorCampo?.toString() || undefined,

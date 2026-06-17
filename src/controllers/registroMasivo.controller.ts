@@ -63,6 +63,8 @@ export const crearRegistroMasivo = async (
         width: Number(plate_config.width),
         heightLetter: String(plate_config.heightLetter),
         code_prefix: String(plate_config.code_prefix),
+        fill_direction:
+          plate_config.fill_direction === 'column' ? 'column' : 'row',
       },
       f_recepcion: String(body.f_recepcion),
       codigo_externo_placa:

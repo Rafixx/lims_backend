@@ -90,12 +90,16 @@ interface CrearMuestraData {
     id_tecnica_proc: string | number;
     comentarios?: string;
   }>;
+  plate_width?: number;
+  plate_height?: number;
   array_config?: {
     code: string;
     width: number;
     heightLetter: string;
     height: number;
     totalPositions: number;
+    maxPositions?: number;
+    fill_direction?: 'row' | 'column';
   } | null;
 }
 
@@ -123,36 +127,66 @@ export class MuestraRepository {
    */
   private async createMuestraArray(
     idMuestra: number,
-    arrayConfig: { code: string; width: number; heightLetter: string; maxPositions?: number },
+    arrayConfig: {
+      code: string;
+      width: number;
+      heightLetter: string;
+      maxPositions?: number;
+      fill_direction?: 'row' | 'column';
+    },
     getCodigoEpiFn: () => Promise<{ codigo_epi: string; secuencia: number; year: number }>,
     transaction?: Transaction
   ): Promise<MuestraArray[]> {
-    const { code, width, heightLetter, maxPositions } = arrayConfig;
+    const { code, width, heightLetter, maxPositions, fill_direction = 'row' } = arrayConfig;
     const arrayPositions = [];
 
     const maxLetterIndex = heightLetter.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
     let positionIndex = 1;
     let created = 0;
 
-    outer: for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
-      const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
-      for (let col = 1; col <= width; col++) {
-        if (maxPositions !== undefined && created >= maxPositions) break outer;
-        const colPadded = col < 10 ? `0${col}` : `${col}`;
+    if (fill_direction === 'column') {
+      // Numeración por columnas: A01, B01 … H01, A02, B02 … H02 … H12
+      outer: for (let col = 1; col <= width; col++) {
+        for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
+          if (maxPositions !== undefined && created >= maxPositions) break outer;
+          const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
+          const colPadded = col < 10 ? `0${col}` : `${col}`;
 
-        // Obtener un código EPI único para esta posición
-        const { codigo_epi } = await getCodigoEpiFn();
+          const { codigo_epi } = await getCodigoEpiFn();
+          arrayPositions.push({
+            id_muestra: idMuestra,
+            id_posicion: positionIndex,
+            codigo_placa: code,
+            posicion_placa: `${letter}${colPadded}`,
+            codigo_epi,
+            f_creacion: new Date(),
+          });
+          positionIndex++;
+          created++;
+        }
+      }
+    } else {
+      // Numeración por filas (row-major): A01, A02 … A12, B01 … (por defecto)
+      outer: for (let letterIndex = 0; letterIndex < maxLetterIndex; letterIndex++) {
+        const letter = String.fromCharCode('A'.charCodeAt(0) + letterIndex);
+        for (let col = 1; col <= width; col++) {
+          if (maxPositions !== undefined && created >= maxPositions) break outer;
+          const colPadded = col < 10 ? `0${col}` : `${col}`;
 
-        arrayPositions.push({
-          id_muestra: idMuestra,
-          id_posicion: positionIndex,
-          codigo_placa: code,
-          posicion_placa: `${letter}${colPadded}`,
-          codigo_epi,
-          f_creacion: new Date(),
-        });
-        positionIndex++;
-        created++;
+          // Obtener un código EPI único para esta posición
+          const { codigo_epi } = await getCodigoEpiFn();
+
+          arrayPositions.push({
+            id_muestra: idMuestra,
+            id_posicion: positionIndex,
+            codigo_placa: code,
+            posicion_placa: `${letter}${colPadded}`,
+            codigo_epi,
+            f_creacion: new Date(),
+          });
+          positionIndex++;
+          created++;
+        }
       }
     }
 
@@ -448,6 +482,8 @@ export class MuestraRepository {
         id_ubicacion: ubicacionId,
         id_prueba: pruebaId,
         tipo_array: data.array_config ? true : false,
+        plate_width: data.plate_width,
+        plate_height: data.plate_height,
       };
 
       const nuevaMuestra = await Muestra.create(muestraData, { transaction });

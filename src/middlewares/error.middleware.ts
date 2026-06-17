@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError as SequelizeValidationError } from 'sequelize';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import multer from 'multer';
 import { BadRequestError } from '../errors/BadRequestError';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
 import { NotFoundError } from '../errors/NotFoundError';
@@ -14,6 +15,23 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   console.error('[ErrorHandler]', err);
+
+  // Multer: tamaño de archivo excedido o tipo no permitido (fileFilter cb(new Error(...)))
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message:
+        err.code === 'LIMIT_FILE_SIZE'
+          ? 'El archivo es demasiado grande. Tamaño máximo: 10 MB'
+          : `Error al procesar el archivo: ${err.message}`,
+    });
+  }
+  if (err instanceof Error && err.message.startsWith('Tipo de archivo no permitido')) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
 
   if (err instanceof SequelizeValidationError) {
     return res.status(400).json({

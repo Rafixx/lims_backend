@@ -253,6 +253,27 @@ export class ResultadoRepository {
     resultadosCreados?: number;
     type?: ImportType;
   }> {
+    // Capa de defensa global: cualquier excepción inesperada devuelve un mensaje
+    // descriptivo en lugar de propagarse como 500.
+    try {
+      return await this._setCSVtoRAWInternal(csvBuffer);
+    } catch (err) {
+      console.error('[setCSVtoRAW] Error inesperado:', err);
+      return {
+        success: false,
+        message: `Error inesperado al procesar el archivo: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
+  }
+
+  private async _setCSVtoRAWInternal(
+    csvBuffer: Buffer
+  ): Promise<{
+    success: boolean;
+    message: string;
+    resultadosCreados?: number;
+    type?: ImportType;
+  }> {
     // Intentar parsear el CSV con ambos formatos para detectar el tipo
     let columnasDetectadas: string[] = [];
 
@@ -287,7 +308,7 @@ export class ResultadoRepository {
         if (tieneColumnasQubit) {
           console.log('✅ CSV detectado como Qubit');
           console.log('Columnas encontradas:', columnasDetectadas);
-          return this.importQubitRawDataResults(
+          return await this.importQubitRawDataResults(
             //idWorklist,
             csvBuffer
           );
@@ -328,7 +349,7 @@ export class ResultadoRepository {
         if (tieneColumnasNanodrop) {
           console.log('✅ CSV detectado como Nanodrop');
           console.log('Columnas encontradas:', columnasDetectadas);
-          return this.importNanoDropRawDataResults(
+          return await this.importNanoDropRawDataResults(
             // idWorklist,
             csvBuffer
           );
@@ -531,7 +552,7 @@ export class ResultadoRepository {
       (registro) => ({
         run_id: registro['Run ID'] || null,
         assay_name: registro['Assay Name'] || null,
-        test_name: registro['Test Name'] || null,
+        test_name: registro['codigo muestra'] || registro['Test Name'] || null,
         test_date: registro['Test Date'] || null,
         qubit_tube_conc: registro['Qubit tube conc.'] || null,
         qubit_units: registro['Qubit tube conc. units'] || null,

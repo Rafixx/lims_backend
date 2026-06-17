@@ -1232,6 +1232,7 @@ CREATE TABLE res_raw_nanodrop (
 	impureza3_a260 VARCHAR(50),
 	impureza3_porc VARCHAR(50),
 	impureza3_mm VARCHAR(50),
+	position VARCHAR,
 	createdAt timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -1257,6 +1258,7 @@ CREATE TABLE res_raw_qubit (
 	green_rfu VARCHAR(50),
 	far_red_rfu VARCHAR(50),
 	fecha TIMESTAMP,
+	position VARCHAR,
 	createdAt timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
