@@ -1,7 +1,7 @@
 import { Resultado } from '../models/Resultado';
 import { sequelize } from '../config/db.config';
 import { Transaction } from 'sequelize';
-import { parseCSV } from '../utils/csvParser';
+import { parseCSV, detectDelimiter } from '../utils/csvParser';
 import {
   ResRawNanodropRepository,
   CreateResRawNanodropDTO,
@@ -274,18 +274,22 @@ export class ResultadoRepository {
     resultadosCreados?: number;
     type?: ImportType;
   }> {
+    // Detectar delimitador automáticamente (Excel europeo usa ; en vez de ,)
+    const delimiter = detectDelimiter(csvBuffer);
+    console.log('[setCSVtoRAW] Delimitador detectado:', JSON.stringify(delimiter));
+
     // Intentar parsear el CSV con ambos formatos para detectar el tipo
     let columnasDetectadas: string[] = [];
 
-    // Primero intentar parsear como UTF-8 (Qubit)
+    // Primero intentar parsear como Qubit (delimitador auto-detectado)
     try {
       const registrosQubit = await parseCSV(csvBuffer, {
-        delimiter: ',',
+        delimiter,
         trim: true,
         skipEmptyLines: true,
         relaxColumnCount: true,
         relaxQuotes: true,
-        quote: '"',
+        quote: delimiter === '\t' ? false : '"',
       });
 
       if (registrosQubit.length > 0) {
@@ -308,10 +312,7 @@ export class ResultadoRepository {
         if (tieneColumnasQubit) {
           console.log('✅ CSV detectado como Qubit');
           console.log('Columnas encontradas:', columnasDetectadas);
-          return await this.importQubitRawDataResults(
-            //idWorklist,
-            csvBuffer
-          );
+          return await this.importQubitRawDataResults(csvBuffer, delimiter);
         }
       }
     } catch {
@@ -319,44 +320,46 @@ export class ResultadoRepository {
       console.log('No es formato Qubit, intentando Nanodrop...');
     }
 
-    // Intentar parsear como UTF-16 LE con tabs (Nanodrop)
-    try {
-      const registrosNanodrop = await parseCSV(csvBuffer, {
-        delimiter: '\t',
-        trim: true,
-        skipEmptyLines: true,
-        relaxColumnCount: true,
-        relaxQuotes: true,
-        quote: false,
-      });
+    // Intentar parsear como Nanodrop: primero con tab (instrumento), luego con delimitador detectado
+    const nanodropDelimiters: Array<',' | ';' | '\t'> = delimiter === '\t'
+      ? ['\t']
+      : ['\t', delimiter];
 
-      if (registrosNanodrop.length > 0) {
-        columnasDetectadas = Object.keys(registrosNanodrop[0]);
+    for (const ndDelimiter of nanodropDelimiters) {
+      try {
+        const registrosNanodrop = await parseCSV(csvBuffer, {
+          delimiter: ndDelimiter,
+          trim: true,
+          skipEmptyLines: true,
+          relaxColumnCount: true,
+          relaxQuotes: true,
+          quote: ndDelimiter === '\t' ? false : '"',
+        });
 
-        // Columnas características de Nanodrop
-        const columnasNanodrop = [
-          'Fecha',
-          'Nombre de muestra',
-          'Ácido nucleico(ng/uL)',
-          'A260/A280',
-          'A260/A230',
-        ];
+        if (registrosNanodrop.length > 0) {
+          columnasDetectadas = Object.keys(registrosNanodrop[0]);
 
-        const tieneColumnasNanodrop = columnasNanodrop.some((col) =>
-          columnasDetectadas.includes(col)
-        );
+          const columnasNanodrop = [
+            'Fecha',
+            'Nombre de muestra',
+            'Ácido nucleico(ng/uL)',
+            'A260/A280',
+            'A260/A230',
+          ];
 
-        if (tieneColumnasNanodrop) {
-          console.log('✅ CSV detectado como Nanodrop');
-          console.log('Columnas encontradas:', columnasDetectadas);
-          return await this.importNanoDropRawDataResults(
-            // idWorklist,
-            csvBuffer
+          const tieneColumnasNanodrop = columnasNanodrop.some((col) =>
+            columnasDetectadas.includes(col)
           );
+
+          if (tieneColumnasNanodrop) {
+            console.log('✅ CSV detectado como Nanodrop (delimitador:', JSON.stringify(ndDelimiter), ')');
+            console.log('Columnas encontradas:', columnasDetectadas);
+            return await this.importNanoDropRawDataResults(csvBuffer, ndDelimiter);
+          }
         }
+      } catch (error) {
+        console.error('Error al parsear como Nanodrop con delimitador', JSON.stringify(ndDelimiter), ':', error);
       }
-    } catch (error) {
-      console.error('Error al parsear como Nanodrop:', error);
     }
 
     // Si no se pudo detectar el tipo
@@ -374,32 +377,24 @@ export class ResultadoRepository {
    * @returns Promise<{ success: boolean; message: string; resultadosCreados: number }>
    */
   async importNanoDropRawDataResults(
-    // idWorklist: number,
-    csvBuffer: Buffer
+    csvBuffer: Buffer,
+    delimiter: ',' | ';' | '\t' = '\t'
   ): Promise<{
     success: boolean;
     message: string;
     resultadosCreados?: number;
     type?: ImportType;
   }> {
-    // Validar que el worklist existe
-    // const worklist = await Worklist.findByPk(idWorklist);
-    // if (!worklist) {
-    //   return {
-    //     success: false,
-    //     message: `Worklist con ID ${idWorklist} no encontrado`,
-    //   };
-    // }
-
-    // Parsear el CSV
+    // Parsear el CSV con el delimitador detectado
     let registrosCSV;
     try {
       registrosCSV = await parseCSV(csvBuffer, {
-        delimiter: '\t', // El CSV usa tabuladores
+        delimiter,
         trim: true,
         skipEmptyLines: true,
-        relaxColumnCount: true, // Permite columnas inconsistentes
-        relaxQuotes: true, // Relaja la validación de comillas
+        relaxColumnCount: true,
+        relaxQuotes: true,
+        quote: delimiter === '\t' ? false : '"',
       });
     } catch (error) {
       return {
@@ -491,33 +486,24 @@ export class ResultadoRepository {
    * - Completa las técnicas automáticamente
    */
   async importQubitRawDataResults(
-    // idWorklist: number,
-    csvBuffer: Buffer
+    csvBuffer: Buffer,
+    delimiter: ',' | ';' | '\t' = ','
   ): Promise<{
     success: boolean;
     message: string;
     resultadosCreados?: number;
     type?: ImportType;
   }> {
-    // Validar que el worklist existe
-    // const worklist = await Worklist.findByPk(idWorklist);
-    // if (!worklist) {
-    //   return {
-    //     success: false,
-    //     message: `Worklist con ID ${idWorklist} no encontrado`,
-    //   };
-    // }
-
-    // Parsear el CSV de Qubit
+    // Parsear el CSV de Qubit con el delimitador detectado
     let registrosCSV;
     try {
       registrosCSV = await parseCSV(csvBuffer, {
-        delimiter: ',', // El CSV de Qubit usa comas
+        delimiter,
         trim: true,
         skipEmptyLines: true,
         relaxColumnCount: true,
         relaxQuotes: true,
-        quote: '"', // Procesa comillas dobles
+        quote: delimiter === '\t' ? false : '"',
       });
     } catch (error) {
       return {

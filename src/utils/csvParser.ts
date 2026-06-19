@@ -41,6 +41,21 @@ function decodeBuffer(buffer: Buffer): string {
 }
 
 /**
+ * Detecta el delimitador más probable en un buffer CSV analizando la primera línea.
+ * Excel con locale europeo/español guarda CSVs con ; en lugar de ,
+ */
+export function detectDelimiter(buffer: Buffer): ',' | ';' | '\t' {
+  const content = decodeBuffer(buffer)
+  const firstLine = content.split(/\r?\n/)[0] || ''
+  const commas = (firstLine.match(/,/g) || []).length
+  const semicolons = (firstLine.match(/;/g) || []).length
+  const tabs = (firstLine.match(/\t/g) || []).length
+  if (tabs > commas && tabs > semicolons) return '\t'
+  if (semicolons > commas) return ';'
+  return ','
+}
+
+/**
  * Parsea un buffer CSV y retorna un array de objetos
  * @param buffer - Buffer del archivo CSV
  * @param options - Opciones de parseo
