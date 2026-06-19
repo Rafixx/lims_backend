@@ -43,7 +43,7 @@ export class ResultadoQubitService {
 
   async findAllRaw(): Promise<ResRawQubit[]> {
     return ResRawQubit.findAll({
-      order: [['createdAt', 'DESC']],
+      order: [['id', 'ASC']],
     });
   }
 
@@ -61,7 +61,7 @@ export class ResultadoQubitService {
 
     try {
       // 1. Obtener todos los registros raw
-      const rawRecords = await ResRawQubit.findAll({ transaction });
+      const rawRecords = await ResRawQubit.findAll({ order: [['id', 'ASC']], transaction });
 
       if (rawRecords.length === 0) {
         await transaction.rollback();
@@ -321,8 +321,9 @@ export class ResultadoQubitService {
     let resultsCreated = 0;
 
     try {
-      // 1. Obtener todos los registros raw
-      const rawRecords = await ResRawQubit.findAll({ transaction });
+      // 1. Obtener todos los registros raw (SIEMPRE id ASC para que el índice
+      //    coincida con el que el frontend vio en findAllRaw)
+      const rawRecords = await ResRawQubit.findAll({ order: [['id', 'ASC']], transaction });
 
       if (rawRecords.length === 0) {
         await transaction.rollback();
@@ -549,9 +550,17 @@ export class ResultadoQubitService {
         `✅ [PROCESO CON MAPEO QUBIT] Completado: ${recordsProcessed} registros → Final, ${resultsCreated} resultados creados`
       );
 
+      const successFlag = resultsCreated > 0;
+      const summaryMsg = successFlag
+        ? `Proceso completado: ${recordsProcessed} registros procesados, ${resultsCreated} resultados creados`
+        : `No se creó ningún resultado (${recordsProcessed} filas procesadas). ` +
+          (errors.length > 0
+            ? `Primer error: ${errors[0]}`
+            : 'Las filas no contienen valores de cuantificación o los códigos no coinciden con las técnicas del worklist.');
+
       return {
-        success: resultsCreated > 0,
-        message: `Proceso completado: ${recordsProcessed} registros procesados, ${resultsCreated} resultados creados`,
+        success: successFlag,
+        message: summaryMsg,
         recordsProcessed,
         resultsCreated,
         errors,

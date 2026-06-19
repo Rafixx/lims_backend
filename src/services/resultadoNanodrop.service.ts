@@ -40,7 +40,7 @@ export class ResultadoNanodropService {
 
   async findAllRaw(): Promise<ResRawNanodrop[]> {
     return ResRawNanodrop.findAll({
-      order: [['createdAt', 'DESC']],
+      order: [['id', 'ASC']],
     });
   }
 
@@ -58,7 +58,7 @@ export class ResultadoNanodropService {
 
     try {
       // 1. Obtener todos los registros raw
-      const rawRecords = await ResRawNanodrop.findAll({ transaction });
+      const rawRecords = await ResRawNanodrop.findAll({ order: [['id', 'ASC']], transaction });
 
       if (rawRecords.length === 0) {
         await transaction.rollback();
@@ -326,8 +326,9 @@ export class ResultadoNanodropService {
     let resultsCreated = 0;
 
     try {
-      // 1. Obtener todos los registros raw
-      const rawRecords = await ResRawNanodrop.findAll({ transaction });
+      // 1. Obtener todos los registros raw (SIEMPRE id ASC para que el índice
+      //    coincida con el que el frontend vio en findAllRaw)
+      const rawRecords = await ResRawNanodrop.findAll({ order: [['id', 'ASC']], transaction });
 
       if (rawRecords.length === 0) {
         await transaction.rollback();
@@ -523,9 +524,17 @@ export class ResultadoNanodropService {
         `✅ [PROCESO CON MAPEO] Completado: ${recordsProcessed} registros → Final, ${resultsCreated} resultados creados`
       );
 
+      const successFlag = resultsCreated > 0;
+      const summaryMsg = successFlag
+        ? `Proceso completado: ${recordsProcessed} registros procesados, ${resultsCreated} resultados creados`
+        : `No se creó ningún resultado (${recordsProcessed} filas procesadas). ` +
+          (errors.length > 0
+            ? `Primer error: ${errors[0]}`
+            : 'Las filas no contienen valores de cuantificación o los códigos no coinciden con las técnicas del worklist.');
+
       return {
-        success: resultsCreated > 0,
-        message: `Proceso completado: ${recordsProcessed} registros procesados, ${resultsCreated} resultados creados`,
+        success: successFlag,
+        message: summaryMsg,
         recordsProcessed,
         resultsCreated,
         errors,

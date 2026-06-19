@@ -267,12 +267,10 @@ export class WorklistService {
       );
     }
 
-    if (!resultado.success) {
-      throw new Error(resultado.message);
-    }
-
+    // Devolver el resultado completo (success o no) sin lanzar excepción.
+    // El frontend lee response.success para decidir cómo notificar al usuario.
     return {
-      success: true,
+      success: resultado.success,
       message: resultado.message,
       recordsProcessed: resultado.recordsProcessed,
       resultsCreated: resultado.resultsCreated,
