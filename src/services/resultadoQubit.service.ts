@@ -389,22 +389,16 @@ export class ResultadoQubitService {
           }
 
           // 3.1 Transformar y guardar en res_final_qubit
-          const parseFloat = (value: string | null): number | null => {
-            if (!value) return null;
-            const num = Number(value);
-            return !isNaN(num) ? num : null;
-          };
-
-          // Usar el registro devuelto por create directamente (no hacer lookup posterior
-          // con findByCodigoEpi porque la transacción aún no está confirmada y PostgreSQL
-          // con READ COMMITTED no vería el registro recién insertado)
+          // Se guardan los strings crudos (sin parseFloat) para que el campo quede no-null
+          // cuando el instrumento exporta texto en lugar de número (p.ej. 'A05', 'N/A').
+          // El bucle de resultadosKeyFields decide luego si va a valor o valor_texto.
           const registro = await this.resFinalQubitRepository.create(
             {
               codigo_epi: raw.test_name,
-              valor: parseFloat(raw.orig_conc)?.toString() || null,
+              valor: raw.orig_conc || null,
               valor_uds: raw.orig_conc_units || 'ng/uL',
               tipo_ensayo: raw.assay_name || null,
-              qubit_valor: parseFloat(raw.qubit_tube_conc)?.toString() || null,
+              qubit_valor: raw.qubit_tube_conc || null,
               qubit_uds: raw.qubit_units || null,
               analizador: 'Qubit',
               valor_fecha: raw.test_date || null,
@@ -474,21 +468,27 @@ export class ResultadoQubitService {
             const unidadesCampo =
               registro[keyField.unidades as keyof typeof registro];
 
-            console.log(`  → Campo: ${keyField.valor} = ${valorCampo}`);
-
-            if (valorCampo === null || valorCampo === undefined) {
+            // Omitir campos genuinamente vacíos (null / undefined / string vacío)
+            const valorStr = valorCampo != null ? String(valorCampo).trim() : '';
+            if (!valorStr) {
               console.log(`  ⚠️ Campo ${keyField.valor} vacío, se omite`);
               continue;
             }
+
+            // Distinguir numérico de texto para asignar el campo correcto en resultado
+            const numVal = Number(valorStr.replace(',', '.'));
+            const esNumerico = !isNaN(numVal);
+
+            console.log(`  → Campo: ${keyField.valor} = ${valorStr} (${esNumerico ? 'numérico' : 'texto'})`);
 
             await this.resultadoRepository.create(
               {
                 id_muestra: muestraInfo.id_muestra,
                 id_tecnica: tecnicaMatch.id_tecnica,
                 tipo_res: keyField.valor,
-                valor: valorCampo?.toString() || undefined,
-                valor_texto: ``,
-                unidades: unidadesCampo?.toString() || '',
+                valor: esNumerico ? valorStr : undefined,
+                valor_texto: esNumerico ? '' : valorStr,
+                unidades: unidadesCampo != null ? String(unidadesCampo) : '',
                 valor_fecha: fechaResultado,
                 f_resultado: new Date(),
                 validado: false,

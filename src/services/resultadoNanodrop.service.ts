@@ -453,27 +453,47 @@ export class ResultadoNanodropService {
             `📊 Procesando ${resultadosKeyFields.NANODROP.length} campos para técnica ${tecnicaMatch.id_tecnica}`
           );
 
+          // Mapa keyField → string crudo del RAW (res_final_nanodrop es DECIMAL,
+          // no puede guardar texto; leemos el string original para el fallback a valor_texto)
+          const rawFieldMap: Record<string, string | null | undefined> = {
+            valor_conc_nucleico: raw.an_cant,
+            ratio260_280: raw.a260_280,
+            ratio260_230: raw.a260_230,
+          };
+
           for (const keyField of resultadosKeyFields.NANODROP) {
-            const valorCampo =
-              registro[keyField.valor as keyof typeof registro];
+            // Preferir el string crudo del RAW para detectar texto/número correctamente
+            const rawStr = (rawFieldMap[keyField.valor] ?? '').trim().replace(',', '.');
+            const valorCampo = registro[keyField.valor as keyof typeof registro];
             const unidadesCampo =
               registro[keyField.unidades as keyof typeof registro];
 
-            console.log(`  → Campo: ${keyField.valor} = ${valorCampo}`);
-
-            if (valorCampo === null || valorCampo === undefined) {
+            // Omitir campos genuinamente vacíos
+            if (!rawStr && (valorCampo === null || valorCampo === undefined)) {
               console.log(`  ⚠️ Campo ${keyField.valor} vacío, se omite`);
               continue;
             }
+
+            const valorStr = rawStr || String(valorCampo ?? '').trim();
+            if (!valorStr) {
+              console.log(`  ⚠️ Campo ${keyField.valor} vacío, se omite`);
+              continue;
+            }
+
+            // Si es numérico va a valor; si es texto va a valor_texto
+            const numVal = Number(valorStr);
+            const esNumerico = !isNaN(numVal);
+
+            console.log(`  → Campo: ${keyField.valor} = ${valorStr} (${esNumerico ? 'numérico' : 'texto'})`);
 
             await this.resultadoRepository.create(
               {
                 id_muestra: muestraInfo.id_muestra,
                 id_tecnica: tecnicaMatch.id_tecnica,
                 tipo_res: keyField.valor,
-                valor: valorCampo?.toString() || undefined,
-                valor_texto: ``,
-                unidades: unidadesCampo?.toString() || '',
+                valor: esNumerico ? valorStr : undefined,
+                valor_texto: esNumerico ? '' : valorStr,
+                unidades: unidadesCampo != null ? String(unidadesCampo) : '',
                 valor_fecha: fechaResultado,
                 f_resultado: new Date(),
                 validado: false,
