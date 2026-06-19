@@ -395,7 +395,10 @@ export class ResultadoQubitService {
             return !isNaN(num) ? num : null;
           };
 
-          await this.resFinalQubitRepository.create(
+          // Usar el registro devuelto por create directamente (no hacer lookup posterior
+          // con findByCodigoEpi porque la transacción aún no está confirmada y PostgreSQL
+          // con READ COMMITTED no vería el registro recién insertado)
+          const registro = await this.resFinalQubitRepository.create(
             {
               codigo_epi: raw.test_name,
               valor: parseFloat(raw.orig_conc)?.toString() || null,
@@ -413,7 +416,7 @@ export class ResultadoQubitService {
             transaction
           );
 
-          console.log(`✅ Registro ${index} guardado en res_final_qubit`);
+          console.log(`✅ Registro ${index} guardado en res_final_qubit: id=${registro.id}, valor="${registro.valor}", qubit_valor="${registro.qubit_valor}"`);
           recordsProcessed++;
 
           // 3.2 Buscar id_tecnica usando el mapeo por índice
@@ -454,33 +457,6 @@ export class ResultadoQubitService {
             );
             continue;
           }
-
-          // 3.4 Obtener el registro final que acabamos de crear
-          console.log(
-            `🔍 Buscando registro final con codigo_epi="${raw.test_name}"`
-          );
-          const finalRecords =
-            await this.resFinalQubitRepository.findByCodigoEpi(raw.test_name);
-
-          console.log(
-            `📦 Registros finales encontrados: ${finalRecords.length}`
-          );
-
-          if (finalRecords.length === 0) {
-            console.log(
-              `❌ Registro ${index}: No se encontró el registro final`
-            );
-            errors.push(
-              `Registro raw índice ${index}: No se encontró el registro final con codigo_epi=${raw.test_name}`
-            );
-            continue;
-          }
-
-          // Tomar el registro más reciente
-          const registro = finalRecords[finalRecords.length - 1];
-          console.log(
-            `✅ Registro final obtenido: id=${registro.id}, valor="${registro.valor}", qubit_valor="${registro.qubit_valor}"`
-          );
 
           // Parsear fecha en formato español DD/MM/YYYY HH:MM:SS
           const fechaResultado =

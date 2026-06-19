@@ -396,7 +396,10 @@ export class ResultadoNanodropService {
             return !isNaN(num) ? num : null;
           };
 
-          await this.resFinalNanodropRepository.create(
+          // Usar el registro devuelto por create directamente (no hacer lookup posterior
+          // con findByCodigoEpi porque la transacción aún no está confirmada y PostgreSQL
+          // con READ COMMITTED no vería el registro recién insertado)
+          const registro = await this.resFinalNanodropRepository.create(
             {
               codigo_epi: raw.sample_code,
               valor_conc_nucleico: parseFloat(raw.an_cant),
@@ -407,7 +410,7 @@ export class ResultadoNanodropService {
               abs_280: parseFloat(raw.a280),
               analizador: 'NanoDrop',
               valor_fecha: raw.fecha || null,
-              position: raw.position || null, // ✅ Propagar position desde RAW
+              position: raw.position || null,
               procesado: false,
               created_by: createdBy,
               updated_by: null,
@@ -440,22 +443,6 @@ export class ResultadoNanodropService {
             );
             continue;
           }
-
-          // 3.4 Obtener el registro final que acabamos de crear
-          const finalRecords =
-            await this.resFinalNanodropRepository.findByCodigoEpi(
-              raw.sample_code
-            );
-
-          if (finalRecords.length === 0) {
-            errors.push(
-              `Registro raw índice ${index}: No se encontró el registro final con codigo_epi=${raw.sample_code}`
-            );
-            continue;
-          }
-
-          // Tomar el registro más reciente
-          const registro = finalRecords[finalRecords.length - 1];
 
           // Parsear fecha en formato español DD/MM/YYYY HH:MM:SS
           const fechaResultado =
