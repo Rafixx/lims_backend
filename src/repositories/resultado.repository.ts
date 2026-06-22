@@ -339,12 +339,16 @@ export class ResultadoRepository {
         if (registrosNanodrop.length > 0) {
           columnasDetectadas = Object.keys(registrosNanodrop[0]);
 
+          // Columnas del instrumento nativo Y de nuestra plantilla generada por la app
           const columnasNanodrop = [
             'Fecha',
             'Nombre de muestra',
             'Ácido nucleico(ng/uL)',
             'A260/A280',
             'A260/A230',
+            'Nucleic Acid Conc.',
+            '260/280',
+            '260/230',
           ];
 
           const tieneColumnasNanodrop = columnasNanodrop.some((col) =>
@@ -430,14 +434,15 @@ export class ResultadoRepository {
       console.log('Total de registros:', registrosCSV.length);
     }
 
-    // Mapear los registros del CSV al formato de ResRawNanodrop
+    // Mapear los registros del CSV al formato de ResRawNanodrop.
+    // Soporta columnas del instrumento nativo Y de nuestra plantilla generada por la app.
     const datosRawNanodrop: CreateResRawNanodropDTO[] = registrosCSV.map(
       (registro) => ({
         fecha: registro['Fecha'] || '',
-        sample_code: registro['Nombre de muestra'] || '',
-        an_cant: registro['Ácido nucleico(ng/uL)'] || '',
-        a260_280: registro['A260/A280'] || '',
-        a260_230: registro['A260/A230'] || '',
+        sample_code: registro['Nombre de muestra'] || registro['codigo muestra'] || '',
+        an_cant: registro['Ácido nucleico(ng/uL)'] || registro['Nucleic Acid Conc.'] || '',
+        a260_280: registro['A260/A280'] || registro['260/280'] || '',
+        a260_230: registro['A260/A230'] || registro['260/230'] || '',
         a260: registro['A260'] || '',
         a280: registro['A280'] || '',
         an_factor: registro['Factor de ácido nucleico'] || '',
@@ -457,7 +462,7 @@ export class ResultadoRepository {
         impureza3_a260: registro['Impureza 3 A260'] || '',
         impureza3_porc: registro['Impureza 3 %CV'] || '',
         impureza3_mm: registro['Impureza 3 mM'] || '',
-        position: registro['Posición placa'] || null, // ✅ NUEVO CAMPO
+        position: registro['Posición placa'] || registro['Pocillo'] || null,
       })
     );
 
